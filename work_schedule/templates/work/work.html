@@ -1,0 +1,240 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block link %}
+<link rel="stylesheet" href="{% static 'calendar/calendar.css' %}">
+
+{% endblock %}
+
+{% block title %}
+{% trans 'График' %}
+{% endblock %}
+
+{% load static %}
+
+{% block content %}
+
+<body class="dark">
+<div class="container text-center">
+    <div class="row align-items-start">
+        <div class="col">
+            <h2 class="custom-heading">Выберите дату:</h2>
+            <br>
+            <div class="calendar">
+                <!-- CALENDAR HEADER START -->
+                <div class="calendar-header">
+                    <span class="month-picker" id="month-picker">
+                        February
+                    </span>
+                    <div class="year-picker">
+                        <span class="year-change mt-3" id="prev-year">
+                            <pre> < </pre>
+                        </span>
+                        <span id="year">2023</span>
+                        <span class="year-change mt-3" id="next-year">
+                            <pre> > </pre>
+                        </span>
+                    </div>
+
+
+                </div>
+
+                <!-- CALENDAR BODY START -->
+                <div class="calendar-body">
+                    <div class="calendar-week-day">
+                        <div>Пн</div> <!-- Понедельник -->
+                        <div>Вт</div> <!-- Вторник -->
+                        <div>Ср</div> <!-- Среда -->
+                        <div>Чт</div> <!-- Четверг -->
+                        <div>Пт</div> <!-- Пятница -->
+                        <div>Сб</div> <!-- Суббота -->
+                        <div>Вс</div> <!-- Воскресенье -->
+                    </div>
+                    <div class="calendar-day">
+                        <div>
+                            1
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <div>2</div>
+                        <div>3</div>
+                        <div>4</div>
+                        <div>5</div>
+                        <div>6</div>
+                        <div>7</div>
+                        <div>1</div>
+                        <div>2</div>
+                        <div>3</div>
+                        <div>4</div>
+                        <div>5</div>
+                        <div>6</div>
+                        <div>7</div>
+                    </div>
+                </div>
+
+                <div class="month-picker">
+                    <span></span>
+                    <div class="month-list">
+                        <!-- Здесь добавьте месяцы -->
+                        <div data-month="0">Январь</div>
+                        <div data-month="1">Февраль</div>
+                        <div data-month="2">Март</div>
+                        <div data-month="3">Апрель</div>
+                        <div data-month="4">Май</div>
+                        <div data-month="5">Июнь</div>
+                        <div data-month="6">Июль</div>
+                        <div data-month="7">Август</div>
+                        <div data-month="8">Сентябрь</div>
+                        <div data-month="9">Октябрь</div>
+                        <div data-month="10">Ноябрь</div>
+                        <div data-month="11">Декабрь</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <h3>
+                <br>
+                <div id="selected-date">Выбрана дата: <span id="selected-date-text"></span></div>
+            </h3>
+            <br>
+            <br>
+            <form method="post">
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <ul>
+                        {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% csrf_token %}
+
+                <div class="row align-items-start">
+                    <div class="col">
+                        <label class="label-cal" for="{{ form.start_time.id_for_label }}">Начало работы:</label>
+                        {{ form.start_time }}
+                        <!-- Вывод сообщений об ошибках для start_time -->
+                        {% for error in form.start_time.errors %}
+                        <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    <div class="col">
+                        <label class="label-cal" for="{{ form.end_time.id_for_label }}">Конец работы:</label>
+                        {{ form.end_time }}
+                        <!-- Вывод сообщений об ошибках для end_time -->
+                        {% for error in form.end_time.errors %}
+                        <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                <br>
+                <br>
+                <label class="label-cal">Комментарий:</label>
+                <br>
+                <br>
+                {{ form.comment }}
+                {{ form.user_id }}
+                <br>
+                <br>
+                <br>
+
+                <button class="but-click" type="submit">Записаться</button>
+                <input type="hidden" name="date" id="selected-date-input" value="">
+            </form>
+        </div>
+    </div>
+</div>
+<br>
+<br>
+
+<h2>Все записи</h2>
+<br>
+<br>
+<div class="table-responsive">
+    <table class="ttable table-sm">
+        <thead>
+        <tr>
+            <th scope="col" style="width: 5%; font-size: 16px;">#</th>
+            <th scope="col" style="width: 20%; font-size: 16px;">Имя</th>
+            <th scope="col" style="width: 10%; font-size: 16px;">Дата</th>
+            <th scope="col" style="width: 15%; font-size: 16px;">Время начала работы</th>
+            <th scope="col" style="width: 15%; font-size: 16px;">Время конца работы</th>
+            <th scope="col" style="width: 15%; font-size: 16px;">Время работы</th>
+            <th scope="col" style="width: 15%; font-size: 16px;">Утверждено</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in appointments %}
+        <tr>
+            <th scope="row">{{ forloop.counter }}</th>
+            <td style="font-size: 12px;">{{ item.user.username }}</td> <!-- Вывести имя пользователя -->
+            <td style="font-size: 12px;">{{ item.date }}</td>
+            <td style="font-size: 12px;">{{ item.start_time }}</td>
+            <td style="font-size: 12px;">{{ item.end_time }}</td>
+            <td style="font-size: 12px;">{{ item.duration }}</td>
+            {% if item.verified %}
+                <td style="font-size: 12px;">Да</td>
+            {% else %}
+                <td style="font-size: 12px;">Нет</td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Получить элементы DOM
+    var selectedDateText = document.getElementById("selected-date-text");
+    var dateInput = document.getElementById("selected-date-input"); // Замените "id_date" на актуальный идентификатор поля формы
+
+    // Функция для преобразования даты в формат "год/месяц/день"
+    function formatDate(dateString) {
+        var months = [
+            "января", "февраля", "марта", "апреля",
+            "мая", "июня", "июля", "августа",
+            "сентября", "октября", "ноября", "декабря"
+        ];
+
+        var parts = dateString.split(' ');
+        var day = parts[0];
+        var monthIndex = months.indexOf(parts[1].toLowerCase()) + 1;
+        var year = parts[2];
+
+        // Формируем дату в формате "год/месяц/день"
+        return year + '-' + monthIndex.toString().padStart(2, '0') + '-' + day.padStart(2, '0');
+    }
+
+    // Обработчик события для обновления поля формы
+    selectedDateText.addEventListener("DOMSubtreeModified", function () {
+        var selectedDateStr = selectedDateText.innerText.trim();
+        dateInput.value = formatDate(selectedDateStr);
+    });
+
+    // Обработчик события для кнопки отправки формы
+    var form = document.querySelector("form");
+    form.addEventListener("submit", function () {
+        var selectedDateStr = selectedDateText.innerText.trim();
+        dateInput.value = formatDate(selectedDateStr);
+    });
+</script>
+<script>
+    // Устанавливаем шаг в 30 минут для полей времени
+    var timeInputs = document.querySelectorAll('input[type="time"]');
+    timeInputs.forEach(function(input) {
+        input.step = 1800;  // 1800 секунд = 30 минут
+    });
+</script>
+<script src="{% static 'calendar/calendar.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+</body>
+{% endblock %}

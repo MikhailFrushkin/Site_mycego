@@ -1,0 +1,15 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% block title %}
+{% trans 'Вход в систему' %}
+{% endblock %}
+{% block content %}
+<h1>{% trans 'Вход в систему' %}</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="col-auto mb-3 mt-5">
+        <button type="submit" class="btn btn-lg btn-outline-secondary">{% trans 'Войти' %}</button>
+    </div>
+</form>
+{% endblock %}
