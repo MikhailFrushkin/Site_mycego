@@ -53,6 +53,7 @@ def ajax_view(request):
                                   "verified": 'пусто'}]
         response_data = {'appointments': appointments_list}
         # pprint(response_data)
+        return JsonResponse(response_data)
 
 
 class WorkSchedule(LoginRequiredMixin, FormView):
