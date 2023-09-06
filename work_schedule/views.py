@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from pprint import pprint
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -20,19 +20,21 @@ def ajax_view(request):
     if request.method == 'POST':
         selected_date = request.POST.get('date', None)
         print(selected_date)
-        if len(selected_date.split('-')) == 2:
-            year, month = map(int, selected_date.split('-'))
-            # Формируем дату начала месяца
-            start_date = datetime(year, month, 1)
-            # Формируем дату конца месяца (последний день месяца)
-            if month == 12:
-                end_date = datetime(year + 1, 1, 1)
+
+        if selected_date == 'current_month':
+            today = date.today()
+            # Вычисление начальной даты текущего месяца
+            start_date = date(today.year, today.month, 1)
+            # Вычисление конечной даты текущего месяца
+            if today.month == 12:
+                end_date = date(today.year + 1, 1, 1)
             else:
-                end_date = datetime(year, month + 1, 1)
-            # Выполняем запрос к базе данных для получения записей за этот месяц
+                end_date = date(today.year, today.month + 1, 1)
             appointments = Appointment.objects.filter(date__gte=start_date, date__lt=end_date)
         elif selected_date == 'all':
             appointments = Appointment.objects.all()
+        elif selected_date == 'my':
+            appointments = Appointment.objects.filter(user_id=request.user.id)
         else:
             appointments = Appointment.objects.filter(date=selected_date)
 
@@ -51,7 +53,6 @@ def ajax_view(request):
                                   "verified": 'пусто'}]
         response_data = {'appointments': appointments_list}
         # pprint(response_data)
-        return JsonResponse(response_data)
 
 
 class WorkSchedule(LoginRequiredMixin, FormView):

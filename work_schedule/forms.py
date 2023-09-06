@@ -44,7 +44,7 @@ class AppointmentForm(forms.ModelForm):
 
         # Создаем список ошибок
         errors = []
-
+        print('Проверяемая дата: ', cleaned_data)
         if date is None:
             errors.append(ValidationError("Не выбрана дата."))
         else:
@@ -75,7 +75,5 @@ class AppointmentForm(forms.ModelForm):
             # Если есть ошибки, добавляем их в атрибуты формы
             for error in errors:
                 self.add_error(None, error)
-
-
 
         return cleaned_data

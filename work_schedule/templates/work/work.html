@@ -158,18 +158,10 @@
                     <div class="col">
                         <label class="label-cal" for="{{ form.start_time.id_for_label }}">Начало работы:</label>
                         {{ form.start_time }}
-                        <!-- Вывод сообщений об ошибках для start_time -->
-                        {% for error in form.start_time.errors %}
-                        <p class="error-message">{{ error }}</p>
-                        {% endfor %}
                     </div>
                     <div class="col">
                         <label class="label-cal" for="{{ form.end_time.id_for_label }}">Конец работы:</label>
                         {{ form.end_time }}
-                        <!-- Вывод сообщений об ошибках для end_time -->
-                        {% for error in form.end_time.errors %}
-                        <p class="error-message">{{ error }}</p>
-                        {% endfor %}
                     </div>
                 </div>
                 <br>
@@ -192,14 +184,14 @@
 <br>
 <br>
 <br>
-
-
 <div class="table-responsive" style="max-width: 1200px; margin: 0 auto;">
     <h2>Все записи</h2>
+    <br>
     <div>
+        <button class="btn-lg" id="my-rows" onclick="filterAppointments('my')">Мои записи</button>
         <button class="btn-lg" id="current-month-btn" onclick="filterAppointments('current_month')">Текущий месяц
         </button>
-        <button class="btn-lg" id="reset-btn" onclick="filterAppointments('all')">Сбросить</button>
+        <button class="btn-lg" id="reset-btn" onclick="filterAppointments('all')">Все записи</button>
     </div>
     <br>
     <table class="table-responsive-sm">
@@ -218,15 +210,15 @@
         {% for item in appointments %}
         <tr>
             <th scope="row">{{ forloop.counter }}</th>
-            <td style="font-size: 12px;">{{ item.user.username }}</td> <!-- Вывести имя пользователя -->
-            <td style="font-size: 12px;">{{ item.date }}</td>
-            <td style="font-size: 12px;">{{ item.start_time }}</td>
-            <td style="font-size: 12px;">{{ item.end_time }}</td>
-            <td style="font-size: 12px;">{{ item.duration }}</td>
+            <td>{{ item.user.username }}</td> <!-- Вывести имя пользователя -->
+            <td>{{ item.date }}</td>
+            <td>{{ item.start_time }}</td>
+            <td>{{ item.end_time }}</td>
+            <td>{{ item.duration }}</td>
             {% if item.verified %}
-            <td style="font-size: 12px;">Да</td>
+            <td>Да</td>
             {% else %}
-            <td style="font-size: 12px;">Нет</td>
+            <td>Нет</td>
             {% endif %}
         </tr>
         {% endfor %}
@@ -236,15 +228,9 @@
 <script>
     function filterAppointments(filterType) {
         console.log(filterType);
-        if (filterType === 'current_month') {
-                var currentDate = new Date();
-                var currentYear = currentDate.getFullYear();
-                var currentMonth = currentDate.getMonth() + 1;  // Месяцы в JavaScript начинаются с 0
-                selectedDate = currentYear + '-' + currentMonth.toString().padStart(2, '0');
-        } else { selectedDate = 'all' }
         var xhr = new XMLHttpRequest();
         // Создать объект с данными для отправки на сервер
-        var data = 'date=' + selectedDate;
+        var data = 'date=' + filterType;
         // Получение CSRF-токена из cookies
         var csrftoken = getCookie('csrftoken');
         var xhr = new XMLHttpRequest();

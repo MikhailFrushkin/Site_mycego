@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Добавляем обработчики событий для каждой даты, ссылок и кнопок
     function addEventListeners() {
         let selectedDateText = document.getElementById('selected-date-text');
-        let selectedDateInput = document.getElementById('date-input'); // Новое скрытое поле
+        let selectedDateInput = document.getElementById('selected-date-input'); // Новое скрытое поле
         let calendar = document.querySelector('.calendar'); // Родительский контейнер
 
         calendar.addEventListener('click', (event) => {
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 sendAjaxRequest(formatDateToYYYYMMDD(selectedDate));
 
                 // Устанавливаем значение скрытого поля
-//                selectedDateInput.value = selectedDate.toISOString().split('T')[0];
+                selectedDateInput.value = formatDateToYYYYMMDD(selectedDate);
             } else if (target.tagName === 'A') {
                 // Клик на ссылке
                 // Добавьте здесь логику для обработки кликов на ссылках
