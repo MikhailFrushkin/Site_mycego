@@ -107,9 +107,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 selectedDateText.textContent = formattedDate;
+                // Функция для отправки AJAX-запроса
+                console.log(selectedDate);
+
+                sendAjaxRequest(formatDateToYYYYMMDD(selectedDate));
 
                 // Устанавливаем значение скрытого поля
-                selectedDateInput.value = selectedDate.toISOString().split('T')[0];
+//                selectedDateInput.value = selectedDate.toISOString().split('T')[0];
             } else if (target.tagName === 'A') {
                 // Клик на ссылке
                 // Добавьте здесь логику для обработки кликов на ссылках
@@ -128,4 +132,64 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Генерируем календарь при загрузке страницы
     generateCalendar(currMonth.value, currYear.value);
+
+    // Функция для отправки AJAX-запроса
+function sendAjaxRequest(selectedDate) {
+    // Создать объект для AJAX-запроса
+    var xhr = new XMLHttpRequest();
+    // Создать объект с данными для отправки на сервер
+    var data = 'date=' + selectedDate;
+    // Получение CSRF-токена из cookies
+    var csrftoken = getCookie('csrftoken');
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/work/ajax/', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-CSRFToken', csrftoken); // Добавление CSRF-токена
+    // Отправить данные
+    xhr.send(data);
+    // Определить обработчик события при завершении запроса
+    xhr.onreadystatechange = function () {
+        console.log(xhr.status);
+
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                // Обработать успешный ответ от сервера
+                var responseData = JSON.parse(xhr.responseText);
+                // Добавьте здесь логику для обновления данных на вашей странице
+                console.log(responseData);
+                updateAppointmentsTable(responseData.appointments);
+            } else {
+                // Обработать ошибку при запросе
+                console.error('Произошла ошибка при запросе.');
+            }
+        }
+    };
+}
+
+function formatDateToYYYYMMDD(date) {
+    var year = date.getFullYear();
+    var month = (date.getMonth() + 1).toString().padStart(2, '0');
+    var day = date.getDate().toString().padStart(2, '0');
+    return year + '-' + month + '-' + day;
+}
+
+// Функция для обновления таблицы с записями
+function updateAppointmentsTable(appointments) {
+    var tableBody = document.querySelector('.table-responsive-sm tbody');
+    tableBody.innerHTML = '';
+
+    for (var i = 0; i < appointments.length; i++) {
+        var appointment = appointments[i];
+        var row = '<tr>' +
+            '<th scope="row">' + (i + 1) + '</th>' +
+            '<td>' + appointment.user + '</td>' +
+            '<td>' + appointment.date + '</td>' +
+            '<td>' + appointment.start_time + '</td>' +
+            '<td>' + appointment.end_time + '</td>' +
+            '<td>' + appointment.duration + '</td>' +
+            '<td>' + (appointment.verified ? 'Да' : 'Нет') + '</td>' +
+            '</tr>';
+        tableBody.innerHTML += row;
+    }
+}
 });

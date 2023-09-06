@@ -1,10 +1,57 @@
-from django.contrib import messages
+from datetime import datetime
+from pprint import pprint
+
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
 from django.urls import reverse_lazy
-from django.views.generic import FormView, ListView
+from django.views.generic import FormView
 
 from work_schedule.forms import AppointmentForm
 from work_schedule.models import Appointment
+
+
+def format_duration(duration):
+    hours, remainder = divmod(duration.seconds, 3600)
+    minutes, _ = divmod(remainder, 60)
+    return f"{hours:02d}:{minutes:02d}"
+
+
+def ajax_view(request):
+    if request.method == 'POST':
+        selected_date = request.POST.get('date', None)
+        print(selected_date)
+        if len(selected_date.split('-')) == 2:
+            year, month = map(int, selected_date.split('-'))
+            # Формируем дату начала месяца
+            start_date = datetime(year, month, 1)
+            # Формируем дату конца месяца (последний день месяца)
+            if month == 12:
+                end_date = datetime(year + 1, 1, 1)
+            else:
+                end_date = datetime(year, month + 1, 1)
+            # Выполняем запрос к базе данных для получения записей за этот месяц
+            appointments = Appointment.objects.filter(date__gte=start_date, date__lt=end_date)
+        elif selected_date == 'all':
+            appointments = Appointment.objects.all()
+        else:
+            appointments = Appointment.objects.filter(date=selected_date)
+
+        if appointments:
+            # Преобразуйте записи в список словарей
+            appointments_list = [{"user": appointment.user.username, "date": appointment.date.strftime("%Y-%m-%d"),
+                                  "start_time": appointment.start_time.strftime("%H:%M"),
+                                  "end_time": appointment.end_time.strftime("%H:%M"),
+                                  "duration": format_duration(appointment.duration),
+                                  "verified": appointment.verified} for appointment in appointments]
+        else:
+            appointments_list = [{"user": 'пусто', "date": 'пусто',
+                                  "start_time": 'пусто',
+                                  "end_time": 'пусто',
+                                  "duration": 'пусто',
+                                  "verified": 'пусто'}]
+        response_data = {'appointments': appointments_list}
+        # pprint(response_data)
+        return JsonResponse(response_data)
 
 
 class WorkSchedule(LoginRequiredMixin, FormView):

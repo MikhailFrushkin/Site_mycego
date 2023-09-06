@@ -14,6 +14,8 @@ class Appointment(models.Model):
 
     class Meta:
         ordering = ['date']
+        verbose_name = "Заявка на работу"
+        verbose_name_plural = "Заявки на работу"
 
     def save(self, *args, **kwargs):
         # Вычисляем разницу между start_time и end_time

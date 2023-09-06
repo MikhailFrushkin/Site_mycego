@@ -4,7 +4,45 @@
 
 {% block link %}
 <link rel="stylesheet" href="{% static 'calendar/calendar.css' %}">
+<script>
+    // Получить элементы DOM
+    var selectedDateText = document.getElementById("selected-date-text");
+    var dateInput = document.getElementById("selected-date-input"); // Замените "id_date" на актуальный идентификатор поля формы
 
+    // Функция для преобразования даты в формат "год/месяц/день"
+    function formatDate(dateString) {
+        var months = [
+            "января", "февраля", "марта", "апреля",
+            "мая", "июня", "июля", "августа",
+            "сентября", "октября", "ноября", "декабря"
+        ];
+
+        var parts = dateString.split(' ');
+        var day = parts[0];
+        var monthIndex = months.indexOf(parts[1].toLowerCase()) + 1;
+        var year = parts[2];
+
+        // Формируем дату в формате "год/месяц/день"
+        return year + '-' + monthIndex.toString().padStart(2, '0') + '-' + day.padStart(2, '0');
+    }
+
+    // Обработчик события для обновления поля формы
+    selectedDateText.addEventListener("DOMSubtreeModified", function () {
+        var selectedDateStr = selectedDateText.innerText.trim();
+        dateInput.value = formatDate(selectedDateStr);
+    });
+
+    // Обработчик события для кнопки отправки формы
+    var form = document.querySelector("form");
+    form.addEventListener("submit", function () {
+        var selectedDateStr = selectedDateText.innerText.trim();
+        dateInput.value = formatDate(selectedDateStr);
+    });
+</script>
+<script src="{% static 'calendar/calendar.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
 {% endblock %}
 
 {% block title %}
@@ -153,21 +191,27 @@
 </div>
 <br>
 <br>
+<br>
 
-<h2>Все записи</h2>
-<br>
-<br>
-<div class="table-responsive">
-    <table class="ttable table-sm">
+
+<div class="table-responsive" style="max-width: 1200px; margin: 0 auto;">
+    <h2>Все записи</h2>
+    <div>
+        <button class="btn-lg" id="current-month-btn" onclick="filterAppointments('current_month')">Текущий месяц
+        </button>
+        <button class="btn-lg" id="reset-btn" onclick="filterAppointments('all')">Сбросить</button>
+    </div>
+    <br>
+    <table class="table-responsive-sm">
         <thead>
         <tr>
-            <th scope="col" style="width: 5%; font-size: 16px;">#</th>
-            <th scope="col" style="width: 20%; font-size: 16px;">Имя</th>
-            <th scope="col" style="width: 10%; font-size: 16px;">Дата</th>
+            <th scope="col" style="width: 3%; font-size: 16px;">#</th>
+            <th scope="col" style="width: 15%; font-size: 16px;">Имя</th>
+            <th scope="col" style="width: 13%; font-size: 16px;">Дата</th>
             <th scope="col" style="width: 15%; font-size: 16px;">Время начала работы</th>
             <th scope="col" style="width: 15%; font-size: 16px;">Время конца работы</th>
             <th scope="col" style="width: 15%; font-size: 16px;">Время работы</th>
-            <th scope="col" style="width: 15%; font-size: 16px;">Утверждено</th>
+            <th scope="col" style="width: 10%; font-size: 16px;">Утверждено</th>
         </tr>
         </thead>
         <tbody>
@@ -180,61 +224,73 @@
             <td style="font-size: 12px;">{{ item.end_time }}</td>
             <td style="font-size: 12px;">{{ item.duration }}</td>
             {% if item.verified %}
-                <td style="font-size: 12px;">Да</td>
+            <td style="font-size: 12px;">Да</td>
             {% else %}
-                <td style="font-size: 12px;">Нет</td>
+            <td style="font-size: 12px;">Нет</td>
             {% endif %}
         </tr>
         {% endfor %}
         </tbody>
     </table>
 </div>
-
 <script>
-    // Получить элементы DOM
-    var selectedDateText = document.getElementById("selected-date-text");
-    var dateInput = document.getElementById("selected-date-input"); // Замените "id_date" на актуальный идентификатор поля формы
+    function filterAppointments(filterType) {
+        console.log(filterType);
+        if (filterType === 'current_month') {
+                var currentDate = new Date();
+                var currentYear = currentDate.getFullYear();
+                var currentMonth = currentDate.getMonth() + 1;  // Месяцы в JavaScript начинаются с 0
+                selectedDate = currentYear + '-' + currentMonth.toString().padStart(2, '0');
+        } else { selectedDate = 'all' }
+        var xhr = new XMLHttpRequest();
+        // Создать объект с данными для отправки на сервер
+        var data = 'date=' + selectedDate;
+        // Получение CSRF-токена из cookies
+        var csrftoken = getCookie('csrftoken');
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/work/ajax/', true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.setRequestHeader('X-CSRFToken', csrftoken); // Добавление CSRF-токена
+        // Отправить данные
+        xhr.send(data);
+        // Определить обработчик события при завершении запроса
+        xhr.onreadystatechange = function () {
+            console.log(xhr.status);
 
-    // Функция для преобразования даты в формат "год/месяц/день"
-    function formatDate(dateString) {
-        var months = [
-            "января", "февраля", "марта", "апреля",
-            "мая", "июня", "июля", "августа",
-            "сентября", "октября", "ноября", "декабря"
-        ];
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                // Обработать успешный ответ от сервера
+                var responseData = JSON.parse(xhr.responseText);
+                // Добавьте здесь логику для обновления данных на вашей странице
+                console.log(responseData);
+                updateAppointmentsTable(responseData.appointments);
+            } else {
+                // Обработать ошибку при запросе
+                console.error('Произошла ошибка при запросе.');
+            }
+        }
+        };
+}
+// Функция для обновления таблицы с записями
+function updateAppointmentsTable(appointments) {
+    var tableBody = document.querySelector('.table-responsive-sm tbody');
+    tableBody.innerHTML = '';
 
-        var parts = dateString.split(' ');
-        var day = parts[0];
-        var monthIndex = months.indexOf(parts[1].toLowerCase()) + 1;
-        var year = parts[2];
-
-        // Формируем дату в формате "год/месяц/день"
-        return year + '-' + monthIndex.toString().padStart(2, '0') + '-' + day.padStart(2, '0');
+    for (var i = 0; i < appointments.length; i++) {
+        var appointment = appointments[i];
+        var row = '<tr>' +
+            '<th scope="row">' + (i + 1) + '</th>' +
+            '<td>' + appointment.user + '</td>' +
+            '<td>' + appointment.date + '</td>' +
+            '<td>' + appointment.start_time + '</td>' +
+            '<td>' + appointment.end_time + '</td>' +
+            '<td>' + appointment.duration + '</td>' +
+            '<td>' + (appointment.verified ? 'Да' : 'Нет') + '</td>' +
+            '</tr>';
+        tableBody.innerHTML += row;
     }
-
-    // Обработчик события для обновления поля формы
-    selectedDateText.addEventListener("DOMSubtreeModified", function () {
-        var selectedDateStr = selectedDateText.innerText.trim();
-        dateInput.value = formatDate(selectedDateStr);
-    });
-
-    // Обработчик события для кнопки отправки формы
-    var form = document.querySelector("form");
-    form.addEventListener("submit", function () {
-        var selectedDateStr = selectedDateText.innerText.trim();
-        dateInput.value = formatDate(selectedDateStr);
-    });
+}
 </script>
-<script>
-    // Устанавливаем шаг в 30 минут для полей времени
-    var timeInputs = document.querySelectorAll('input[type="time"]');
-    timeInputs.forEach(function(input) {
-        input.step = 1800;  // 1800 секунд = 30 минут
-    });
-</script>
-<script src="{% static 'calendar/calendar.js' %}"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
-        crossorigin="anonymous"></script>
+
 </body>
 {% endblock %}

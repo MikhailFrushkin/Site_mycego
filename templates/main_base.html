@@ -121,27 +121,26 @@
 {% endblock %}
 
 <main class="page-content">
-        {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-danger" role="alert">
-            {{ message }}
-        </div>
-        {% endfor %}
-        {% endif %}
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-danger" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
     {% block content %}
     <h1>Content</h1>
     {% endblock %}
+
 </main>
 
 <!-- Bootstrap bundle JS -->
 <script src="{% static 'assets/js/bootstrap.bundle.min.js '%} "></script>
 <!--plugins-->
-<!--<script src="{% static 'assets/js/jquery.min.js '%} "></script>-->
 <script src="{% static 'assets/plugins/simplebar/js/simplebar.min.js '%} "></script>
 <script src="{% static 'assets/plugins/perfect-scrollbar/js/perfect-scrollbar.js '%} "></script>
 <script src="{% static 'assets/js/pace.min.js '%} "></script>
-<script src="{% static 'assets/plugins/vectormap/jquery-jvectormap-2.0.2.min.js '%} "></script>
-<script src="{% static 'assets/plugins/vectormap/jquery-jvectormap-world-mill-en.js '%} "></script>
 <!--app-->
 <script src="{% static 'assets/js/app.js '%} "></script>
 <script src="{% static 'assets/js/index.js '%} "></script>
@@ -151,10 +150,7 @@
      new PerfectScrollbar(".top-sellers-list")
 </script>
 
-<!--<script src="{% static 'nufti/assets/js/jquery.min.js' %}"></script>-->
 <script src="{% static 'nufti/assets/js/jquery.easing.js' %}"></script>
-<!--<script src="{% static 'nufti/assets/js/bootstrap.min.js' %}"></script>-->
-<!--<script src="{% static 'nufti/assets/js/swiper-bundle.min.js' %}"></script>-->
 <script src="{% static 'nufti/assets/js/swiper.js' %}"></script>
 <script src="{% static 'nufti/assets/js/jquery.fancybox.js' %}"></script>
 
