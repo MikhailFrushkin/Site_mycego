@@ -57,9 +57,10 @@ class AppointmentForm(forms.ModelForm):
                 errors.append(ValidationError("Дата должна быть не младше 3х дней от текущей даты."))
 
             # Проверяем, что дата не старше 1 месяца
-            max_date = current_date + dt.timedelta(days=30)
+            user_date = 30
+            max_date = current_date + dt.timedelta(days=user_date)
             if date > max_date:
-                errors.append(ValidationError("Дата не должна быть старше 1 месяца."))
+                errors.append(ValidationError(f"Дата не должна быть старше {user_date} месяца."))
 
         if start_time >= end_time:
             errors.append(ValidationError("Время начала должно быть меньше времени окончания."))

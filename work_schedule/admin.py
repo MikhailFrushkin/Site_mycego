@@ -1,5 +1,5 @@
 from django.contrib import admin
-from work_schedule.models import Appointment
+from work_schedule.models import Appointment, Role, UserProfile
 
 
 class WorkSchedule(admin.ModelAdmin):
@@ -10,3 +10,8 @@ class WorkSchedule(admin.ModelAdmin):
     fields = ('user', 'date', 'start_time', 'end_time', 'comment', 'duration', 'verified')
 
 admin.site.register(Appointment, WorkSchedule)
+admin.site.register(Role)
+admin.site.register(UserProfile)
+
+
+

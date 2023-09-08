@@ -1,16 +1,16 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Функция для проверки високосного года
-    function isLeapYear(year) {
+function isLeapYear(year) {
         return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
     }
 
     // Функция для получения числа дней в феврале
-    function getFebDays(year) {
+function getFebDays(year) {
         return isLeapYear(year) ? 29 : 28;
     }
 
     // Функция для генерации календаря
-    function generateCalendar(month, year) {
+function generateCalendar(month, year) {
         let calendarDay = document.querySelector('.calendar-day');
         calendarDay.innerHTML = '';
 
@@ -76,10 +76,13 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Добавляем обработчики событий для каждой даты, ссылок и кнопок
-    function addEventListeners() {
+function addEventListeners() {
         let selectedDateText = document.getElementById('selected-date-text');
         let selectedDateInput = document.getElementById('selected-date-input'); // Новое скрытое поле
         let calendar = document.querySelector('.calendar'); // Родительский контейнер
+
+        const userId = localStorage.getItem('user.id');
+        console.log(userId);
 
         calendar.addEventListener('click', (event) => {
             // Проверяем, на каком элементе был клик
@@ -92,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentDatePlus3Days.setDate(currentDatePlus3Days.getDate() + 3); // Текущая дата +3 дня
 
                 let currentDatePlus30Days = new Date();
-                currentDatePlus30Days.setDate(currentDatePlus30Days.getDate() + 30); // Текущая дата +30
+                currentDatePlus30Days.setDate(currentDatePlus30Days.getDate() + 14); // Текущая дата +30
 
                 let formattedDate = selectedDate.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -157,7 +160,7 @@ function sendAjaxRequest(selectedDate) {
                 var responseData = JSON.parse(xhr.responseText);
                 // Добавьте здесь логику для обновления данных на вашей странице
                 console.log(responseData);
-                updateAppointmentsTable(responseData.appointments);
+                updateAppointmentsTable(responseData.appointments, responseData.user);
             } else {
                 // Обработать ошибку при запросе
                 console.error('Произошла ошибка при запросе.');
@@ -174,13 +177,15 @@ function formatDateToYYYYMMDD(date) {
 }
 
 // Функция для обновления таблицы с записями
-function updateAppointmentsTable(appointments) {
+function updateAppointmentsTable(appointments, currentUser) {
     var tableBody = document.querySelector('.table-responsive-sm tbody');
     tableBody.innerHTML = '';
 
     for (var i = 0; i < appointments.length; i++) {
         var appointment = appointments[i];
-        var row = '<tr>' +
+        var canDelete = appointment.user === currentUser && !appointment.verified;
+        console.log(appointment.id);
+        var row = '<tr id="row-' + appointment.id + '">' +
             '<th scope="row">' + (i + 1) + '</th>' +
             '<td>' + appointment.user + '</td>' +
             '<td>' + appointment.date + '</td>' +
@@ -188,8 +193,49 @@ function updateAppointmentsTable(appointments) {
             '<td>' + appointment.end_time + '</td>' +
             '<td>' + appointment.duration + '</td>' +
             '<td>' + (appointment.verified ? 'Да' : 'Нет') + '</td>' +
-            '</tr>';
+            '<td>';
+
+        if (canDelete) {
+            row += '<button class="btn btn-danger" onclick="deleteAppointment(' + appointment.id + ')">Удалить</button>';
+        } else {
+            row += '<button class="btn btn-secondary" disabled>Удалить</button>';
+        }
+
+        row += '</td></tr>';
+
         tableBody.innerHTML += row;
+    }
+}
+
+function deleteAppointment(appointmentId) {
+    if (confirm("Вы уверены, что хотите удалить запись?")) {
+        var xhr = new XMLHttpRequest();
+        var csrftoken = getCookie('csrftoken');
+
+        xhr.open('POST', '/work/delete_row/', true); // Replace '/work/delete/' with your actual delete endpoint
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.setRequestHeader('X-CSRFToken', csrftoken);
+
+        var data = 'id=' + appointmentId;
+        xhr.send(data);
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    // Handle success
+                    var responseData = JSON.parse(xhr.responseText);
+                    // You can update the table or perform any other action as needed
+                    console.log(responseData);
+                    var tableRow = document.getElementById('row-' + appointmentId);
+                    if (tableRow) {
+                        tableRow.parentNode.removeChild(tableRow);
+                    }
+                } else {
+                    // Handle error
+                    console.error('Произошла ошибка при удалении записи.');
+                }
+            }
+        };
     }
 }
 });

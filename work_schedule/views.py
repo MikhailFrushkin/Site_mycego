@@ -1,10 +1,14 @@
-from datetime import datetime, date, timedelta
+from datetime import date, timedelta
 from pprint import pprint
 
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import User
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import FormView
+from django.views.decorators.http import require_POST
+from django.views.generic import FormView, ListView
 
 from work_schedule.forms import AppointmentForm
 from work_schedule.models import Appointment
@@ -44,16 +48,36 @@ def ajax_view(request):
                                   "start_time": appointment.start_time.strftime("%H:%M"),
                                   "end_time": appointment.end_time.strftime("%H:%M"),
                                   "duration": format_duration(appointment.duration),
-                                  "verified": appointment.verified} for appointment in appointments]
+                                  "verified": appointment.verified,
+                                  "id": appointment.id,
+                                  } for appointment in appointments]
         else:
             appointments_list = [{"user": 'пусто', "date": 'пусто',
                                   "start_time": 'пусто',
                                   "end_time": 'пусто',
                                   "duration": 'пусто',
-                                  "verified": 'пусто'}]
-        response_data = {'appointments': appointments_list}
+                                  "verified": False,
+                                  "id": 'пусто',
+                                  }]
+        response_data = {'appointments': appointments_list, 'user': request.user.username}
         # pprint(response_data)
         return JsonResponse(response_data)
+
+
+@login_required  # Ensure the user is logged in
+@require_POST  # Accept only POST requests for this view
+def delete_appointment(request):
+    print(request.POST)
+    appointment_id = request.POST.get('id', None)
+    appointment = get_object_or_404(Appointment, id=appointment_id)
+    print(appointment)
+    # Check if the user is the owner of the appointment
+    if appointment.user == request.user:
+        appointment.delete()  # Delete the appointment
+        return JsonResponse({'message': 'Appointment deleted successfully.'})
+    else:
+        # Return a 403 Forbidden response if the user is not the owner
+        return JsonResponse({'message': 'You do not have permission to delete this appointment.'}, status=403)
 
 
 class WorkSchedule(LoginRequiredMixin, FormView):
@@ -86,3 +110,34 @@ class WorkSchedule(LoginRequiredMixin, FormView):
         # Обработка случая, когда форма невалидна (возникли ошибки валидации)
         appointments = Appointment.objects.all()
         return self.render_to_response(self.get_context_data(form=form, appointments=appointments))
+
+
+class EditWork(LoginRequiredMixin, ListView):
+    model = Appointment
+    template_name = 'work/edit_work.html'
+    login_url = '/users/login/'
+    success_url = reverse_lazy('work:edit_work')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        unique_dates = Appointment.objects.values_list('date', flat=True).distinct()
+        work_schedule = {}
+
+        # Итерируйтесь по датам и ищите записи в модели Appointment
+        for date in unique_dates:
+            user_dict = {}
+            work_hours = [0] * 12
+            appointments = Appointment.objects.filter(date=date)
+            for appointment in appointments:
+                start_hour = appointment.start_time.hour
+                end_hour = appointment.end_time.hour
+
+                for i in range(start_hour - 9, end_hour - 9):
+                    work_hours[i] = 1  # Помечаем часы, когда пользователь работает
+                user_dict[appointment.user] = work_hours
+            work_schedule[date] = user_dict
+
+        context['work_schedule'] = work_schedule
+        context['users'] = User.objects.distinct()
+        # pprint(context)
+        return context

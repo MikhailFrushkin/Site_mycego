@@ -581,7 +581,7 @@ select {
 select option {
   font-size: 15px;
   line-height: 24px;
-  color: #1F1F2C;
+  color: #ffffff0;
 }
 
 textarea,
@@ -5374,7 +5374,7 @@ input[type=number]::-webkit-outer-spin-button {
   position: absolute;
   top: 20%;
   transform: translateY(-50%);
-  right: -150px;
+  right: 0px;
   justify-content: center;
   align-items: center;
 }
