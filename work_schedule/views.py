@@ -1,4 +1,6 @@
-from datetime import date, timedelta
+import json
+import locale
+from datetime import date, timedelta, datetime, time
 from pprint import pprint
 
 from django.contrib.auth.decorators import login_required
@@ -80,6 +82,73 @@ def delete_appointment(request):
         return JsonResponse({'message': 'You do not have permission to delete this appointment.'}, status=403)
 
 
+@login_required
+@require_POST
+def update_appointment(request):
+    try:
+        locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
+        data_str = list(request.POST.keys())[0]
+        data_dict = json.loads(data_str)
+
+        date_str = data_dict.get('date')
+        month_names = {
+            'января': 1, 'февраля': 2, 'марта': 3, 'апреля': 4,
+            'мая': 5, 'июня': 6, 'июля': 7, 'августа': 8,
+            'сентября': 9, 'октября': 10, 'ноября': 11, 'декабря': 12
+        }
+
+        for month_name, month_number in month_names.items():
+            if month_name in date_str:
+                formatted_date_str = date_str.replace(month_name, str(month_number))
+                date_obj = datetime.strptime(formatted_date_str, "%d %m %Y г.")
+                break
+
+        rowData = data_dict.get('rowData', [])[:12]
+        rowData = [i.replace('\n                    Х', '') for i in rowData]
+
+        unique_elements = {}
+
+        for index, item in enumerate(rowData):
+            if item != 'Нет':
+                if item in unique_elements:
+                    unique_elements[item].append(index)
+                else:
+                    unique_elements[item] = [index]
+
+        # Создание новых записей
+        new_appointments = []
+        for key, value in unique_elements.items():
+            start_time = 9 + value[0]
+            end_time = 10 + value[-1]
+
+            start_time = time(start_time, 0)
+            end_time = time(end_time, 0)
+
+            your_user_instance = User.objects.get(username=key)
+
+            appointment = Appointment(
+                user=your_user_instance,
+                date=date_obj,
+                start_time=start_time,
+                end_time=end_time,
+                verified=True,
+                comment=f"Утверженно в {datetime.now()}"
+            )
+            new_appointments.append(appointment)
+
+        # Сначала удаляем старые записи
+        Appointment.objects.filter(date=date_obj).delete()
+
+        # Затем сохраняем новые записи
+        for appointment in new_appointments:
+            appointment.save()
+
+        return JsonResponse({'message': 'Appointment update successfully.'})
+
+    except json.JSONDecodeError as e:
+        return JsonResponse({'error': 'Invalid JSON data.'}, status=400)
+
+
 class WorkSchedule(LoginRequiredMixin, FormView):
     template_name = 'work/work.html'
     login_url = '/users/login/'
@@ -124,20 +193,24 @@ class EditWork(LoginRequiredMixin, ListView):
         work_schedule = {}
 
         # Итерируйтесь по датам и ищите записи в модели Appointment
-        for date in unique_dates:
+        for index, date in enumerate(unique_dates):
             user_dict = {}
-            work_hours = [0] * 12
             appointments = Appointment.objects.filter(date=date)
             for appointment in appointments:
+                work_hours = [0] * 12
                 start_hour = appointment.start_time.hour
                 end_hour = appointment.end_time.hour
-
+                print(appointment, start_hour - 9, end_hour - 9)
                 for i in range(start_hour - 9, end_hour - 9):
                     work_hours[i] = 1  # Помечаем часы, когда пользователь работает
+                print(work_hours)
                 user_dict[appointment.user] = work_hours
-            work_schedule[date] = user_dict
+            work_hours_count = {hour: sum([user_work_hours[hour] for user_work_hours in user_dict.values()]) for
+                                hour in range(12)}
+            work_schedule[(date, f'table-{index}')] = (user_dict, work_hours_count)
 
         context['work_schedule'] = work_schedule
         context['users'] = User.objects.distinct()
-        # pprint(context)
+
+        pprint(context['work_schedule'])
         return context
