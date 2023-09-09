@@ -5,13 +5,13 @@ from pprint import pprint
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView
 
+from users.models import CustomUser
 from work_schedule.forms import AppointmentForm
 from work_schedule.models import Appointment
 
@@ -118,13 +118,28 @@ def update_appointment(request):
         # Создание новых записей
         new_appointments = []
         for key, value in unique_elements.items():
-            start_time = 9 + value[0]
-            end_time = 10 + value[-1]
+
+            # Сортируем значения в списке
+            value.sort()
+
+            # Разбиваем значения на списки с последовательными элементами
+            grouped_values = []
+            current_group = [value[0]]
+            for i in range(1, len(value)):
+                if value[i] == value[i - 1] + 1:
+                    current_group.append(value[i])
+                else:
+                    grouped_values.append(current_group)
+                    current_group = [value[i]]
+            grouped_values.append(current_group)
+        for group in grouped_values:
+            start_time = 9 + group[0]
+            end_time = 10 + group[-1]
 
             start_time = time(start_time, 0)
             end_time = time(end_time, 0)
 
-            your_user_instance = User.objects.get(username=key)
+            your_user_instance = CustomUser.objects.get(username=key)
 
             appointment = Appointment(
                 user=your_user_instance,
@@ -132,7 +147,7 @@ def update_appointment(request):
                 start_time=start_time,
                 end_time=end_time,
                 verified=True,
-                comment=f"Утверженно в {datetime.now()}"
+                comment=f"Утверждено в {datetime.now()}"
             )
             new_appointments.append(appointment)
 
@@ -203,14 +218,22 @@ class EditWork(LoginRequiredMixin, ListView):
                 print(appointment, start_hour - 9, end_hour - 9)
                 for i in range(start_hour - 9, end_hour - 9):
                     work_hours[i] = 1  # Помечаем часы, когда пользователь работает
-                print(work_hours)
-                user_dict[appointment.user] = work_hours
+                if appointment.user in user_dict:
+                    existing_work_hours = user_dict[appointment.user]
+                    # Объединяем два списка с использованием логического ИЛИ
+                    updated_work_hours = [a | b for a, b in zip(existing_work_hours, work_hours)]
+                    # Обновляем запись в словаре
+                    user_dict[appointment.user] = updated_work_hours
+                else:
+                    # Если записи нет, создаем новую
+                    user_dict[appointment.user] = work_hours
+                print(user_dict[appointment.user])
             work_hours_count = {hour: sum([user_work_hours[hour] for user_work_hours in user_dict.values()]) for
                                 hour in range(12)}
             work_schedule[(date, f'table-{index}')] = (user_dict, work_hours_count)
 
         context['work_schedule'] = work_schedule
-        context['users'] = User.objects.distinct()
+        context['users'] = CustomUser.objects.distinct()
 
-        pprint(context['work_schedule'])
+        # pprint(context['work_schedule'])
         return context

@@ -13,8 +13,15 @@ end_time = dt.time(21, 0)  # Завершаем в 21:00
 
 while current_time <= end_time:
     HOUR_CHOICES.append((current_time, current_time.strftime('%H:%M')))
-    current_time = (dt.datetime.combine(dt.date(1, 1, 1), current_time) + dt.timedelta(minutes=30)).time()
+    current_time = (dt.datetime.combine(dt.date(1, 1, 1), current_time) + dt.timedelta(minutes=60)).time()
 
+HOUR_CHOICES2 = []
+current_time = dt.time(10, 0)  # Начинаем с 9:00
+end_time = dt.time(21, 0)  # Завершаем в 21:00
+
+while current_time <= end_time:
+    HOUR_CHOICES2.append((current_time, current_time.strftime('%H:%M')))
+    current_time = (dt.datetime.combine(dt.date(1, 1, 1), current_time) + dt.timedelta(minutes=60)).time()
 
 class AppointmentForm(forms.ModelForm):
     class Meta:
@@ -25,13 +32,11 @@ class AppointmentForm(forms.ModelForm):
     date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
     start_time = forms.ChoiceField(
         choices=HOUR_CHOICES,
-        initial='09:00',
         widget=forms.Select(attrs={'class': 'custom-select'})
     )
 
     end_time = forms.ChoiceField(
-        choices=HOUR_CHOICES,
-        initial='21:00',
+        choices=HOUR_CHOICES2,
         widget=forms.Select(attrs={'class': 'custom-select'})
     )
 
@@ -57,10 +62,10 @@ class AppointmentForm(forms.ModelForm):
                 errors.append(ValidationError("Дата должна быть не младше 3х дней от текущей даты."))
 
             # Проверяем, что дата не старше 1 месяца
-            user_date = 30
+            user_date = 14
             max_date = current_date + dt.timedelta(days=user_date)
             if date > max_date:
-                errors.append(ValidationError(f"Дата не должна быть старше {user_date} месяца."))
+                errors.append(ValidationError(f"Дата не должна быть старше {user_date} дней."))
 
         if start_time >= end_time:
             errors.append(ValidationError("Время начала должно быть меньше времени окончания."))

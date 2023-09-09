@@ -177,3 +177,4 @@ DEBUG_TOOLBAR_PANELS = [
 
 settings.SILENCED_SYSTEM_CHECKS = ['admin.E408']
 
+AUTH_USER_MODEL = 'users.CustomUser'

@@ -1,10 +1,11 @@
 from django.db import models
-from django.contrib.auth.models import User
 from django.utils import timezone
+
+from users.models import CustomUser
 
 
 class Appointment(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     date = models.DateField()
     start_time = models.TimeField(verbose_name='Начало работы')
     end_time = models.TimeField(verbose_name='Конец работы')
@@ -26,21 +27,3 @@ class Appointment(models.Model):
             self.duration = end_datetime - start_datetime
 
         super().save(*args, **kwargs)
-
-
-class Role(models.Model):
-    name = models.CharField(verbose_name='Должность', max_length=255)
-    salary = models.IntegerField(verbose_name='Ставка', default=0)
-
-    def __str__(self):
-        return self.name
-
-
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
-    is_active = models.BooleanField(default=True)
-    days = models.IntegerField(verbose_name='Дней для заявки в график', default=14)
-
-    def __str__(self):
-        return self.user.username

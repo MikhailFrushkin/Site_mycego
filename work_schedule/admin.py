@@ -1,5 +1,5 @@
 from django.contrib import admin
-from work_schedule.models import Appointment, Role, UserProfile
+from work_schedule.models import Appointment
 
 
 class WorkSchedule(admin.ModelAdmin):
@@ -9,9 +9,9 @@ class WorkSchedule(admin.ModelAdmin):
     list_per_page = 30
     fields = ('user', 'date', 'start_time', 'end_time', 'comment', 'duration', 'verified')
 
+
 admin.site.register(Appointment, WorkSchedule)
-admin.site.register(Role)
-admin.site.register(UserProfile)
+
 
 
 
