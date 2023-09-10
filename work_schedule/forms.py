@@ -72,8 +72,6 @@ class AppointmentForm(forms.ModelForm):
             if date not in days_in_target_week:
                 errors.append(ValidationError(f"Вы можете записаться на даты, начиная с {start_date} до  {end_day}."))
 
-
-
         if start_time >= end_time:
             errors.append(ValidationError("Время начала должно быть меньше времени окончания."))
 

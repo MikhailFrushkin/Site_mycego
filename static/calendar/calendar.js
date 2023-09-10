@@ -100,77 +100,81 @@ function generateCalendar(month, year) {
         generateCalendar(currMonth.value, currYear.value);
     };
 
-    // Добавляем обработчики событий для каждой даты, ссылок и кнопок
 function addEventListeners() {
-        let selectedDateText = document.getElementById('selected-date-text');
-        let selectedDateInput = document.getElementById('selected-date-input'); // Новое скрытое поле
-        let calendar = document.querySelector('.calendar'); // Родительский контейнер
+    let selectedDateText = document.getElementById('selected-date-text');
+    let selectedDateInput = document.getElementById('selected-date-input');
+    let calendar = document.querySelector('.calendar');
 
-        const userId = localStorage.getItem('user.id');
-        console.log(userId);
+    const userId = localStorage.getItem('user.id');
+    console.log(userId);
 
-        calendar.addEventListener('click', (event) => {
-            // Проверяем, на каком элементе был клик
-            let target = event.target;
+    calendar.addEventListener('click', (event) => {
+        let target = event.target;
 
-            if (target.tagName === 'DIV') {
-                // Клик на div элементе календаря
-                let selectedDate = new Date(currYear.value, currMonth.value, parseInt(target.textContent));
-                let currentDatePlus3Days = new Date();
-                currentDatePlus3Days.setDate(currentDatePlus3Days.getDate() + 7); // Текущая дата +7 дня
+        if (target.tagName === 'DIV') {
+            let selectedDate = new Date(currYear.value, currMonth.value, parseInt(target.textContent));
+            let currentDate = new Date();
 
-                let currentDatePlus30Days = new Date();
-                currentDatePlus30Days.setDate(currentDatePlus30Days.getDate() + 21); // Текущая дата +21
+            let currentWeek = getISOWeek(currentDate); // Получаем текущую неделю
+            let targetWeek = currentWeek + 2; // Добавляем 2 недели
+            let startOfWeek = getStartOfWeek(currentDate, targetWeek); // Получаем начало целевой недели
+            let endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 14); // Добавляем 13 дней к началу недели
 
-                let formattedDate = selectedDate.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' });
-
-                if (selectedDate <= currentDatePlus3Days) {
-                    selectedDateText.style.color = 'red';
-                } else {
-                    selectedDateText.style.color = 'green';
-                }
-
-                if (selectedDate > currentDatePlus30Days) {
-                    selectedDateText.style.color = 'red';
-                }
-
-                selectedDateText.textContent = formattedDate;
-
-                if (isValidDate(formatDateToYYYYMMDD(selectedDate))) {
-                            // Функция для отправки AJAX-запроса
-                            console.log(selectedDate);
-                            sendAjaxRequest(formatDateToYYYYMMDD(selectedDate));
-                } else {
-                    console.log("Дата некорректна:", selectedDate);
-                }
-
-                // Устанавливаем значение скрытого поля
-                selectedDateInput.value = formatDateToYYYYMMDD(selectedDate);
-            } else if (target.tagName === 'A') {
-                // Клик на ссылке
-                // Добавьте здесь логику для обработки кликов на ссылках
-                window.location.href = target.href; // Пример: перенаправление на ссылку
-            } else if (target.tagName === 'BUTTON') {
-                // Клик на кнопке
-                // Добавьте здесь логику для обработки кликов на кнопках
-                console.log('Клик на кнопке: ' + target.textContent);
+            // Проверяем, входит ли выбранная дата в диапазон целевой недели
+            if (selectedDate >= startOfWeek && selectedDate <= endOfWeek) {
+                selectedDateText.style.color = 'green';
+            } else {
+                selectedDateText.style.color = 'red';
             }
-        });
-    // Удаляем старый обработчик события перед добавлением нового
-    calendar.removeEventListener('click', clickHandler);
 
-    // Добавляем новый обработчик события
-    calendar.addEventListener('click', clickHandler);
-    }
+            let formattedDate = selectedDate.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' });
+            selectedDateText.textContent = formattedDate;
 
-    let currDate = new Date();
-    let currMonth = { value: currDate.getMonth() };
-    let currYear = { value: currDate.getFullYear() };
+            if (isValidDate(formatDateToYYYYMMDD(selectedDate))) {
+                console.log(selectedDate);
+                sendAjaxRequest(formatDateToYYYYMMDD(selectedDate));
+            } else {
+                console.log("Дата некорректна:", selectedDate);
+            }
 
-    // Генерируем календарь при загрузке страницы
-    generateCalendar(currMonth.value, currYear.value);
+            selectedDateInput.value = formatDateToYYYYMMDD(selectedDate);
+        } else if (target.tagName === 'A') {
+            window.location.href = target.href;
+        } else if (target.tagName === 'BUTTON') {
+            console.log('Клик на кнопке: ' + target.textContent);
+        }
+    });
 
-    // Функция для отправки AJAX-запроса
+//    calendar.removeEventListener('click', clickHandler);
+//    calendar.addEventListener('click', clickHandler);
+}
+
+// Функция для получения номера недели
+function getISOWeek(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+// Функция для получения начала недели
+function getStartOfWeek(date, weekNumber) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + (weekNumber - getISOWeek(date)) * 7);
+    d.setDate(d.getDate() - d.getDay()); // Установка на понедельник
+    return d;
+}
+
+let currDate = new Date();
+let currMonth = { value: currDate.getMonth() };
+let currYear = { value: currDate.getFullYear() };
+
+generateCalendar(currMonth.value, currYear.value);
+
+
+// Функция для отправки AJAX-запроса
 function sendAjaxRequest(selectedDate) {
     // Создать объект для AJAX-запроса
     var xhr = new XMLHttpRequest();
