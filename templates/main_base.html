@@ -17,8 +17,8 @@
     <link href="{% static 'assets/css/bootstrap-extended.css' %} " rel="stylesheet"/>
     <link href="{% static 'assets/css/style.css' %} " rel="stylesheet"/>
     <link href="{% static 'assets/css/icons.css' %} " rel="stylesheet">
-<!--    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">-->
-<!--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css '%} ">-->
+    <!--    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">-->
+    <!--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css '%} ">-->
     <!-- loader-->
     <link href="{% static 'assets/css/pace.min.css' %} " rel="stylesheet"/>
     <!--Theme Styles-->
@@ -36,32 +36,31 @@
     {% block link %}{% endblock %}
     <title>{% block title %} {% trans 'Главная страница' %} {% endblock %}</title>
     <style>
-.my-1 {
-    color: black;
-}
-<!--.form-select {-->
-<!--    font-size: 2rem!important;-->
-<!--    }-->
-.link-dark {
-   color: #000;
-}
-.page-content{
-    margin-left: 50px!important;
-    margin-top: 90px!important;
-}
-.top-header .navbar{
-    left: 0 !important;
-}
+        .my-1 {
+            color: black;
+        }
+        <!--.form-select {-->
+        <!--    font-size: 2rem!important;-->
+        <!--    }-->
+        .link-dark {
+           color: #000;
+        }
+        .page-content{
+            margin-left: 50px!important;
+            margin-top: 90px!important;
+        }
+        .top-header .navbar{
+            left: 0 !important;
+        }
 
-</style>
+    </style>
 </head>
-
 <body>
 {% block nav %}
 <header id="header_main" class="header_1 js-header">
     <div class="themes-container">
         <div class="row">
-            <div class="col-md-14">
+            <div class="col-md-12">
                 <div id="site-header-inner">
                     <div class="wrap-box flex">
                         <div id="site-logo" class="clearfix">
@@ -71,39 +70,64 @@
                         <div class="mobile-button"><span></span></div><!-- /.mobile-button -->
                         <nav id="main-nav" class="main-nav">
                             <ul id="menu-primary-menu" class="menu">
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{% url 'work:work_page' %}">График работы</a>
+                                <li class="menu-item menu-item-has-children current-menu-item">
+                                    <a href="#">График</a>
+                                    {% if request.user.is_authenticated %}
+                                    <ul class="sub-menu" style="display: block;">
+                                        <li class="menu-item current-item"><a href="{% url 'work:work_page' %}">
+                                            Подать заявку</a></li>
+                                        <li class="menu-item"><a href="#">
+                                            Мой График
+                                        </a></li>
+                                        {% if request.user.is_staff %}
+                                        <li class="menu-item"><a href="{% url 'work:edit_work' %}">
+                                            Редактировать
+                                        </a></li>
+                                        {% endif %}
+                                    </ul>
+                                    {% endif %}
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{% url 'work:edit_work' %}">График редактирование</a>
+
+                                <li class="menu-item">
+                                    <a href="#">Сдельные листы</a>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link " href="#">Расчет ЗП</a>
+                                <li class="menu-item">
+                                    <a href="#">Расчет ЗП</a>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" href="#">Сдельные листы</a>
+                                <li class="menu-item">
+                                    <a href="#">Эффективность</a>
                                 </li>
+                                <li>
+                                </li>
+
+                                <li>
+                                </li>
+
+                                <li>
+                                </li>
+
                                 {% if not request.user.is_authenticated %}
                                 <li>
-                                    <a class="nav-link" href="{% url 'users:login' %}">{% trans 'Вход'%}</a>
+                                    <a class="menu-item" href="{% url 'users:login' %}">Вход</a>
                                 </li>
                                 {% else %}
                                 <li>
-                                    <a class="nav-link" href="#">
+                                    <a class="menu-item" href="#">
                                         {{ user.username }}
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="nav-link" href="{% url 'users:logout' %}">{% trans 'Выход' %}</a>
+                                    <a class="menu-item" href="{% url 'users:logout' %}">Выход</a>
                                 </li>
-                                {% endif %}
+                                {% endif%}
                             </ul>
                         </nav><!-- /#main-nav -->
-                        <div class="wrap-box flex">
+
                     </div>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <div class="mode_switcher">
@@ -114,7 +138,7 @@
             <img src="{% static 'nufti/assets/images/icon/moon.png' %}" alt="">
         </a>
     </div>
-    </div>
+
 </header>
 {% endblock %}
 
