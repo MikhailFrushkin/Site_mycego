@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView
+from loguru import logger
 
 from users.models import CustomUser
 from work_schedule.forms import AppointmentForm
@@ -115,48 +116,57 @@ def update_appointment(request):
                 else:
                     unique_elements[item] = [index]
 
-        # Создание новых записей
-        new_appointments = []
-        for key, value in unique_elements.items():
+        if unique_elements:
+            logger.debug(f"unique_elements = {unique_elements}")
+            # Создание новых записей
+            new_appointments = []
+            for key, value in unique_elements.items():
 
-            # Сортируем значения в списке
-            value.sort()
+                # Сортируем значения в списке
+                value.sort()
 
-            # Разбиваем значения на списки с последовательными элементами
-            grouped_values = []
-            current_group = [value[0]]
-            for i in range(1, len(value)):
-                if value[i] == value[i - 1] + 1:
-                    current_group.append(value[i])
-                else:
-                    grouped_values.append(current_group)
-                    current_group = [value[i]]
-            grouped_values.append(current_group)
-        for group in grouped_values:
-            start_time = 9 + group[0]
-            end_time = 10 + group[-1]
+                # Разбиваем значения на списки с последовательными элементами
+                grouped_values = []
+                current_group = [value[0]]
+                for i in range(1, len(value)):
+                    if value[i] == value[i - 1] + 1:
+                        current_group.append(value[i])
+                    else:
+                        grouped_values.append(current_group)
+                        current_group = [value[i]]
+                grouped_values.append(current_group)
 
-            start_time = time(start_time, 0)
-            end_time = time(end_time, 0)
+                logger.debug(f"grouped_values = {grouped_values}")
 
-            your_user_instance = CustomUser.objects.get(username=key)
+                for group in grouped_values:
 
-            appointment = Appointment(
-                user=your_user_instance,
-                date=date_obj,
-                start_time=start_time,
-                end_time=end_time,
-                verified=True,
-                comment=f"Утверждено в {datetime.now()}"
-            )
-            new_appointments.append(appointment)
+                    start_time = 9 + group[0]
+                    if len(group) == 1:
+                        logger.error(len(group))
+                        end_time = 10 + group[0]
+                    else:
+                        end_time = 10 + group[-1]
+
+                    start_time = time(start_time, 0)
+                    end_time = time(end_time, 0)
+
+                    appointment = Appointment(
+                        user=CustomUser.objects.get(username=key),
+                        date=date_obj,
+                        start_time=start_time,
+                        end_time=end_time,
+                        verified=True,
+                        comment=f"Утверждено в {datetime.now()}"
+                    )
+                    new_appointments.append(appointment)
 
         # Сначала удаляем старые записи
         Appointment.objects.filter(date=date_obj).delete()
 
         # Затем сохраняем новые записи
-        for appointment in new_appointments:
-            appointment.save()
+        if unique_elements:
+            for appointment in new_appointments:
+                appointment.save()
 
         return JsonResponse({'message': 'Appointment update successfully.'})
 
@@ -236,4 +246,17 @@ class EditWork(LoginRequiredMixin, ListView):
         context['users'] = CustomUser.objects.distinct()
 
         # pprint(context['work_schedule'])
+        return context
+
+
+class GrafUser(LoginRequiredMixin, ListView):
+    model = Appointment
+    template_name = 'work/graf_user.html'
+    login_url = '/users/login/'
+    success_url = reverse_lazy('work:graf_user')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        appointments = Appointment.objects.filter(user=self.request.user, verified=True).order_by('date')
+        context['appointments'] = appointments
         return context

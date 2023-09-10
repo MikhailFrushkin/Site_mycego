@@ -1,0 +1,49 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block link %}
+
+{% endblock %}
+
+{% block title %}
+{% trans 'График' %}
+{% endblock %}
+
+{% load static %}
+
+{% block content %}
+<div class="table-responsive" style="max-width: 1200px; margin: 0 auto;">
+    <br>
+    <table class="table-responsive-sm">
+        <thead>
+        <tr>
+            <th scope="col" style="width: 3%; font-size: 16px;">#</th>
+            <th scope="col" style="width: 15%; font-size: 16px;">Имя</th>
+            <th scope="col" style="width: 15%; font-size: 16px;">Дата</th>
+            <th scope="col" style="width: 10%; font-size: 16px;">С</th>
+            <th scope="col" style="width: 10%; font-size: 16px;">До</th>
+            <th scope="col" style="width: 15%; font-size: 16px;">Время работы</th>
+            <th scope="col" style="width: 10%; font-size: 16px;">Утверждено</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in appointments %}
+        <tr id="row-{{ item.id }}">
+            <th scope="row">{{ forloop.counter }}</th>
+            <td>{{ item.user.username }}</td> <!-- Вывести имя пользователя -->
+            <td>{{ item.date }}</td>
+            <td>{{ item.start_time }}</td>
+            <td>{{ item.end_time }}</td>
+            <td>{{ item.duration }}</td>
+            {% if item.verified %}
+            <td>Да</td>
+            {% else %}
+            <td>Нет</td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

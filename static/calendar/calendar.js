@@ -11,41 +11,66 @@ function getFebDays(year) {
 
     // Функция для генерации календаря
 function generateCalendar(month, year) {
-        let calendarDay = document.querySelector('.calendar-day');
-        calendarDay.innerHTML = '';
+    let calendarDay = document.querySelector('.calendar-day');
+    calendarDay.innerHTML = '';
 
-        let calendarHeaderYear = document.querySelector('#year');
-        let daysOfMonth = [31, getFebDays(year), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        let currDate = new Date();
+    let calendarHeaderYear = document.querySelector('#year');
+    let daysOfMonth = [31, getFebDays(year), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let currDate = new Date();
 
-        let monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-        let monthPicker = document.querySelector('#month-picker');
-        monthPicker.innerHTML = monthNames[month];
-        calendarHeaderYear.innerHTML = year;
+    let monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    let monthPicker = document.querySelector('#month-picker');
+    monthPicker.innerHTML = monthNames[month];
+    calendarHeaderYear.innerHTML = year;
 
-        let firstDay = new Date(year, month, 1);
-        let startDay = 1; // Понедельник
+    // Определение первого дня месяца
+    let firstDay = new Date(year, month, 1);
+    let startDay = 1; // Понедельник
+    let dayOfWeek = firstDay.getDay();
 
-        for (let i = 0; i <= daysOfMonth[month] + (firstDay.getDay() - startDay) - 1; i++) {
-            let day = document.createElement('div');
-            if (i >= (firstDay.getDay() - startDay)) {
-                day.classList.add('calendarDayHover');
-                day.innerHTML = i - (firstDay.getDay() - startDay) + 1;
-                day.innerHTML += `<span></span><span></span><span></span><span></span>`;
-                if (
-                    i - (firstDay.getDay() - startDay) + 1 === currDate.getDate() &&
-                    year === currDate.getFullYear() &&
-                    month === currDate.getMonth()
-                ) {
-                    day.classList.add('currDate');
-                }
+    // Вычисляем сдвиг для начала месяца
+    let shift = dayOfWeek - startDay;
+    if (shift < 0) {
+        shift = 7 + shift; // Чтобы сдвиг был положительным
+    }
+
+    // Сдвиг начальной даты на дни недели
+    firstDay.setDate(1 - shift);
+
+    // Переменные для отслеживания количества дней
+    let dayCount = 0;
+    let totalDaysToShow = 6 * 7; // 6 недель
+
+    while (dayCount < totalDaysToShow) {
+        let day = document.createElement('div');
+
+        if (dayCount >= shift && dayCount < (daysOfMonth[month] + shift)) {
+            // Выводим дату текущего месяца
+            day.classList.add('calendarDayHover');
+            day.innerHTML = firstDay.getDate();
+            day.innerHTML += `<span></span><span></span><span></span><span></span>`;
+
+            if (
+                firstDay.getDate() === currDate.getDate() &&
+                year === currDate.getFullYear() &&
+                month === currDate.getMonth()
+            ) {
+                day.classList.add('currDate');
             }
-            calendarDay.appendChild(day);
+        } else {
+            // Пропускаем дни других месяцев
+            day.classList.add('emptyDay');
+            day.setAttribute('disabled', 'true');
         }
 
-        // Добавляем обработчики событий для каждой даты, ссылок и кнопок
-        addEventListeners();
+        calendarDay.appendChild(day);
+        firstDay.setDate(firstDay.getDate() + 1);
+        dayCount++;
     }
+
+    // Добавляем обработчики событий для каждой даты, ссылок и кнопок
+    addEventListeners();
+}
 
     // Обработчик события для отображения списка месяцев
     document.querySelector('.month-picker').onclick = () => {
@@ -92,10 +117,10 @@ function addEventListeners() {
                 // Клик на div элементе календаря
                 let selectedDate = new Date(currYear.value, currMonth.value, parseInt(target.textContent));
                 let currentDatePlus3Days = new Date();
-                currentDatePlus3Days.setDate(currentDatePlus3Days.getDate() + 3); // Текущая дата +3 дня
+                currentDatePlus3Days.setDate(currentDatePlus3Days.getDate() + 7); // Текущая дата +7 дня
 
                 let currentDatePlus30Days = new Date();
-                currentDatePlus30Days.setDate(currentDatePlus30Days.getDate() + 14); // Текущая дата +30
+                currentDatePlus30Days.setDate(currentDatePlus30Days.getDate() + 21); // Текущая дата +21
 
                 let formattedDate = selectedDate.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -110,10 +135,14 @@ function addEventListeners() {
                 }
 
                 selectedDateText.textContent = formattedDate;
-                // Функция для отправки AJAX-запроса
-                console.log(selectedDate);
 
-                sendAjaxRequest(formatDateToYYYYMMDD(selectedDate));
+                if (isValidDate(formatDateToYYYYMMDD(selectedDate))) {
+                            // Функция для отправки AJAX-запроса
+                            console.log(selectedDate);
+                            sendAjaxRequest(formatDateToYYYYMMDD(selectedDate));
+                } else {
+                    console.log("Дата некорректна:", selectedDate);
+                }
 
                 // Устанавливаем значение скрытого поля
                 selectedDateInput.value = formatDateToYYYYMMDD(selectedDate);
@@ -127,6 +156,11 @@ function addEventListeners() {
                 console.log('Клик на кнопке: ' + target.textContent);
             }
         });
+    // Удаляем старый обработчик события перед добавлением нового
+    calendar.removeEventListener('click', clickHandler);
+
+    // Добавляем новый обработчик события
+    calendar.addEventListener('click', clickHandler);
     }
 
     let currDate = new Date();
@@ -237,6 +271,33 @@ function deleteAppointment(appointmentId) {
             }
         };
     }
+}
+
+function isValidDate(dateString) {
+    // Проверяем, является ли строка датой в формате год-месяц-день
+    const regexDate = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regexDate.test(dateString)) {
+        return false;
+    }
+
+    // Парсим строку в объект Date
+    const dateObj = new Date(dateString);
+
+    // Проверяем, является ли объект Date корректной датой
+    if (isNaN(dateObj.getTime())) {
+        return false;
+    }
+
+    // Проверяем, что год, месяц и день находятся в разумных пределах
+    const year = dateObj.getFullYear();
+    const month = dateObj.getMonth() + 1; // Месяцы в JavaScript начинаются с 0
+    const day = dateObj.getDate();
+
+    if (year < 1000 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) {
+        return false;
+    }
+
+    return true;
 }
 
 });
