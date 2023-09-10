@@ -56,16 +56,23 @@ class AppointmentForm(forms.ModelForm):
             # Получаем текущую дату
             current_date = date.today()
 
-            # Проверяем, что дата не младше 3 дней от текущей даты
-            min_date = current_date + dt.timedelta(days=3)
-            if date < min_date:
-                errors.append(ValidationError("Дата должна быть не младше 7 дней от текущей даты."))
+            # Определяем текущую неделю в году
+            current_week = current_date.isocalendar()[1]
 
-            # Проверяем, что дата не старше 1 месяца
-            user_date = 21
-            max_date = current_date + dt.timedelta(days=user_date)
-            if date > max_date:
-                errors.append(ValidationError(f"Дата не должна быть старше {user_date} дней."))
+            # Добавляем 2 недели к текущей неделе
+            target_week = current_week + 2
+
+            # Определяем дату начала target_week (понедельник этой недели)
+            start_date = current_date + dt.timedelta(weeks=target_week - current_week, days=-current_date.weekday())
+
+            # Создаем список дней для target_week
+            days_in_target_week = [start_date + dt.timedelta(days=i) for i in range(14)]
+            end_day = start_date + dt.timedelta(days=14)
+            # Проверяем, если дата входит в список дней target_week
+            if date not in days_in_target_week:
+                errors.append(ValidationError(f"Вы можете записаться на даты, начиная с {start_date} до  {end_day}."))
+
+
 
         if start_time >= end_time:
             errors.append(ValidationError("Время начала должно быть меньше времени окончания."))

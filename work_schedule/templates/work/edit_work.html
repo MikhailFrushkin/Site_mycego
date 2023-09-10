@@ -13,11 +13,16 @@
 {%for key, value in work_schedule.items %}
 <div>
     <p>
-        <a class="btn btn-primary w-25" data-bs-toggle="collapse" href="#collapseExample{{ forloop.counter }}"
+        <a class="btn btn-primary w-25 {% if value.2 %}btn-success{% endif %}" data-bs-toggle="collapse" href="#collapseExample{{ forloop.counter }}"
            role="button"
            aria-expanded="false"
            aria-controls="collapseExample">
             {{ key.0 }}
+            {% if value.2 %}
+            <td>&#10003;</td>
+            {% else %}
+            <td>&#10007;</td>
+            {% endif %}
         </a>
     </p>
     <div class="collapse" id="collapseExample{{ forloop.counter }}">

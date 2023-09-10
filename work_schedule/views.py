@@ -215,17 +215,23 @@ class EditWork(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         unique_dates = Appointment.objects.values_list('date', flat=True).distinct()
+
         work_schedule = {}
 
         # Итерируйтесь по датам и ищите записи в модели Appointment
         for index, date in enumerate(unique_dates):
             user_dict = {}
             appointments = Appointment.objects.filter(date=date)
+            flag_ver = [i.verified for i in appointments]
+            flag = True
+            for value in flag_ver:
+                if value == False:
+                    flag = False
+                    break
             for appointment in appointments:
                 work_hours = [0] * 12
                 start_hour = appointment.start_time.hour
                 end_hour = appointment.end_time.hour
-                print(appointment, start_hour - 9, end_hour - 9)
                 for i in range(start_hour - 9, end_hour - 9):
                     work_hours[i] = 1  # Помечаем часы, когда пользователь работает
                 if appointment.user in user_dict:
@@ -240,7 +246,7 @@ class EditWork(LoginRequiredMixin, ListView):
                 print(user_dict[appointment.user])
             work_hours_count = {hour: sum([user_work_hours[hour] for user_work_hours in user_dict.values()]) for
                                 hour in range(12)}
-            work_schedule[(date, f'table-{index}')] = (user_dict, work_hours_count)
+            work_schedule[(date, f'table-{index}')] = (user_dict, work_hours_count, flag)
 
         context['work_schedule'] = work_schedule
         context['users'] = CustomUser.objects.distinct()
