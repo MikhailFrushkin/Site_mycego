@@ -2,9 +2,10 @@ import json
 import locale
 from datetime import date, timedelta, datetime, time
 from pprint import pprint
-
+from django.db import models
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import F, Case, When, Value
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
@@ -212,7 +213,22 @@ class EditWork(LoginRequiredMixin, ListView):
         # Итерируйтесь по датам и ищите записи в модели Appointment
         for index, date in enumerate(unique_dates):
             user_dict = {}
-            appointments = Appointment.objects.filter(date=date)
+            appointments = Appointment.objects.filter(date=date).annotate(
+                user_role=F('user__role__name')
+            )
+            # Задайте порядок сортировки с помощью функции Case
+            appointments = appointments.annotate(
+                custom_order=Case(
+                    When(user_role="Администратор", then=Value(1)),
+                    When(user_role="Работник", then=Value(2)),
+                    default=Value(3),  # Для всех остальных ролей
+                    output_field=models.IntegerField(),
+                )
+            )
+
+            # Теперь сортируйте результаты по полю 'custom_order', чтобы получить желаемый порядок
+            appointments = appointments.order_by('custom_order')
+
             flag_ver = [i.verified for i in appointments]
             flag = True
             for value in flag_ver:
@@ -234,7 +250,6 @@ class EditWork(LoginRequiredMixin, ListView):
                 else:
                     # Если записи нет, создаем новую
                     user_dict[appointment.user] = work_hours
-                print(user_dict[appointment.user])
             work_hours_count = {hour: sum([user_work_hours[hour] for user_work_hours in user_dict.values()]) for
                                 hour in range(12)}
             work_schedule[(date, f'table-{index}')] = (user_dict, work_hours_count, flag)
