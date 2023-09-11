@@ -3,8 +3,8 @@ from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, FormView
 
+from download_files.forms import UploadExcelForm
 from users.models import CustomUser, Role
-from work_schedule.forms import AppointmentForm
 from work_schedule.models import Appointment
 import pandas as pd
 
@@ -13,7 +13,7 @@ class DownloadFiles(LoginRequiredMixin, FormView):
     template_name = 'download/download.html'
     login_url = '/users/login/'
     success_url = reverse_lazy('download:download')
-    form_class = AppointmentForm
+    form_class = UploadExcelForm
 
     def form_valid(self, form):
         excel_file = form.cleaned_data['excel_file']
