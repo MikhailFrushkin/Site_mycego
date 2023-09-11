@@ -116,7 +116,7 @@ function addEventListeners() {
             let currentDate = new Date();
 
             let currentWeek = getISOWeek(currentDate); // Получаем текущую неделю
-            let targetWeek = currentWeek + 2; // Добавляем 2 недели
+            let targetWeek = currentWeek + 1; // Добавляем 2 недели
             let startOfWeek = getStartOfWeek(currentDate, targetWeek); // Получаем начало целевой недели
             let endOfWeek = new Date(startOfWeek);
             endOfWeek.setDate(startOfWeek.getDate() + 14); // Добавляем 13 дней к началу недели
