@@ -103,70 +103,61 @@ def update_appointment(request):
                 formatted_date_str = date_str.replace(month_name, str(month_number))
                 date_obj = datetime.strptime(formatted_date_str, "%d %m %Y г.")
                 break
-
-        rowData = data_dict.get('rowData', [])[:12]
-        rowData = [i.replace('\n                    Х', '') for i in rowData]
-
-        unique_elements = {}
-
-        for index, item in enumerate(rowData):
-            if item != 'Нет':
-                if item in unique_elements:
-                    unique_elements[item].append(index)
-                else:
-                    unique_elements[item] = [index]
-
-        if unique_elements:
-            logger.debug(f"unique_elements = {unique_elements}")
-            # Создание новых записей
-            new_appointments = []
-            for key, value in unique_elements.items():
-
-                # Сортируем значения в списке
-                value.sort()
-
-                # Разбиваем значения на списки с последовательными элементами
-                grouped_values = []
-                current_group = [value[0]]
-                for i in range(1, len(value)):
-                    if value[i] == value[i - 1] + 1:
-                        current_group.append(value[i])
-                    else:
-                        grouped_values.append(current_group)
-                        current_group = [value[i]]
-                grouped_values.append(current_group)
-
-                logger.debug(f"grouped_values = {grouped_values}")
-
-                for group in grouped_values:
-
-                    start_time = 9 + group[0]
-                    if len(group) == 1:
-                        logger.error(len(group))
-                        end_time = 10 + group[0]
-                    else:
-                        end_time = 10 + group[-1]
-
-                    start_time = time(start_time, 0)
-                    end_time = time(end_time, 0)
-
-                    appointment = Appointment(
-                        user=CustomUser.objects.get(username=key),
-                        date=date_obj,
-                        start_time=start_time,
-                        end_time=end_time,
-                        verified=True,
-                        comment=f"Утверждено в {datetime.now()}"
-                    )
-                    new_appointments.append(appointment)
-
         # Сначала удаляем старые записи
         Appointment.objects.filter(date=date_obj).delete()
 
-        # Затем сохраняем новые записи
-        if unique_elements:
-            for appointment in new_appointments:
-                appointment.save()
+        rowData = data_dict.get('rowData', [])
+        logger.debug(rowData)
+        for data in rowData:
+            unique_elements = {}
+
+            for index, item in enumerate(data):
+                if item != 'Нет' and item != 'Очистить':
+                    if item in unique_elements:
+                        unique_elements[item].append(index)
+                    else:
+                        unique_elements[item] = [index]
+            logger.debug(f'unique_elements = {unique_elements}')
+            if unique_elements:
+                logger.debug(f"unique_elements = {unique_elements}")
+                # Создание новых записей
+                new_appointments = []
+                for key, value in unique_elements.items():
+                    # Сортируем значения в списке
+                    value.sort()
+                    logger.debug(f'value = {value}')
+                    # Разбиваем значения на списки с последовательными элементами
+                    grouped_values = []
+                    current_group = [value[0]]
+                    for i in range(1, len(value)):
+                        if value[i] == value[i - 1] + 1:
+                            current_group.append(value[i])
+                        else:
+                            grouped_values.append(current_group)
+                            current_group = [value[i]]
+                    grouped_values.append(current_group)
+                    logger.debug(f"grouped_values = {grouped_values}")
+
+                    for group in grouped_values:
+                        start_time = 9 + group[0]
+                        if len(group) == 1:
+                            logger.error(len(group))
+                            end_time = 10 + group[0]
+                        else:
+                            end_time = 10 + group[-1]
+
+                        start_time = time(start_time, 0)
+                        end_time = time(end_time, 0)
+
+                        appointment = Appointment(
+                            user=CustomUser.objects.get(username=key),
+                            date=date_obj,
+                            start_time=start_time,
+                            end_time=end_time,
+                            verified=True,
+                            comment=f"Утверждено в {datetime.now()}"
+                        )
+                        appointment.save()
 
         return JsonResponse({'message': 'Appointment update successfully.'})
 
