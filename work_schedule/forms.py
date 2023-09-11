@@ -60,7 +60,7 @@ class AppointmentForm(forms.ModelForm):
             current_week = current_date.isocalendar()[1]
 
             # Добавляем 2 недели к текущей неделе
-            target_week = current_week + 2
+            target_week = current_week + 1
 
             # Определяем дату начала target_week (понедельник этой недели)
             start_date = current_date + dt.timedelta(weeks=target_week - current_week, days=-current_date.weekday())
