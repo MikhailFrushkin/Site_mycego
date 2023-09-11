@@ -17,16 +17,15 @@ class DownloadFiles(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         excel_file = form.cleaned_data['excel_file']
-
+        print(excel_file)
         try:
             # Используйте Pandas для чтения файла Excel
             df = pd.read_excel(excel_file, engine='openpyxl')
-
+            print(df.columns)
             for index, row in df.iterrows():
                 username = row['username']
                 first_name = row['first_name']
                 last_name = row['last_name']
-                email = row['email']
                 role_name = row['role_name']
 
                 # Проверяем, существует ли пользователь по username
@@ -35,7 +34,6 @@ class DownloadFiles(LoginRequiredMixin, FormView):
                 # Обновляем поля пользователя
                 user.first_name = first_name
                 user.last_name = last_name
-                user.email = email
 
                 # Находим или создаем роль
                 role, created = Role.objects.get_or_create(name=role_name)
