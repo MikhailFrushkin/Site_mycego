@@ -1,12 +1,11 @@
+import pandas as pd
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse_lazy
-from django.views.generic import ListView, FormView
+from django.views.generic import FormView
 
 from download_files.forms import UploadExcelForm
 from users.models import CustomUser, Role
-from work_schedule.models import Appointment
-import pandas as pd
 
 
 class DownloadFiles(LoginRequiredMixin, FormView):
@@ -28,13 +27,16 @@ class DownloadFiles(LoginRequiredMixin, FormView):
                 last_name = row['last_name']
                 role_name = row['role_name']
                 password = row['password']
+                status_work = row['status_work']
 
                 # Проверяем, существует ли пользователь по username
                 user, created = CustomUser.objects.get_or_create(username=username)
-
+                print(created)
+                print(user)
                 # Обновляем поля пользователя
                 user.first_name = first_name
                 user.last_name = last_name
+                user.status_work = status_work
                 user.set_password(password)
 
                 # Находим или создаем роль
