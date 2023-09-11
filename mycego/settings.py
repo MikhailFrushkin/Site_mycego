@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'users',
     'main_site',
     'work_schedule',
+    'download_files',
 
 ]
 

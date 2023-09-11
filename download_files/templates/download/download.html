@@ -1,0 +1,18 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block link %}
+{% endblock %}
+
+{% block title %}
+{% trans 'Загрузка документов' %}
+{% endblock %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Загрузить</button>
+</form>
+{% endblock %}
