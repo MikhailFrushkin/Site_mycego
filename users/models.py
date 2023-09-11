@@ -16,7 +16,7 @@ class Role(models.Model):
 
 class CustomUser(AbstractUser):
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
-    status_work = models.BooleanField(default=True)
+    status_work = models.BooleanField(default=True, blank=True)
 
     def __str__(self):
         return self.username

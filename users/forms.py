@@ -26,7 +26,7 @@ class CustomUserCreationForm(UserCreationForm):
 
 class CustomUserChangeForm(UserChangeForm):
     role = forms.ModelChoiceField(queryset=Role.objects.all(), empty_label="Выберите должность")
-    status_work = forms.BooleanField(label='Работает', initial=True)
+    status_work = forms.BooleanField(label='Работает', initial=True, required=False)
 
     class Meta:
         model = CustomUser
