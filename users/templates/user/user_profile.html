@@ -24,6 +24,10 @@
     .user-name-small {
         font-size: 18px;
     }
+    .img-author img {
+    width: 420px; /* Для обеспечения правильного размера изображения */
+    height: 420px; /* Для обеспечения правильного размера изображения */
+    }
 </style>
 {% endblock %}
 
@@ -33,11 +37,16 @@
     <div class="row">
         <div class="col-4">
             <div>
-                {% if profile.photo %}
-                <img src="{{ profile.photo.url }}" class="rounded float-start" alt="{{ profile.username }}">
-                {% else %}
-                <img src="{% static 'Нет фото.jpg' %}" class="rounded float-start" alt="{{ profile.username }}">
-                {% endif %}
+                <div class="img-box flat-img">
+                    <div class="img-author">
+                        {% if user.photo %}
+                        <img src="{{ user.photo.url }}" class="rounded float-start" alt="{{ user.username }}">
+                        {% else %}
+                        <img src="{% static 'Нет фото.jpg' %}" class="rounded float-start"
+                             alt="{{ user.username }}">
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
 
