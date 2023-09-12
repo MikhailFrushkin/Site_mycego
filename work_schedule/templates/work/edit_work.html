@@ -169,112 +169,59 @@
     });
 }
 
-<!--    function saveTableData(tableId, date) {-->
-<!--        const table = document.getElementById(tableId);-->
+    function saveTableData(tableId, date) {
+    const table = document.getElementById(tableId);
+    const rowDataList = [];
+    if (!table) {
+        console.error('Таблица не найдена');
+        return;
+    }
 
-<!--        if (!table) {-->
-<!--            console.error('Таблица не найдена');-->
-<!--            return;-->
-<!--        }-->
+    const rows = table.querySelectorAll('tbody tr');
 
-<!--        const rows = table.querySelectorAll('tbody tr');-->
+    rows.forEach(function (row) {
+        const rowData = [];
+        const cells = row.querySelectorAll('td');
 
-<!--        rows.forEach(function (row) {-->
-<!--            const rowData = [];-->
-<!--            const cells = row.querySelectorAll('td');-->
-
-<!--            cells.forEach(function (cell) {-->
-<!--                if (cell.querySelector('select')) {-->
-<!--                    const selectedOption = cell.querySelector('option:checked');-->
-<!--                    rowData.push(selectedOption.textContent);-->
-<!--                } else {-->
-<!--                    rowData.push(cell.textContent.trim());-->
-<!--                }-->
-<!--            });-->
-
-<!--            console.log(date); // Отправляем данные в консоль-->
-<!--            console.log(rowData.join(', ')); // Отправляем данные в консоль-->
-
-
-<!--            const xhr = new XMLHttpRequest();-->
-<!--            var csrftoken = getCookie('csrftoken');-->
-<!--            xhr.open('POST', '/work/update_rows/', true); // Замените на реальный URL сервера-->
-<!--            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');-->
-<!--            xhr.setRequestHeader('X-CSRFToken', csrftoken);-->
-
-<!--            xhr.onreadystatechange = function () {-->
-<!--                if (xhr.readyState === XMLHttpRequest.DONE) {-->
-<!--                    if (xhr.status === 200) {-->
-<!--                        console.log('Данные успешно отправлены на сервер');-->
-<!--                        location.reload();-->
-<!--                        // Здесь можно обрабатывать ответ сервера, если необходимо-->
-<!--                    } else {-->
-<!--                        console.error('Произошла ошибка при отправке данных на сервер');-->
-<!--                    }-->
-<!--                }-->
-<!--            };-->
-
-<!--            const dataToSend = {-->
-<!--                date: date,-->
-<!--                rowData: rowData-->
-<!--                };-->
-<!--            xhr.send(JSON.stringify(dataToSend));-->
-
-<!--        });-->
-<!--    }-->
-        function saveTableData(tableId, date) {
-        const table = document.getElementById(tableId);
-        const rowDataList = [];
-        if (!table) {
-            console.error('Таблица не найдена');
-            return;
-        }
-
-        const rows = table.querySelectorAll('tbody tr');
-
-        rows.forEach(function (row) {
-            const rowData = [];
-            const cells = row.querySelectorAll('td');
-
-            cells.forEach(function (cell) {
-                if (cell.querySelector('select')) {
-                    const selectedOption = cell.querySelector('option:checked');
-                    rowData.push(selectedOption.textContent);
-                } else {
-                    rowData.push(cell.textContent.trim());
-                }
-            });
-
-            rowDataList.push(rowData)
-            console.log(rowDataList); // Отправляем данные в консоль
+        cells.forEach(function (cell) {
+            if (cell.querySelector('select')) {
+                const selectedOption = cell.querySelector('option:checked');
+                rowData.push(selectedOption.textContent);
+            } else {
+                rowData.push(cell.textContent.trim());
+            }
         });
 
-        const xhr = new XMLHttpRequest();
-        var csrftoken = getCookie('csrftoken');
-        xhr.open('POST', '/work/update_rows/', true); // Замените на реальный URL сервера
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.setRequestHeader('X-CSRFToken', csrftoken);
+        rowDataList.push(rowData)
+        console.log(rowDataList); // Отправляем данные в консоль
+    });
 
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    console.log('Данные успешно отправлены на сервер');
-                    location.reload();
-                    // Здесь можно обрабатывать ответ сервера, если необходимо
-                } else {
-                    console.error('Произошла ошибка при отправке данных на сервер');
-                }
+    const xhr = new XMLHttpRequest();
+    var csrftoken = getCookie('csrftoken');
+    xhr.open('POST', '/work/update_rows/', true); // Замените на реальный URL сервера
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-CSRFToken', csrftoken);
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                console.log('Данные успешно отправлены на сервер');
+                location.reload();
+                // Здесь можно обрабатывать ответ сервера, если необходимо
+            } else {
+                console.error('Произошла ошибка при отправке данных на сервер');
             }
+        }
+    };
+
+    const dataToSend = {
+        date: date,
+        rowData: rowDataList
         };
-
-        const dataToSend = {
-            date: date,
-            rowData: rowDataList
-            };
-        xhr.send(JSON.stringify(dataToSend));
+    xhr.send(JSON.stringify(dataToSend));
 
 
-    }
+}
 
 </script>
 {% endfor %}

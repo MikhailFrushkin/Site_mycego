@@ -13,7 +13,8 @@ class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'role', 'status_work')
 
     fieldsets = UserAdmin.fieldsets + (
-        ('Должность', {'fields': ('role', 'status_work')}),
+        ('Доп. инофрмация', {'fields': ('role', 'status_work', 'photo', 'phone_number',
+                                        'telegram_id', 'card_details', 'birth_date', 'hobbies')}),
     )
 
     add_fieldsets = (

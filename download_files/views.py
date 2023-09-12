@@ -22,21 +22,28 @@ class DownloadFiles(LoginRequiredMixin, FormView):
             df = pd.read_excel(excel_file, engine='openpyxl')
             print(df.columns)
             for index, row in df.iterrows():
-                username = row['username']
-                first_name = row['first_name']
-                last_name = row['last_name']
-                role_name = row['role_name']
-                password = row['password']
-                status_work = row['status_work']
-
+                username = row['Ник']
+                first_name = row['Имя']
+                last_name = row['Фамилия']
+                role_name = row['Должность']
+                print(row['Телефон'])
+                if isinstance(row['Телефон'], str):
+                    phone_number = row['Телефон']
+                else:
+                    phone_number = str(row['Телефон']).split('.')[0]
+                password = row['Пароль']
+                status_work = row['Работа']
+                print(phone_number)
                 # Проверяем, существует ли пользователь по username
                 user, created = CustomUser.objects.get_or_create(username=username)
-                print(created)
-                print(user)
                 # Обновляем поля пользователя
                 user.first_name = first_name
                 user.last_name = last_name
-                user.status_work = status_work
+                if status_work == 'Да':
+                    user.status_work = True
+                else:
+                    user.status_work = False
+                user.phone_number = phone_number
                 user.set_password(password)
 
                 # Находим или создаем роль

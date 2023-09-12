@@ -220,9 +220,10 @@ class EditWork(LoginRequiredMixin, ListView):
             appointments = appointments.annotate(
                 custom_order=Case(
                     When(user_role="Руководитель", then=Value(1)),
-                    When(user_role="Администратор", then=Value(2)),
-                    When(user_role="Работник", then=Value(3)),
-                    default=Value(4),  # Для всех остальных ролей
+                    When(user_role="Босс склада", then=Value(2)),
+                    When(user_role="Сервисный инженер", then=Value(3)),
+                    When(user_role="Печатник", then=Value(4)),
+                    default=Value(5),  # Для всех остальных ролей
                     output_field=models.IntegerField(),
                 )
             )
@@ -256,7 +257,7 @@ class EditWork(LoginRequiredMixin, ListView):
             work_schedule[(date, f'table-{index}')] = (user_dict, work_hours_count, flag)
 
         context['work_schedule'] = work_schedule
-        context['users'] = CustomUser.objects.filter(status_work=True).distinct()
+        context['users'] = CustomUser.objects.filter(status_work=True).distinct().order_by('username')
 
         # pprint(context['work_schedule'])
         return context
