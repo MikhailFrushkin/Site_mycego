@@ -1,0 +1,91 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block link %}
+<style>
+    .col-lg-3.col-md-6 {
+        float: left;
+        margin-top: 70px;
+    }
+
+    /* Очистка элементов в новом ряду (каждый четвёртый элемент) */
+    .col-lg-3.col-md-6:nth-child(4n) {
+        clear: left;
+        margin-right: 0; /* Уберите отступ у последнего элемента в ряду */
+    }
+    .col-lg-3.col-md-6:nth-child(-n+4) {
+    margin-top: 0; /* Убираем отступ сверху */
+    }
+    .staff-name {
+    font-size: 44px;
+    text-align: center;
+    margin-left: 140px;
+    }
+    .img-author img {
+    width: 110px; /* Для обеспечения правильного размера изображения */
+    height: 110px; /* Для обеспечения правильного размера изображения */
+}
+    .flat-top-seller.home2 .style-container {
+    padding-top: 100px;
+    padding-bottom: 30px;
+    }
+    .container {
+    margin-left: 50px;
+    margin-right: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block title %}
+{% trans 'Сотрудники' %}
+{% endblock %}
+
+{% block content %}
+{% for key, value in staff_by_role.items %}
+<span class="staff-name">{{ key }}</span>
+<br>
+<br>
+
+<div class="flat-top-seller home2">
+    <div class="themes-container2 style-container">
+        <div class="container">
+            <div class="row">
+                {% for emp in value %}
+                <div class="col-lg-3 col-md-6">
+                    <div class="wrap-seller">
+                        <div class="img-box flat-img">
+                            <div class="img-author">
+                                {% if emp.photo %}
+                                <img src="{{ emp.photo.url }}" class="rounded float-start" alt="{{ emp.username }}">
+                                {% else %}
+                                <img src="{% static 'Нет фото.jpg' %}" class="rounded float-start"
+                                     alt="{{ emp.username }}">
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="content">
+                            <h3><a href="author-profile.html">{{ emp.last_name }} {{ emp.first_name }}</a></h3>
+                            <div class="price flex">
+                                <div class="title-price fs-16"> {{ emp.role }}</div>
+                            </div>
+                            <div class="button-follow">
+                                <a href="{% url 'users:user_profile' emp.id %}" class="sc-button btn-6 bt"><span>Профиль</span></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+
+<script src="{% static 'nufti/assets/js/switchmode.js' %}"></script>
+<script src="{% static 'nufti/assets/js/bootstrap.min.js' %}"></script>
+<script src="{% static 'nufti/assets/js/swiper-bundle.min.js' %}"></script>
+<script src="{% static 'nufti/assets/js/wow.min.js' %}"></script>
+
+{% endblock %}
