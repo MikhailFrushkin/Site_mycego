@@ -22,7 +22,7 @@ class CustomUser(AbstractUser):
     telegram_id = models.CharField(verbose_name='ID Телеграма', max_length=255, blank=True)
     card_details = models.CharField(verbose_name='Реквизиты карты', max_length=255, blank=True)
     birth_date = models.DateField(verbose_name='Дата рождения', null=True, blank=True)
-    hobbies = models.TextField(verbose_name='Увлечения', blank=True)
+    hobbies = models.CharField(verbose_name='Увлечения', max_length=255, blank=True)
 
     def __str__(self):
         return self.username

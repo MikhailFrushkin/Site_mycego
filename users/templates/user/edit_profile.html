@@ -1,14 +1,40 @@
 {% extends 'main_base.html' %}
 {% load i18n %}
+{% load static %}
 {% block title %}
-{% trans 'Редактирование' %}
+{% trans 'Редактирование профиля' %}
 {% endblock %}
+
+{% block link %}
+<link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% endblock %}
+
 {% block content %}
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
+<div class="row justify-content-md-center">
+    <div class="gradient-border" id="box" style="width: 600px;">
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+                <p for="{{ field.id_for_label }}" class="title-infor-account">{% trans field.label %}</p>
+                <input type="{{ field.field.widget.input_type }}"
+                       name="{{ field.name }}"
+                       placeholder="0"
+                       class="{% if field.errors %} error{% endif %} narrower-input"
+                       id="{{ field.id_for_label }}"
+                       style="width: 500px!important;"
+                       {% if field.value %} value="{{ field.value }}" {% endif %}>
+                {% if field.errors %}
+                <div class="error-message">
+                    {{ field.errors }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn-grad btn-gradient-border btn-glow">Сохранить</button>
+        </form>
+    </div>
+</div>
 
-    {{ form.as_p }}
-
-    <button type="submit">Сохранить</button>
-</form>
 {% endblock %}
