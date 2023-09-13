@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'main_site',
     'work_schedule',
     'download_files',
+    'completed_works',
 
 ]
 
