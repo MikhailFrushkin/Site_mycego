@@ -1,0 +1,33 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+{% block title %}
+{% trans 'Эффективность сотрудника' %}
+{% endblock %}
+
+{% block link %}
+
+{% endblock %}
+
+{% block content %}
+<div>
+    {% for year, weeks in full_dict.items %}
+    <h2 style="text-align: center;">{{ year }}</h2>
+    {% for week, week_data in weeks.items %}
+    <h3 style="text-align: center;">Неделя {{ week }}:</h3>
+    <p>{{ user.last_name }} {{ user.first_name }}</p>
+    <p>Часы: {{ week_data.hours }}</p>
+    <p>Коэффициент: {{ week_data.kf }}</p>
+    <p>Зарплата: {{ week_data.salary }}</p>
+    <h3>Работы: </h3>
+    {% for key, value in week_data.operations.items %}
+    <p>
+        {{ key }}: {{ value }} шт. Норматив({{ key.standard }}/час)
+    </p>
+    {% endfor %}
+    <br><br>
+
+    {% endfor %}
+    {% endfor %}
+</div>
+{% endblock %}

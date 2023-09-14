@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'work_schedule',
     'download_files',
     'completed_works',
+    'effectiveness',
 
 ]
 
