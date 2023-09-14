@@ -24,3 +24,17 @@ class WorkRecordQuantityForm(forms.ModelForm):
     class Meta:
         model = WorkRecordQuantity
         fields = ['quantity']
+
+
+class WeekSelectionForm(forms.Form):
+    import datetime
+    today = datetime.date.today()
+    year = forms.IntegerField(
+        label='Год',
+        min_value=2023,  # Начиная с 2023 года
+        initial=today.year,  # Устанавливаем начальное значение на 2023 год
+    )
+    week = forms.IntegerField(
+        label='Неделя',
+        initial=today.isocalendar()[1]
+    )

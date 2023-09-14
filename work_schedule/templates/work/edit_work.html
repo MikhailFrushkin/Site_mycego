@@ -3,6 +3,9 @@
 {% load static %}
 
 {% block link %}
+<link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'my_js/myjs.js' %}"></script>
 {% endblock %}
 
 {% block title %}
@@ -10,98 +13,126 @@
 {% endblock %}
 
 {% block content %}
-{%for key, value in work_schedule.items %}
-<div>
-    <p>
-        <a class="btn btn-primary w-25 {% if value.2 %}btn-success{% endif %}" data-bs-toggle="collapse" href="#collapseExample{{ forloop.counter }}"
-           role="button"
-           aria-expanded="false"
-           aria-controls="collapseExample">
-            {{ key.0 }}
-            {% if value.2 %}
-            <td>&#10003;</td>
-            {% else %}
-            <td>&#10007;</td>
-            {% endif %}
-        </a>
-    </p>
-    <div class="collapse" id="collapseExample{{ forloop.counter }}">
-        <br>
-        <button class="btn btn-success w-auto btn-save" onclick="saveTableData('{{key.1}}', '{{key.0}}')">
-            Сохранить
-        </button>
-        <button class="btn btn-success" onclick="addRow('{{ key.1 }}')">Добавить строку</button>
-        <br>
-        <br>
 
-        <table class="table-responsive-sm">
-            <thead>
-            <tr>
-                <th scope="col">Количество сотрудников</th>
-                {% for hour, count in value.1.items %}
-                <th scope="col" style="font-size: 16px;">{{ count }}</th>
-                {% endfor %}
-                <th scope="col"></th>
-            </tr>
-            </thead>
-        </table>
-
-        <table id="{{key.1}}" class="table-responsive-sm">
-            <thead>
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">9:00</th>
-                <th scope="col">10:00</th>
-                <th scope="col">11:00</th>
-                <th scope="col">12:00</th>
-                <th scope="col">13:00</th>
-                <th scope="col">14:00</th>
-                <th scope="col">15:00</th>
-                <th scope="col">16:00</th>
-                <th scope="col">17:00</th>
-                <th scope="col">18:00</th>
-                <th scope="col">19:00</th>
-                <th scope="col">20:00</th>
-                <th scope="col"></th>
-            </tr>
-            </thead>
-            <tbody class="table-group-divider">
-            {% for user_name, hours in value.0.items %}
-            <tr>
-                <th scope="row">{{ forloop.counter }}</th>
-                {% for hour in hours %}
-                {% if hour %}
-                <td>
-                    <select class="form-select bg-primary w-auto text-white" aria-label="Запись">
-                        <option value="0">Нет</option> <!-- Добавляем вариант "Нет" -->
-                        <option selected>{{ user_name }}</option>
-                        {% for emp in users %}
-                        <option value="{{ forloop.counter }}" style="color: #ffffff;">{{ emp.username }}</option>
-                        {% endfor %}
-                    </select>
-                </td>
-                {% else %}
-                <td>
-                    <select class="form-select bg-dark w-auto text-white" aria-label="Запись">
-                        <option selected>Нет</option>
-                        {% for emp in users %}
-                        <option value="{{ forloop.counter }}" style="color: #ffffff;">{{ emp.username }}</option>
-                        {% endfor %}
-                    </select>
-                </td>
+<div class="container text-center">
+    <div class="row justify-content-md-center">
+        <form method="get" class="custom-form">
+            <div class="form-group">
+                {% for field in form %}
+                <span for="{{ field.id_for_label }}" style="font-size: 14px;">{% trans field.label %}  </span>
+                <input type="{{ field.field.widget.input_type }}"
+                       name="{{ field.name }}"
+                       placeholder="0"
+                       class="{% if field.errors %} error{% endif %} narrower-input2"
+                       id="{{ field.id_for_label }}"
+                       {% if field.value %} value="{{ field.value }}" {% endif %}>
+                {% if field.errors %}
+                <div class="error-message">
+                    {{ field.errors }}
+                </div>
                 {% endif %}
                 {% endfor %}
-                <td>
-                    <button class="btn btn-danger w-100 btn-clear" data-table-id="{{ key.1 }}" onclick="clearRow(this)">
-                        Очистить
-                    </button>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
+                <button type="submit" class="btn-lg">Выбрать</button>
+            </div>
+        </form>
 
-        </table>
     </div>
+</div>
+
+
+<div class="container text-center">
+    <div class="row justify-content-md-center">
+        {% for key, value in work_schedule.items %}
+        <button class="depth {% if value.2 %} depth-green {% endif %}"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseExample{{ forloop.counter }}"
+                aria-expanded="false"
+                aria-controls="collapseExample">
+            {{ key.0 }}
+        </button>
+        {% endfor %}
+        <br><br>
+    </div>
+</div>
+
+{%for key, value in work_schedule.items %}
+<div class="collapse" id="collapseExample{{ forloop.counter }}">
+    <br>
+    <button class="btn btn-success w-auto btn-save" onclick="saveTableData('{{key.1}}', '{{key.0}}')">
+        Сохранить
+    </button>
+    <button class="btn btn-success" onclick="addRow('{{ key.1 }}')">Добавить строку</button>
+    <br>
+    <br>
+
+    <table class="table-responsive-sm">
+        <thead>
+        <tr>
+            <th scope="col">Количество сотрудников</th>
+            {% for hour, count in value.1.items %}
+            <th scope="col" style="font-size: 16px;">{{ count }}</th>
+            {% endfor %}
+            <th scope="col"></th>
+        </tr>
+        </thead>
+    </table>
+
+    <table id="{{key.1}}" class="table-responsive-sm">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">9:00</th>
+            <th scope="col">10:00</th>
+            <th scope="col">11:00</th>
+            <th scope="col">12:00</th>
+            <th scope="col">13:00</th>
+            <th scope="col">14:00</th>
+            <th scope="col">15:00</th>
+            <th scope="col">16:00</th>
+            <th scope="col">17:00</th>
+            <th scope="col">18:00</th>
+            <th scope="col">19:00</th>
+            <th scope="col">20:00</th>
+            <th scope="col"></th>
+        </tr>
+        </thead>
+        <tbody class="table-group-divider">
+        {% for user_name, hours in value.0.items %}
+        <tr>
+            <th scope="row">{{ forloop.counter }}</th>
+            {% for hour in hours %}
+            {% if hour %}
+            <td>
+                <select class="form-select bg-primary w-auto text-white" aria-label="Запись">
+                    <option value="0">Нет</option> <!-- Добавляем вариант "Нет" -->
+                    <option selected>{{ user_name }}</option>
+                    {% for emp in users %}
+                    <option value="{{ forloop.counter }}" style="color: #ffffff;">{{ emp.username }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            {% else %}
+            <td>
+                <select class="form-select bg-dark w-auto text-white" aria-label="Запись">
+                    <option selected>Нет</option>
+                    {% for emp in users %}
+                    <option value="{{ forloop.counter }}" style="color: #ffffff;">{{ emp.username }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            {% endif %}
+            {% endfor %}
+            <td>
+                <button class="btn btn-danger w-100 btn-clear" data-table-id="{{ key.1 }}" onclick="clearRow(this)">
+                    Очистить
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
 </div>
 
 <script>

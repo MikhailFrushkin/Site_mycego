@@ -6,10 +6,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import ListView, FormView
+from django.views.generic import ListView, FormView, TemplateView
+from loguru import logger
 
 from users.models import CustomUser
-from .forms import WorkRecordForm, WorkRecordQuantityForm
+from .forms import WorkRecordForm, WorkRecordQuantityForm, WeekSelectionForm
 from .models import WorkRecordQuantity, Standards, WorkRecord
 
 
@@ -105,21 +106,45 @@ def update_work_quantities(request):
 
 
 class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
-    model = CustomUser
+    model = WorkRecord
     form_class = WorkRecordQuantityForm
+    form_class2 = WeekSelectionForm
     template_name = 'completed_works/view_works_admin.html'
     login_url = '/users/login/'
     success_url = reverse_lazy('completed_works:completed_works_view_admin')
 
+    def get_queryset(self):
+        if hasattr(self, '_queryset'):
+            return self._queryset
+
+        year = self.request.GET.get('year')
+        week = self.request.GET.get('week')
+        if not year or not week:
+            import datetime
+            today = datetime.date.today()
+            year = today.year
+            week = today.isocalendar()[1]
+
+        queryset = WorkRecord.objects.filter(
+            date__year=year,
+            date__week=week
+        )
+        logger.debug(queryset)
+        self._queryset = queryset  # Сохраняем результат в атрибуте _queryset
+        return queryset
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        weeks = list(range(1, 53))
+        queryset = self.get_queryset()
+
         work_lists_dict = {}
-        unique_dates = WorkRecord.objects.values_list('date', flat=True).distinct().order_by('date')
+        unique_dates = queryset.values_list('date', flat=True).distinct().order_by('date')
         for date in unique_dates:
             work_records_data = []
             flag = True
 
-            work_lists = WorkRecord.objects.filter(date=date)
+            work_lists = queryset.filter(date=date)
 
             for work_list in work_lists:
                 work_record_data = {
@@ -135,4 +160,6 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
             work_records_data = sorted(work_records_data, key=lambda x: x['is_checked'])
             work_lists_dict[date] = (work_records_data, flag)
         context['work_lists_dict'] = work_lists_dict
+        context['weeks'] = weeks
+        context['form2'] = self.form_class2()
         return context

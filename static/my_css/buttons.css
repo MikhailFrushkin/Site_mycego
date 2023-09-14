@@ -59,16 +59,24 @@ button.depth:active {
                 0 0 2px 8px hsla(0,0%,0%,.5),
                 0 1px 2px 8px hsla(0,0%,100%,.25),
                 0 -1px 2px 8px hsla(0,0%,0%,.5);
-    line-height: 86px;
+    line-height: 20px;
 }
 
 .depth-green {
     background: #73f14bd6!important;
 }
+.btn-weeks {
+    height: 40px!important;
+    width: 40px!important;
+}
 
 /* инпуты в формах */
 .narrower-input {
     width: 240px!important;
+    margin-bottom: 3px!important;
+}
+.narrower-input2 {
+    width: 150px!important;
     margin-bottom: 3px!important;
 }
 
@@ -217,4 +225,18 @@ opacity: 0.1;
     0% { background-position: 0 0; }
     50% { background-position: 400% 0; }
     100% { background-position: 0 0; }
+}
+
+.custom-form {
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.form-group {
+    margin-right: 10px;
+}
+
+.form-group:last-child {
+    margin-right: 0;
 }

@@ -13,6 +13,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView
 from loguru import logger
 
+from completed_works.forms import WeekSelectionForm
 from users.models import CustomUser
 from work_schedule.forms import AppointmentForm
 from work_schedule.models import Appointment
@@ -198,22 +199,45 @@ class WorkSchedule(LoginRequiredMixin, FormView):
         return self.render_to_response(self.get_context_data(form=form, appointments=appointments))
 
 
-class EditWork(LoginRequiredMixin, ListView):
+class EditWork(LoginRequiredMixin, ListView, FormView):
     model = Appointment
     template_name = 'work/edit_work.html'
     login_url = '/users/login/'
     success_url = reverse_lazy('work:edit_work')
+    form_class = WeekSelectionForm
+
+    def get_queryset(self):
+        if hasattr(self, '_queryset'):
+            return self._queryset
+
+        year = self.request.GET.get('year')
+        week = self.request.GET.get('week')
+        if not year or not week:
+            import datetime
+            today = datetime.date.today()
+            year = today.year
+            week = today.isocalendar()[1] + 1
+
+        queryset = Appointment.objects.filter(
+            date__year=year,
+            date__week=week
+        )
+        logger.debug(queryset)
+        self._queryset = queryset  # Сохраняем результат в атрибуте _queryset
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        unique_dates = Appointment.objects.values_list('date', flat=True).distinct()
+        queryset = self.get_queryset()
+
+        unique_dates = queryset.values_list('date', flat=True).distinct()
 
         work_schedule = {}
 
         # Итерируйтесь по датам и ищите записи в модели Appointment
         for index, date in enumerate(unique_dates):
             user_dict = {}
-            appointments = Appointment.objects.filter(date=date).annotate(
+            appointments = queryset.filter(date=date).annotate(
                 user_role=F('user__role__name')
             )
             # Задайте порядок сортировки с помощью функции Case
@@ -258,8 +282,8 @@ class EditWork(LoginRequiredMixin, ListView):
 
         context['work_schedule'] = work_schedule
         context['users'] = CustomUser.objects.filter(status_work=True).distinct().order_by('username')
-
-        # pprint(context['work_schedule'])
+        context['form'] = self.form_class()
+        pprint(context['work_schedule'])
         return context
 
 

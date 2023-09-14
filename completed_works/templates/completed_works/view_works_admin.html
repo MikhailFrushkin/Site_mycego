@@ -8,22 +8,36 @@
 {% block link %}
 <link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'my_js/myjs.js' %}"></script>
 {% endblock %}
 
 {% block content %}
-<script>
-    $(document).ready(function() {
-        // Найдем все элементы, которые имеют класс "btn-center" и содержат атрибут data-bs-toggle
-        $(".depth[data-bs-toggle]").click(function() {
-            var target = $(this).attr("data-bs-target"); // Получим цель сворачиваемого блока
-            $(".collapse").not(target).collapse("hide"); // Закроем все сворачиваемые блоки, кроме цели
-        });
-    });
-</script>
-<style>
 
-</style>
-<br><br><br>
+<div class="container text-center">
+    <div class="row justify-content-md-center">
+
+        <form method="get" class="custom-form">
+            <div class="form-group">
+                {% for field in form2 %}
+                <span for="{{ field.id_for_label }}" style="font-size: 14px;">{% trans field.label %}  </span>
+                <input type="{{ field.field.widget.input_type }}"
+                       name="{{ field.name }}"
+                       placeholder="0"
+                       class="{% if field.errors %} error{% endif %} narrower-input2"
+                       id="{{ field.id_for_label }}"
+                       {% if field.value %} value="{{ field.value }}" {% endif %}>
+                {% if field.errors %}
+                <div class="error-message">
+                    {{ field.errors }}
+                </div>
+                {% endif %}
+                {% endfor %}
+                <button type="submit" class="btn-lg">Выбрать</button>
+            </div>
+        </form>
+
+    </div>
+</div>
 <div class="container text-center">
     <div class="row justify-content-md-center">
         {% for key, value in work_lists_dict.items %}
@@ -41,7 +55,6 @@
 </div>
 
 {%for key, value in work_lists_dict.items %}
-
 <div class="collapse" id="collapseExample{{ forloop.counter }}">
     <div class="container text-center">
         <div class="row justify-content-md-center">
