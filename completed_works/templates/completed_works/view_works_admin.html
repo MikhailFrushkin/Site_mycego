@@ -24,9 +24,9 @@
 
 </style>
 <br><br><br>
-<div>
-    {% for key, value in work_lists_dict.items %}
-
+<div class="container text-center">
+    <div class="row justify-content-md-center">
+        {% for key, value in work_lists_dict.items %}
         <button class="depth {% if value.1 %} depth-green {% endif %}"
                 type="button"
                 data-bs-toggle="collapse"
@@ -35,8 +35,9 @@
                 aria-controls="collapseExample">
             {{ key }}
         </button>
-    {% endfor %}
-    <br><br>
+        {% endfor %}
+        <br><br>
+    </div>
 </div>
 
 {%for key, value in work_lists_dict.items %}
@@ -49,7 +50,7 @@
                 <br>
                 <div class="gradient-border" id="box">
                     <div>
-                        <p>
+                        <p style="font-size: 2.5rem;">
                             {{ work_list.user.last_name }} {{ work_list.user.first_name }}
                         </p>
                         <p>
@@ -95,8 +96,10 @@
                                        class="narrower-input">
                             </div>
                             {% endfor %}
-                            <button type="submit" class="btn-grad btn-gradient-border btn-glow">Утвердить</button>
-                            <br>
+                            <div style="height: 70px;">
+                                <button type="submit" class="btn-grad btn-gradient-border btn-glow">Утвердить</button>
+                                <br>
+                            </div>
                         </form>
                     </div>
 

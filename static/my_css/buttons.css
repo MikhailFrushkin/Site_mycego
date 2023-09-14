@@ -1,8 +1,7 @@
-
+/* Кнопки с выбором даты */
 button.depth {
     margin: 1rem;
     background: #444;
-    border: none;
     border-radius: 80px;
     box-shadow: inset 0 0 2px 2px hsla(0,0%,0%,.2),
                 inset 0 0 2px 4px hsla(0,0%,0%,.2),
@@ -21,7 +20,7 @@ button.depth {
                 0 -1px 2px 8px hsla(0,0%,0%,.5);
     color: #303030;
     cursor: pointer;
-    font: bold 14px sans-serif;
+    font: bold 12px sans-serif;
     height: 60px;
     padding: 0;
     text-shadow: 0 1px 1px hsla(0,0%,100%,.25),
@@ -63,13 +62,17 @@ button.depth:active {
     line-height: 86px;
 }
 
-
-
-.narrower-input {
-    width: 240px!important;
-    margin-bottom: 5px!important;
+.depth-green {
+    background: #73f14bd6!important;
 }
 
+/* инпуты в формах */
+.narrower-input {
+    width: 240px!important;
+    margin-bottom: 3px!important;
+}
+
+/* Кнопки с выбором даты */
 #box {
   display: flex;
   align-items: center;
@@ -114,12 +117,10 @@ button.depth:active {
   }
 }
 :root {
-  /* violet */
   --primary-color: 111, 76, 255;
-
-  /* white */
   --text-color: 256, 256, 256;
 }
+
 .btn-grad {
   font-family: 'DM Sans', sans-serif;
   font-size: 18px;
@@ -158,8 +159,7 @@ opacity: 0.1;
     /* Добавьте другие стили, если необходимо */
 }
 
-
-    .glow-on-hover {
+.glow-on-hover {
     width: 220px;
     height: 50px;
     border: none;
@@ -217,8 +217,4 @@ opacity: 0.1;
     0% { background-position: 0 0; }
     50% { background-position: 400% 0; }
     100% { background-position: 0 0; }
-}
-
-.depth-green {
-    background: #73f14bd6!important;
 }

@@ -114,7 +114,7 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         work_lists_dict = {}
-        unique_dates = WorkRecord.objects.values_list('date', flat=True).distinct()
+        unique_dates = WorkRecord.objects.values_list('date', flat=True).distinct().order_by('date')
         for date in unique_dates:
             work_records_data = []
             flag = True
@@ -131,6 +131,8 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
                 if not work_list.is_checked:
                     flag = False
                 work_records_data.append(work_record_data)
+
+            work_records_data = sorted(work_records_data, key=lambda x: x['is_checked'])
             work_lists_dict[date] = (work_records_data, flag)
         context['work_lists_dict'] = work_lists_dict
         return context

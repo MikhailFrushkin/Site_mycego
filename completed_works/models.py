@@ -31,7 +31,7 @@ class WorkRecord(models.Model):
 
 class WorkRecordQuantity(models.Model):
     work_record = models.ForeignKey(WorkRecord, on_delete=models.CASCADE, verbose_name='Запись работы')
-    standard = models.ForeignKey(Standards, on_delete=models.CASCADE, verbose_name='Вид работы')
+    standard = models.ForeignKey(Standards, on_delete=models.SET_NULL, verbose_name='Вид работы', null=True)
     quantity = models.IntegerField(verbose_name='Количество работы', default=0)
 
     def __str__(self):
