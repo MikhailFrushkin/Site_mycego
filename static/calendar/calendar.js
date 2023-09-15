@@ -114,9 +114,16 @@ function addEventListeners() {
         if (target.tagName === 'DIV') {
             let selectedDate = new Date(currYear.value, currMonth.value, parseInt(target.textContent));
             let currentDate = new Date();
-
             let currentWeek = getISOWeek(currentDate); // Получаем текущую неделю
-            let targetWeek = currentWeek + 1; // Добавляем 2 недели
+            let targetWeek;
+
+            if (currentDate.getDay() === 0) {
+                targetWeek = currentWeek + 2; // Добавляем 2 недели для воскресенья
+            } else {
+                targetWeek = currentWeek + 1; // Добавляем 1 неделю для других дней
+            }
+
+
             let startOfWeek = getStartOfWeek(currentDate, targetWeek); // Получаем начало целевой недели
             let endOfWeek = new Date(startOfWeek);
             endOfWeek.setDate(startOfWeek.getDate() + 14); // Добавляем 13 дней к началу недели
