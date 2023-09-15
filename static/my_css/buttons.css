@@ -90,7 +90,7 @@ button.depth:active {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 400px;
+  width: auto;
   height: auto;
   color: white;
   font-family: 'Raleway';
