@@ -244,7 +244,7 @@ class EditWork(LoginRequiredMixin, ListView, FormView):
             appointments = appointments.annotate(
                 custom_order=Case(
                     When(user_role="Руководитель", then=Value(1)),
-                    When(user_role="Босс склада", then=Value(2)),
+                    When(user_role="Руководитель склада", then=Value(2)),
                     When(user_role="Сервисный инженер", then=Value(3)),
                     When(user_role="Печатник", then=Value(4)),
                     default=Value(5),  # Для всех остальных ролей
@@ -283,7 +283,7 @@ class EditWork(LoginRequiredMixin, ListView, FormView):
         context['work_schedule'] = work_schedule
         context['users'] = CustomUser.objects.filter(status_work=True).distinct().order_by('username')
         context['form'] = self.form_class()
-        pprint(context['work_schedule'])
+        # pprint(context['work_schedule'])
         return context
 
 

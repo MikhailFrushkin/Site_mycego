@@ -23,6 +23,7 @@ while current_time <= end_time:
     HOUR_CHOICES2.append((current_time, current_time.strftime('%H:%M')))
     current_time = (dt.datetime.combine(dt.date(1, 1, 1), current_time) + dt.timedelta(minutes=60)).time()
 
+
 class AppointmentForm(forms.ModelForm):
     class Meta:
         model = Appointment
@@ -55,12 +56,15 @@ class AppointmentForm(forms.ModelForm):
         else:
             # Получаем текущую дату
             current_date = date.today()
-
+            current_day_of_week = current_date.strftime('%A')
+            print(type(current_date.weekday()), current_date.weekday())
             # Определяем текущую неделю в году
             current_week = current_date.isocalendar()[1]
-
             # Добавляем 2 недели к текущей неделе
-            target_week = current_week + 1
+            if current_day_of_week == 'Sunday':
+                target_week = current_week + 2
+            else:
+                target_week = current_week + 1
 
             # Определяем дату начала target_week (понедельник этой недели)
             start_date = current_date + dt.timedelta(weeks=target_week - current_week, days=-current_date.weekday())
