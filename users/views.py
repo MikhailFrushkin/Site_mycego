@@ -69,9 +69,9 @@ class Staff(LoginRequiredMixin, ListView):
                          'Директор по производству',
                          'Администратор сайта',
                          'Руководитель',
+                         'Руководитель склада',
                          'Сервисный инженер',
                          'Сервисный инженер (стажер)',
-                         'Босс склада',
                          'Печатник']
 
         # Создаем упорядоченный словарь для хранения данных
@@ -79,9 +79,13 @@ class Staff(LoginRequiredMixin, ListView):
 
         # Добавляем выбранные роли и соответствующие им пользователи
         for role_name in desired_roles:
-            role = Role.objects.get(name=role_name)
-            users_with_role = CustomUser.objects.filter(role=role).order_by('username')
-            staff_by_role[role] = list(users_with_role)
+            try:
+                role = Role.objects.get(name=role_name)
+                users_with_role = CustomUser.objects.filter(role=role).order_by('username')
+                staff_by_role[role] = list(users_with_role)
+            except:
+                pass
+
 
         # Получаем остальные роли и добавляем их в словарь
         other_roles = Role.objects.exclude(name__in=desired_roles)

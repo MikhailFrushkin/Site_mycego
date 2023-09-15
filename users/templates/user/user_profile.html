@@ -39,11 +39,11 @@
             <div>
                 <div class="img-box flat-img">
                     <div class="img-author">
-                        {% if user.photo %}
-                        <img src="{{ user.photo.url }}" class="rounded float-start" alt="{{ user.username }}">
+                        {% if profile.photo %}
+                        <img src="{{ profile.photo.url }}" class="rounded float-start" alt="{{ profile.username }}">
                         {% else %}
                         <img src="{% static 'Нет фото.jpg' %}" class="rounded float-start"
-                             alt="{{ user.username }}">
+                             alt="{{ profile.username }}">
                         {% endif %}
                     </div>
                 </div>
