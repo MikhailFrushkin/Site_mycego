@@ -60,7 +60,7 @@ class Effectiveness(LoginRequiredMixin, TemplateView):
                     for quantity in record_quantities:
                         user_work_count[quantity.standard] += quantity.quantity
 
-                user_work_dict['operations'] = dict(user_work_count)
+                user_work_dict['operations'] = {key: value for key, value in user_work_count.items() if value != 0}
                 user_work_dict['hours'] = hours
 
                 result = 0
@@ -76,7 +76,7 @@ class Effectiveness(LoginRequiredMixin, TemplateView):
                 user_works_dict[week] = user_work_dict
             user_works_dict_sorted = dict(sorted(user_works_dict.items(), key=lambda item: item[0], reverse=True))
             full_dict[year] = user_works_dict_sorted
-        pprint(full_dict)
+        # pprint(full_dict)
         context['full_dict'] = full_dict
         return context
 
@@ -160,5 +160,5 @@ class StatisticView(LoginRequiredMixin, TemplateView):
                 user_works_dict[week] = user_work_dict
             full_dict[year] = user_works_dict
         context['full_dict'] = full_dict
-        pprint(context)
+        # pprint(context)
         return context
