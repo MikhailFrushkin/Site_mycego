@@ -10,8 +10,6 @@
 
 {% block content %}
 <div class="container">
-    <h1>{% trans 'Статистика' %}</h1>
-
     <p>{% trans 'Сколько работников за время было' %}: {{ total_employees }}</p>
     <p>{% trans 'Сколько работников работает' %}: {{ total_employees_work }}</p>
     <p>{% trans 'Сколько активных работников сейчас' %}: {{ active_employees }}</p>
@@ -34,7 +32,7 @@
                     <tr>
                         <th>{% trans 'Пользователь' %}</th>
                         <th>{% trans 'Отработано часов' %}</th>
-                        <th>{% trans 'Среднее количество часов в неделю' %}</th>
+                        <th>{% trans 'Среднее количество часов в день' %}</th>
                         <th>{% trans 'Дни без работы' %}</th>
                     </tr>
                 </thead>
