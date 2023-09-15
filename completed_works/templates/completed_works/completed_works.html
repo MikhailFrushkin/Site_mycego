@@ -6,115 +6,32 @@
 {% endblock %}
 
 {% block link %}
-
+<link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'my_js/myjs.js' %}"></script>
 {% endblock %}
 
 {% block content %}
-<style>
-    .narrower-input {
-    width: 200px!important;
-    margin-bottom: 10px!important;
-}
 
-#box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 300px;
-  height: auto;
-  color: white;
-  font-family: 'Raleway';
-  font-size: 2.5rem;
-}
-.gradient-border {
-  --borderWidth: 5px;
-  background: #1D1F20;
-  position: relative;
-  border-radius: var(--borderWidth);
-}
-.gradient-border:after {
-  content: '';
-  position: absolute;
-  top: calc(-1 * var(--borderWidth));
-  left: calc(-1 * var(--borderWidth));
-  height: calc(100% + var(--borderWidth) * 2);
-  width: calc(100% + var(--borderWidth) * 2);
-  background: linear-gradient(60deg, #f79533, #f37055, #ef4e7b, #a166ab, #5073b8, #1098ad, #07b39b, #6fba82);
-  border-radius: calc(2 * var(--borderWidth));
-  z-index: -1;
-  animation: animatedgradient 3s ease alternate infinite;
-  background-size: 300% 300%;
-}
-
-@keyframes animatedgradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-
-:root {
-  /* violet */
-  --primary-color: 111, 76, 255;
-
-  /* white */
-  --text-color: 256, 256, 256;
-}
-.btn-grad {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 18px;
-  padding: 12px 32px;
-  margin: 1rem;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-  border-radius: 10px;
-}
-
-.btn-gradient-border {
-  color: rgba(var(--text-color));
-  border: 2px double transparent;
-      background-image: linear-gradient(rgb(13, 14, 33), rgb(13, 14, 33)), radial-gradient(circle at left top, rgb(1, 110, 218), rgb(217, 0, 192));
-  background-origin: border-box;
-  background-clip: padding-box, border-box;
-}
-.btn-grad:hover {
-  transition: all 0.3s ease;
-}
-.btn-glow:hover {
-  box-shadow: rgba(var(--primary-color), 0.5) 0px 0px 20px 0px;
-}
-
-</style>
 <div class="gradient-border" id="box">
-<form method="post">
-    {% csrf_token %}
-    {% for field in form %}
-    <div class="form-group">
-        <p for="{{ field.id_for_label }}" class="title-infor-account">{% trans field.label %}</p>
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
         <input type="{{ field.field.widget.input_type }}"
                name="{{ field.name }}"
-               placeholder="0"
-               class="{% if field.errors %} error{% endif %} narrower-input"
+               class="{% if field.errors %} error{% endif %} narrower-input2"
                id="{{ field.id_for_label }}"
+               placeholder={{ field.label }}
                {% if field.value %} value="{{ field.value }}" {% endif %}>
         {% if field.errors %}
         <div class="error-message">
             {{ field.errors }}
         </div>
         {% endif %}
-    </div>
-    {% endfor %}
-    <br>
-    <br>
-    <br>
-    <button type="submit" class="btn-grad btn-gradient-border btn-glow">Отправить</button>
-</form>
+        {% endfor %}
+        <div class="centered-button">
+            <button type="submit" class="btn-grad btn-gradient-border btn-glow">Отправить</button>
+        </div>
+    </form>
 </div>
 {% endblock %}

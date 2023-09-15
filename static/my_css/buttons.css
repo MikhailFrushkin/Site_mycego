@@ -76,7 +76,12 @@ button.depth:active {
     margin-bottom: 3px!important;
 }
 .narrower-input2 {
-    width: 150px!important;
+    width: 48%!important;
+    margin-bottom: 3px!important;
+}
+
+.narrower-input3 {
+    width: 10%!important;
     margin-bottom: 3px!important;
 }
 
@@ -85,7 +90,7 @@ button.depth:active {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 320px;
+  width: 400px;
   height: auto;
   color: white;
   font-family: 'Raleway';
@@ -94,6 +99,7 @@ button.depth:active {
 
 }
 .gradient-border {
+    padding: 10px;
   --borderWidth: 5px;
   background: #1D1F20;
   position: relative;
@@ -239,4 +245,17 @@ opacity: 0.1;
 
 .form-group:last-child {
     margin-right: 0;
+}
+
+.centered-button {
+        text-align: center;
+        height: 60px;
+    }
+
+.input-group-text {
+    background: #1d1f20;
+    font-size: 12px;
+    color: #385283;
+    width: 45%;
+    height: auto;
 }

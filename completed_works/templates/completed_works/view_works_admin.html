@@ -23,7 +23,7 @@
                 <input type="{{ field.field.widget.input_type }}"
                        name="{{ field.name }}"
                        placeholder="0"
-                       class="{% if field.errors %} error{% endif %} narrower-input2"
+                       class="{% if field.errors %} error{% endif %} narrower-input3"
                        id="{{ field.id_for_label }}"
                        {% if field.value %} value="{{ field.value }}" {% endif %}>
                 {% if field.errors %}
@@ -101,15 +101,14 @@
                         <form method="post" action="{% url 'completed_works:update_work_quantities' %}">
                             {% csrf_token %}
                             {% for item in work_list.works %}
-                            <div>
-                                <p>
-                                    {{ item.standard__name }}
-                                </p>
-                                <input type="text" name="quantity_{{ item.id }}" value="{{ item.quantity }}"
-                                       class="narrower-input">
+                            <div class="input-group mb-3">
+                                <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ item.standard__name }}</span>
+                                <input type="text" name="quantity_{{ item.id }}"
+                                       value="{{ item.quantity }}"
+                                       class="narrower-input2">
                             </div>
                             {% endfor %}
-                            <div style="height: 70px;">
+                            <div class="centered-button">
                                 <button type="submit" class="btn-grad btn-gradient-border btn-glow">Утвердить</button>
                                 <br>
                             </div>
