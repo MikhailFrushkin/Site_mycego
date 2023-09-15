@@ -17,18 +17,23 @@
     <form method="post">
         {% csrf_token %}
         {% for field in form %}
-        <input type="{{ field.field.widget.input_type }}"
-               name="{{ field.name }}"
-               class="{% if field.errors %} error{% endif %} narrower-input2"
-               id="{{ field.id_for_label }}"
-               placeholder={{ field.label }}
-               {% if field.value %} value="{{ field.value }}" {% endif %}>
-        {% if field.errors %}
-        <div class="error-message">
-            {{ field.errors }}
-        </div>
+        <div class="input-group mb-3">
+            <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ field.label }}</span>
+            <input type="{{ field.field.widget.input_type }}"
+                   name="{{ field.name }}"
+                   class="{% if field.errors %} error{% endif %} narrower-input2"
+                   id="{{ field.id_for_label }}"
+                   placeholder="0"
+                   {% if field.value %} value="{{ field.value }}" {% endif %}>
+            {% if field.errors %}
+            <div class="error-message">
+                {{ field.errors }}
+            </div>
         {% endif %}
+        </div>
+
         {% endfor %}
+
         <div class="centered-button">
             <button type="submit" class="btn-grad btn-gradient-border btn-glow">Отправить</button>
         </div>
