@@ -89,17 +89,26 @@ WSGI_APPLICATION = 'mycego.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'site',
-        'USER': 'mikhail',
-        'PASSWORD': '123456',
-        'HOST': '94.228.122.52', # Если PostgreSQL находится на локальной машине
-        'PORT': 5432,           # По умолчанию, PostgreSQL использует порт 5432
+        'ENGINE': 'django.db.backends.sqlite3',  # Используется SQLite по умолчанию
+        'NAME': BASE_DIR / 'db.sqlite3',  # Путь к файлу базы данных SQLite
+        'USER': '',  # Имя пользователя базы данных (по умолчанию пусто)
+        'PASSWORD': '',  # Пароль базы данных (по умолчанию пусто)
+        'HOST': '',  # Хост базы данных (по умолчанию пусто)
+        'PORT': '',  # Порт базы данных (по умолчанию пусто)
     }
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'site',
+#         'USER': 'mikhail',
+#         'PASSWORD': '123456',
+#         'HOST': '94.228.122.52', # Если PostgreSQL находится на локальной машине
+#         'PORT': 5432,           # По умолчанию, PostgreSQL использует порт 5432
+#     }
+# }
 
 
 # Password validation

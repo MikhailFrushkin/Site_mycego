@@ -9,6 +9,7 @@ from django.db.models import F, Case, When, Value
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView
 from loguru import logger
@@ -109,7 +110,6 @@ def update_appointment(request):
         Appointment.objects.filter(date=date_obj).delete()
 
         rowData = data_dict.get('rowData', [])
-        logger.debug(rowData)
         for data in rowData:
             unique_elements = {}
 
@@ -119,16 +119,9 @@ def update_appointment(request):
                         unique_elements[item].append(index)
                     else:
                         unique_elements[item] = [index]
-            logger.debug(f'unique_elements = {unique_elements}')
             if unique_elements:
-                logger.debug(f"unique_elements = {unique_elements}")
-                # Создание новых записей
-                new_appointments = []
                 for key, value in unique_elements.items():
-                    # Сортируем значения в списке
                     value.sort()
-                    logger.debug(f'value = {value}')
-                    # Разбиваем значения на списки с последовательными элементами
                     grouped_values = []
                     current_group = [value[0]]
                     for i in range(1, len(value)):
@@ -138,12 +131,10 @@ def update_appointment(request):
                             grouped_values.append(current_group)
                             current_group = [value[i]]
                     grouped_values.append(current_group)
-                    logger.debug(f"grouped_values = {grouped_values}")
 
                     for group in grouped_values:
                         start_time = 9 + group[0]
                         if len(group) == 1:
-                            logger.error(len(group))
                             end_time = 10 + group[0]
                         else:
                             end_time = 10 + group[-1]
@@ -199,6 +190,7 @@ class WorkSchedule(LoginRequiredMixin, FormView):
         return self.render_to_response(self.get_context_data(form=form, appointments=appointments))
 
 
+
 class EditWork(LoginRequiredMixin, ListView, FormView):
     model = Appointment
     template_name = 'work/edit_work.html'
@@ -222,12 +214,12 @@ class EditWork(LoginRequiredMixin, ListView, FormView):
             date__year=year,
             date__week=week
         )
-        logger.debug(queryset)
         self._queryset = queryset  # Сохраняем результат в атрибуте _queryset
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        time_start = datetime.now()
         queryset = self.get_queryset()
 
         unique_dates = queryset.values_list('date', flat=True).distinct()
@@ -254,14 +246,18 @@ class EditWork(LoginRequiredMixin, ListView, FormView):
 
             # Теперь сортируйте результаты по полю 'custom_order', чтобы получить желаемый порядок
             appointments = appointments.order_by('custom_order')
-
-            flag_ver = [i.verified for i in appointments]
             flag = True
-            for value in flag_ver:
-                if value == False:
-                    flag = False
-                    break
+            role_dict = {}
             for appointment in appointments:
+                role = appointment.user.role
+                if role:
+                    if role not in role_dict:
+                        role_dict[role] = 1
+                    else:
+                        role_dict[role] += 1
+
+                if appointment.verified == False:
+                    flag = False
                 work_hours = [0] * 12
                 start_hour = appointment.start_time.hour
                 end_hour = appointment.end_time.hour
@@ -278,13 +274,38 @@ class EditWork(LoginRequiredMixin, ListView, FormView):
                     user_dict[appointment.user] = work_hours
             work_hours_count = {hour: sum([user_work_hours[hour] for user_work_hours in user_dict.values()]) for
                                 hour in range(12)}
-            work_schedule[(date, f'table-{index}')] = (user_dict, work_hours_count, flag)
+            work_schedule[(date, f'table-{index}')] = (user_dict, work_hours_count, flag, role_dict)
+
 
         context['work_schedule'] = work_schedule
         context['users'] = CustomUser.objects.filter(status_work=True).distinct().order_by('username')
         context['form'] = self.form_class()
-        # pprint(context['work_schedule'])
+        try:
+            year = self.request.GET['year']
+            week = self.request.GET['week']
+            print(year, week)
+            monday, sunday = self.get_dates(int(year), int(week))
+            context['monday'] = monday
+            context['sunday'] = sunday
+        except Exception as ex:
+            print(ex)
+        logger.success(datetime.now() - time_start)
         return context
+
+    def get_dates(self, year, week_number):
+        # Создаем объект даты для первого дня года
+        first_day_of_year = date(year, 1, 1)
+        # Вычисляем дату понедельника первой недели года
+        days_to_add = 0 - first_day_of_year.weekday()
+        monday_of_week_1 = first_day_of_year + timedelta(days=days_to_add)
+        # Вычисляем дату понедельника заданной недели
+        days_to_add = (week_number) * 7
+        monday_of_given_week = monday_of_week_1 + timedelta(days=days_to_add)
+
+        # Вычисляем дату воскресенья заданной недели
+        sunday_of_given_week = monday_of_given_week + timedelta(days=6)
+
+        return monday_of_given_week, sunday_of_given_week
 
 
 class GrafUser(LoginRequiredMixin, ListView):

@@ -1,7 +1,7 @@
 {% extends 'main_base.html' %}
 {% load i18n %}
 {% load static %}
-
+{% load custom_tags_users %}
 {% block link %}
 <link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -35,7 +35,11 @@
                 <button type="submit" class="btn-lg">Выбрать</button>
             </div>
         </form>
-
+        <div>
+            <h4>
+                {{monday}}-{{sunday}}
+            </h4>
+        </div>
     </div>
 </div>
 
@@ -58,6 +62,11 @@
 
 {%for key, value in work_schedule.items %}
 <div class="collapse" id="collapseExample{{ forloop.counter }}">
+    {% for role, peoples in value.3.items %}
+        <h3>
+            {{ role }}: {{ peoples }}
+        </h3>
+    {% endfor %}
     <br>
     <button class="btn btn-success w-auto btn-save" onclick="saveTableData('{{key.1}}', '{{key.0}}')">
         Сохранить
@@ -98,163 +107,132 @@
         </tr>
         </thead>
         <tbody class="table-group-divider">
+
         {% for user_name, hours in value.0.items %}
-        <tr>
-            <th scope="row">{{ forloop.counter }}</th>
-            {% for hour in hours %}
-            {% if hour %}
-            <td>
-                <select class="form-select bg-primary w-auto text-white" aria-label="Запись">
-                    <option value="0">Нет</option> <!-- Добавляем вариант "Нет" -->
-                    <option selected>{{ user_name }}</option>
-                    {% for emp in users %}
-                    <option value="{{ forloop.counter }}" style="color: #ffffff;">{{ emp.username }}</option>
-                    {% endfor %}
-                </select>
-            </td>
-            {% else %}
-            <td>
-                <select class="form-select bg-dark w-auto text-white" aria-label="Запись">
-                    <option selected>Нет</option>
-                    {% for emp in users %}
-                    <option value="{{ forloop.counter }}" style="color: #ffffff;">{{ emp.username }}</option>
-                    {% endfor %}
-                </select>
-            </td>
-            {% endif %}
-            {% endfor %}
-            <td>
-                <button class="btn btn-danger w-100 btn-clear" data-table-id="{{ key.1 }}" onclick="clearRow(this)">
-                    Очистить
-                </button>
-            </td>
-        </tr>
+            {% custom_dropdown user_name hours users forloop.counter%}
         {% endfor %}
         </tbody>
 
     </table>
 </div>
 
-<script>
-    function addRow(tableId) {
-    const table = document.getElementById(tableId);
-    if (!table) {
-        console.error('Таблица не найдена');
-        return;
-    }
-
-    const newRow = document.createElement('tr');
-    const selectHTML = `
-        <select class="form-select bg-dark w-auto text-white" aria-label="Запись">
-            <option selected>Нет</option>
-            {% for emp in users %}
-            <option value="{{ forloop.counter }}" style="color: #ffffff;">{{ emp.username }}</option>
-            {% endfor %}
-        </select>
-    `;
-
-    // Увеличьте порядковый номер строки в первом столбце
-    const rowIndex = table.rows.length;
-    const numberCell = document.createElement('th');
-    numberCell.textContent = rowIndex;
-
-    newRow.appendChild(numberCell);
-
-    // Добавьте ячейки в новую строку (кроме первой и последней)
-    for (let i = 0; i < table.rows[0].cells.length - 2; i++) {
-        const cell = document.createElement('td');
-        cell.innerHTML = selectHTML;
-        newRow.appendChild(cell);
-    }
-
-    // Добавьте кнопку "Очистить" в последний столбец
-    const clearButtonCell = document.createElement('td');
-    const clearButton = document.createElement('button');
-    clearButton.className = 'btn btn-danger';
-    clearButton.textContent = 'Очистить';
-    clearButton.addEventListener('click', function () {
-        clearRow(this);
-    });
-    clearButtonCell.appendChild(clearButton);
-    newRow.appendChild(clearButtonCell);
-
-    table.querySelector('tbody').appendChild(newRow);
-}
-
-    function clearRow(button) {
-    const row = button.closest('tr');
-    const cells = row.querySelectorAll('td');
-
-    cells.forEach(function (cell, index) {
-        if (index < cells.length - 1) { // Исключаем последний столбец
-            const selectHTML = `
-                <select class="form-select bg-dark w-auto text-white" aria-label="Запись">
-                    <option selected>Нет</option>
-                    {% for emp in users %}
-                    <option value="{{ forloop.counter }}" style="color: #ffffff;">{{ emp.username }}</option>
-                    {% endfor %}
-                </select>
-            `;
-            cell.innerHTML = selectHTML;
-        }
-    });
-}
-
-    function saveTableData(tableId, date) {
-    const table = document.getElementById(tableId);
-    const rowDataList = [];
-    if (!table) {
-        console.error('Таблица не найдена');
-        return;
-    }
-
-    const rows = table.querySelectorAll('tbody tr');
-
-    rows.forEach(function (row) {
-        const rowData = [];
-        const cells = row.querySelectorAll('td');
-
-        cells.forEach(function (cell) {
-            if (cell.querySelector('select')) {
-                const selectedOption = cell.querySelector('option:checked');
-                rowData.push(selectedOption.textContent);
-            } else {
-                rowData.push(cell.textContent.trim());
-            }
-        });
-
-        rowDataList.push(rowData)
-        console.log(rowDataList); // Отправляем данные в консоль
-    });
-
-    const xhr = new XMLHttpRequest();
-    var csrftoken = getCookie('csrftoken');
-    xhr.open('POST', '/work/update_rows/', true); // Замените на реальный URL сервера
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.setRequestHeader('X-CSRFToken', csrftoken);
-
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState === XMLHttpRequest.DONE) {
-            if (xhr.status === 200) {
-                console.log('Данные успешно отправлены на сервер');
-                location.reload();
-                // Здесь можно обрабатывать ответ сервера, если необходимо
-            } else {
-                console.error('Произошла ошибка при отправке данных на сервер');
-            }
-        }
-    };
-
-    const dataToSend = {
-        date: date,
-        rowData: rowDataList
-        };
-    xhr.send(JSON.stringify(dataToSend));
-
-
-}
-
-</script>
 {% endfor %}
 
+<script>
+        function addRow(tableId) {
+const table = document.getElementById(tableId);
+if (!table) {
+    console.error('Таблица не найдена');
+    return;
+}
+
+const newRow = document.createElement('tr');
+const selectHTML = `
+    <select class="form-select bg-dark w-auto text-white" aria-label="Запись">
+        <option selected>Нет</option>
+        {% for emp in users %}
+        <option value="{{ forloop.counter }}" style="color: #ffffff;">{{ emp.username }}</option>
+        {% endfor %}
+    </select>
+`;
+
+// Увеличьте порядковый номер строки в первом столбце
+const rowIndex = table.rows.length;
+const numberCell = document.createElement('th');
+numberCell.textContent = rowIndex;
+
+newRow.appendChild(numberCell);
+
+// Добавьте ячейки в новую строку (кроме первой и последней)
+for (let i = 0; i < table.rows[0].cells.length - 2; i++) {
+    const cell = document.createElement('td');
+    cell.innerHTML = selectHTML;
+    newRow.appendChild(cell);
+}
+
+// Добавьте кнопку "Очистить" в последний столбец
+const clearButtonCell = document.createElement('td');
+const clearButton = document.createElement('button');
+clearButton.className = 'btn btn-danger';
+clearButton.textContent = 'Очистить';
+clearButton.addEventListener('click', function () {
+    clearRow(this);
+});
+clearButtonCell.appendChild(clearButton);
+newRow.appendChild(clearButtonCell);
+
+table.querySelector('tbody').appendChild(newRow);
+}
+
+function clearRow(button) {
+const row = button.closest('tr');
+const cells = row.querySelectorAll('td');
+
+cells.forEach(function (cell, index) {
+    if (index < cells.length - 1) { // Исключаем последний столбец
+        const selectHTML = `
+            <select class="form-select bg-dark w-auto text-white" aria-label="Запись">
+                <option selected>Нет</option>
+                {% for emp in users %}
+                <option value="{{ forloop.counter }}" style="color: #ffffff;">{{ emp.username }}</option>
+                {% endfor %}
+            </select>
+        `;
+        cell.innerHTML = selectHTML;
+    }
+});
+}
+
+function saveTableData(tableId, date) {
+const table = document.getElementById(tableId);
+const rowDataList = [];
+if (!table) {
+    console.error('Таблица не найдена');
+    return;
+}
+
+const rows = table.querySelectorAll('tbody tr');
+
+rows.forEach(function (row) {
+    const rowData = [];
+    const cells = row.querySelectorAll('td');
+
+    cells.forEach(function (cell) {
+        if (cell.querySelector('select')) {
+            const selectedOption = cell.querySelector('option:checked');
+            rowData.push(selectedOption.textContent);
+        } else {
+            rowData.push(cell.textContent.trim());
+        }
+    });
+
+    rowDataList.push(rowData)
+    console.log(rowDataList); // Отправляем данные в консоль
+});
+
+const xhr = new XMLHttpRequest();
+var csrftoken = getCookie('csrftoken');
+xhr.open('POST', '/work/update_rows/', true); // Замените на реальный URL сервера
+xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+xhr.setRequestHeader('X-CSRFToken', csrftoken);
+
+xhr.onreadystatechange = function () {
+    if (xhr.readyState === XMLHttpRequest.DONE) {
+        if (xhr.status === 200) {
+            console.log('Данные успешно отправлены на сервер');
+            location.reload();
+            // Здесь можно обрабатывать ответ сервера, если необходимо
+        } else {
+            console.error('Произошла ошибка при отправке данных на сервер');
+        }
+    }
+};
+
+const dataToSend = {
+    date: date,
+    rowData: rowDataList
+    };
+xhr.send(JSON.stringify(dataToSend));
+}
+</script>
 {% endblock %}
