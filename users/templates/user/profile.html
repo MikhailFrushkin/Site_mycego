@@ -54,6 +54,9 @@
                 <a href="{% url 'users:edit_profile' %}">
                     <button class="btn-lg">Редактировать</button>
                 </a>
+                <a href="{% url 'users:password_change' %}">
+                    <button class="btn-lg">Сменить пароль</button>
+                </a>
             </div>
 
         </div>
@@ -81,6 +84,14 @@
                         <a href="#">Номер телефона:</a>
                         {% if user.phone_number != 'nan' %}
                         <span class="user-name-small">{{ user.phone_number }}</span>
+                        {% else %}
+                        <span class="user-name-small">Не указан</span>
+                        {% endif %}
+                    </li>
+                    <li class="active">
+                        <a href="#">Email:</a>
+                        {% if user.email %}
+                        <span class="user-name-small">{{ user.email }}</span>
                         {% else %}
                         <span class="user-name-small">Не указан</span>
                         {% endif %}

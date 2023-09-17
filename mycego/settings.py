@@ -190,3 +190,16 @@ DEBUG_TOOLBAR_PANELS = [
 settings.SILENCED_SYSTEM_CHECKS = ['admin.E408']
 
 AUTH_USER_MODEL = 'users.CustomUser'
+
+
+PASSWORD_RESET_TIMEOUT = 3600  # Срок действия сброса пароля в секундах (1 час)
+PASSWORD_RESET_TIMEOUT_DAYS = 1  # Срок действия сброса пароля в днях (1 день)
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.mail.ru'
+EMAIL_PORT = 2525
+EMAIL_HOST_USER = "mycego@mail.ru"
+EMAIL_HOST_PASSWORD = "kfTcbN4AHTxkHhVxLica"
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+DEFAULT_FROM_EMAIL = 'mycego@mail.ru'

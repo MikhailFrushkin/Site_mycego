@@ -8,8 +8,12 @@
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
+    <br><br>
+    <a href="{% url 'users:password_reset' %}"><h4>Забыли пароль?</h4></a>
+
     <div class="col-auto mb-3 mt-5">
         <button type="submit" class="btn btn-lg btn-outline-secondary">{% trans 'Войти' %}</button>
     </div>
+
 </form>
 {% endblock %}

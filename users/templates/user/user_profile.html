@@ -78,6 +78,14 @@
                         {% endif %}
                     </li>
                     <li class="active">
+                        <a href="#">Email:</a>
+                        {% if profile.email %}
+                        <span class="user-name-small">{{ profile.email }}</span>
+                        {% else %}
+                        <span class="user-name-small">Не указан</span>
+                        {% endif %}
+                    </li>
+                    <li class="active">
                         <a href="#">Телеграмм: </a>
                         <span class="user-name-small">{{ profile.telegram_id }}</span>
                     </li>
