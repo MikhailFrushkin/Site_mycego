@@ -1,5 +1,6 @@
 from django import forms
 from .models import WorkRecord, Standards, WorkRecordQuantity
+from django.db.models import Q
 
 
 class WorkRecordForm(forms.ModelForm):
@@ -7,12 +8,23 @@ class WorkRecordForm(forms.ModelForm):
         model = WorkRecord
         fields = ['works']  # Выбираем поля, которые будут отображаться в форме
 
-    # Добавляем поля для количества работы напротив каждого вида работ
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)  # Получаем пользователя из kwargs
         super(WorkRecordForm, self).__init__(*args, **kwargs)
         del self.fields['works']
 
-        for standard in Standards.objects.all():
+        standards = Standards.objects.all()
+
+        if user and user.role:
+            try:
+                if user.role.name == 'Печатник':
+                    # Добавляем фильтрацию для роли 'Печатник', например, по имени стандарта
+                    standards = standards.filter(Q(type_for_printer=True) | Q(name='Другие работы(в минутах)'))
+                else:
+                    standards = standards.filter(type_for_printer=False)
+            except Exception as ex:
+                print(ex)
+        for standard in standards.order_by('id'):
             self.fields[f'{standard.name}'] = forms.IntegerField(
                 label=standard.name,
                 initial=0,
@@ -24,17 +36,3 @@ class WorkRecordQuantityForm(forms.ModelForm):
     class Meta:
         model = WorkRecordQuantity
         fields = ['quantity']
-
-
-class WeekSelectionForm(forms.Form):
-    import datetime
-    today = datetime.date.today()
-    year = forms.IntegerField(
-        label='Год',
-        min_value=2023,  # Начиная с 2023 года
-        initial=today.year,  # Устанавливаем начальное значение на 2023 год
-    )
-    week = forms.IntegerField(
-        label='Неделя',
-        initial=today.isocalendar()[1]
-    )

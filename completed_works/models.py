@@ -6,6 +6,7 @@ from users.models import CustomUser
 class Standards(models.Model):
     name = models.CharField(verbose_name='Тип работ', max_length=255)
     standard = models.IntegerField(verbose_name='Норматив', default=0)
+    type_for_printer = models.BooleanField(verbose_name='Относиться к печатникам', default=False, null=True)
 
     def __str__(self):
         return self.name

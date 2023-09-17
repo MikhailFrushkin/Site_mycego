@@ -3,7 +3,7 @@ from pprint import pprint
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, FormView, TemplateView
@@ -11,13 +11,14 @@ from loguru import logger
 
 from users.models import CustomUser
 from utils.utils import get_year_week
-from .forms import WorkRecordForm, WorkRecordQuantityForm, WeekSelectionForm
+from .forms import WorkRecordForm, WorkRecordQuantityForm
 from .models import WorkRecordQuantity, Standards, WorkRecord
 
 
 def create_work_record(request):
+    form = WorkRecordForm(user=request.user)
     if request.method == 'POST':
-        form = WorkRecordForm(request.POST)
+        form = WorkRecordForm(request.POST, user=request.user)
         if form.is_valid():
             work_record = form.save(commit=False)
 
@@ -25,9 +26,14 @@ def create_work_record(request):
             work_record.date = datetime.datetime.today()
             work_record.is_checked = False
 
+            if work_record.user.role.name == 'Печатник':
+                standards = Standards.objects.filter(Q(type_for_printer=True) | Q(name='Другие работы(в минутах)'))
+            else:
+                standards = Standards.objects.filter(type_for_printer=False)
+
             # Проверка, что все поля quantity не равны нулю
             has_non_zero_quantity = False
-            for standard in Standards.objects.all():
+            for standard in standards:
                 quantity = form.cleaned_data.get(standard.name, None)
                 if quantity is not None and quantity != 0:
                     has_non_zero_quantity = True
@@ -35,16 +41,13 @@ def create_work_record(request):
 
             if has_non_zero_quantity:
                 work_record.save()
-                for standard in Standards.objects.all():
+                for standard in standards:
                     quantity = form.cleaned_data.get(standard.name, None)
-                    print(standard, quantity)
                     if not quantity:
                         quantity = 0
                     WorkRecordQuantity.objects.create(work_record=work_record, standard=standard, quantity=quantity)
                 return redirect('completed_works:completed_works_view')
             else:
-                # Если нет непустых количеств, не сохраняем запись
-                print('Ни одно количество не указано или все равно нулю.')
                 messages.error(request, 'Ни одно количество не указано или все равно нулю.')
                 return render(request, 'completed_works/completed_works.html', {'form': form})
     else:
@@ -55,7 +58,6 @@ def create_work_record(request):
         if existing_record:
             messages.error(request, 'Запись уже существует для этой даты.')
             return redirect('completed_works:completed_works_view')
-        form = WorkRecordForm()
 
     return render(request, 'completed_works/completed_works.html', {'form': form})
 

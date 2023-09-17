@@ -83,7 +83,6 @@
                                     </ul>
                                     {% endif %}
                                 </li>
-                                {% if request.user.is_staff %}
                                 <li class="menu-item menu-item-has-children current-menu-item">
                                     <a href="#">Выполненные работы</a>
                                     {% if request.user.is_authenticated %}
@@ -95,7 +94,7 @@
                                         </li>
                                         <li class="menu-item">
                                             <a href="{% url 'completed_works:completed_works_view' %}">
-                                                Проверенные <br>листы
+                                                Мои листы
                                             </a>
                                         </li>
                                         {% if request.user.is_staff %}
@@ -108,6 +107,7 @@
                                     </ul>
                                     {% endif %}
                                 </li>
+                                {% if request.user.is_staff %}
                                 <li class="menu-item">
                                     <a href="{% url 'effectiveness:effectiveness' %}">Эффективность</a>
                                 </li>

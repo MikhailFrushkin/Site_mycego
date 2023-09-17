@@ -14,7 +14,6 @@ from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView
 from loguru import logger
 
-from completed_works.forms import WeekSelectionForm
 from users.models import CustomUser
 from utils.utils import get_year_week
 from work_schedule.forms import AppointmentForm
