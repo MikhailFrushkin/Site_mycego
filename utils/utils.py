@@ -1,3 +1,4 @@
+from loguru import logger
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 
@@ -17,3 +18,19 @@ def df_in_xlsx(df, filename, max_width=50):
         sheet.column_dimensions[column_letter].width = adjusted_width
     # Сохранение рабочей книги в файл
     workbook.save(f"{filename}.xlsx")
+
+
+def get_year_week(data, type=None):
+    import datetime
+    try:
+        year = data['year']
+        week = data['week']
+    except Exception as ex:
+        today = datetime.date.today()
+        year = today.year
+        if type == 'list_work':
+            week = today.isocalendar()[1]
+        else:
+            week = today.isocalendar()[1] + 1
+        logger.error('ошибка', ex)
+    return year, week

@@ -16,6 +16,7 @@ from loguru import logger
 
 from completed_works.forms import WeekSelectionForm
 from users.models import CustomUser
+from utils.utils import get_year_week
 from work_schedule.forms import AppointmentForm
 from work_schedule.models import Appointment
 
@@ -184,13 +185,11 @@ class WorkSchedule(LoginRequiredMixin, FormView):
         return self.render_to_response(self.get_context_data(form=form, appointments=appointments))
 
 
-
-class EditWork(LoginRequiredMixin, ListView, FormView):
+class EditWork(LoginRequiredMixin, ListView):
     model = Appointment
     template_name = 'work/edit_work.html'
     login_url = '/users/login/'
     success_url = reverse_lazy('work:edit_work')
-    form_class = WeekSelectionForm
 
     def get_queryset(self):
         if hasattr(self, '_queryset'):
@@ -220,10 +219,9 @@ class EditWork(LoginRequiredMixin, ListView, FormView):
 
         work_schedule = {}
 
-        # Итерируйтесь по датам и ищите записи в модели Appointment
-        for index, date in enumerate(unique_dates):
+        for index, date_appointment in enumerate(unique_dates):
             user_dict = {}
-            appointments = queryset.filter(date=date).annotate(
+            appointments = queryset.filter(date=date_appointment).annotate(
                 user_role=F('user__role__name')
             )
             # Задайте порядок сортировки с помощью функции Case
@@ -268,37 +266,15 @@ class EditWork(LoginRequiredMixin, ListView, FormView):
                     user_dict[appointment.user] = work_hours
             work_hours_count = {hour: sum([user_work_hours[hour] for user_work_hours in user_dict.values()]) for
                                 hour in range(12)}
-            work_schedule[(date, f'table-{index}')] = (user_dict, work_hours_count, flag, role_dict)
-
+            work_schedule[(date_appointment, f'table-{index}')] = (user_dict, work_hours_count, flag, role_dict)
 
         context['work_schedule'] = work_schedule
         context['users'] = CustomUser.objects.filter(status_work=True).distinct().order_by('username')
-        context['form'] = self.form_class()
-        try:
-            year = self.request.GET['year']
-            week = self.request.GET['week']
-            monday, sunday = self.get_dates(int(year), int(week))
-            context['monday'] = monday
-            context['sunday'] = sunday
-        except Exception as ex:
-            print('ошибка', ex)
+
+        context['year'], context['week'] = get_year_week(self.request.GET)
+        print(context['year'], context['week'])
         logger.success(datetime.now() - time_start)
         return context
-
-    def get_dates(self, year, week_number):
-        # Создаем объект даты для первого дня года
-        first_day_of_year = date(year, 1, 1)
-        # Вычисляем дату понедельника первой недели года
-        days_to_add = 0 - first_day_of_year.weekday()
-        monday_of_week_1 = first_day_of_year + timedelta(days=days_to_add)
-        # Вычисляем дату понедельника заданной недели
-        days_to_add = (week_number) * 7
-        monday_of_given_week = monday_of_week_1 + timedelta(days=days_to_add)
-
-        # Вычисляем дату воскресенья заданной недели
-        sunday_of_given_week = monday_of_given_week + timedelta(days=6)
-
-        return monday_of_given_week, sunday_of_given_week
 
 
 class GrafUser(LoginRequiredMixin, ListView):

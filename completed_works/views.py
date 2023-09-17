@@ -10,6 +10,7 @@ from django.views.generic import ListView, FormView, TemplateView
 from loguru import logger
 
 from users.models import CustomUser
+from utils.utils import get_year_week
 from .forms import WorkRecordForm, WorkRecordQuantityForm, WeekSelectionForm
 from .models import WorkRecordQuantity, Standards, WorkRecord
 
@@ -108,7 +109,6 @@ def update_work_quantities(request):
 class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
     model = WorkRecord
     form_class = WorkRecordQuantityForm
-    form_class2 = WeekSelectionForm
     template_name = 'completed_works/view_works_admin.html'
     login_url = '/users/login/'
     success_url = reverse_lazy('completed_works:completed_works_view_admin')
@@ -135,7 +135,6 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        weeks = list(range(1, 53))
         queryset = self.get_queryset()
 
         work_lists_dict = {}
@@ -160,6 +159,5 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
             work_records_data = sorted(work_records_data, key=lambda x: x['is_checked'])
             work_lists_dict[date] = (work_records_data, flag)
         context['work_lists_dict'] = work_lists_dict
-        context['weeks'] = weeks
-        context['form2'] = self.form_class2()
+        context['year'], context['week'] = get_year_week(self.request.GET, 'list_work')
         return context

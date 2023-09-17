@@ -2,6 +2,8 @@
 {% load i18n %}
 {% load static %}
 {% load custom_tags_users %}
+{% load custom_tags_choice_date %}
+
 {% block link %}
 <link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -14,35 +16,7 @@
 
 {% block content %}
 
-<div class="container text-center">
-    <div class="row justify-content-md-center">
-        <form method="get" class="custom-form">
-            <div class="form-group">
-                {% for field in form %}
-                <span for="{{ field.id_for_label }}" style="font-size: 14px;">{% trans field.label %}  </span>
-                <input type="{{ field.field.widget.input_type }}"
-                       name="{{ field.name }}"
-                       placeholder="0"
-                       class="{% if field.errors %} error{% endif %} narrower-input3"
-                       id="{{ field.id_for_label }}"
-                       {% if field.value %} value="{{ field.value }}" {% endif %}>
-                {% if field.errors %}
-                <div class="error-message">
-                    {{ field.errors }}
-                </div>
-                {% endif %}
-                {% endfor %}
-                <button type="submit" class="btn-lg">Выбрать</button>
-            </div>
-        </form>
-        <div>
-            <h4>
-                {{monday}}-{{sunday}}
-            </h4>
-        </div>
-    </div>
-</div>
-
+{% choice_date year week monday sunday %}
 
 <div class="container text-center">
     <div class="row justify-content-md-center">
