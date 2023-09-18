@@ -13,18 +13,19 @@
 {% block content %}
 <div class="row justify-content-md-center">
     <div class="gradient-border" id="box" style="width: 600px;">
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {% for field in form %}
             <div class="form-group">
                 <p for="{{ field.id_for_label }}" class="title-infor-account">{% trans field.label %}</p>
                 <input type="{{ field.field.widget.input_type }}"
-                       name="{{ field.name }}"
-                       placeholder="0"
-                       class="{% if field.errors %} error{% endif %} narrower-input"
-                       id="{{ field.id_for_label }}"
-                       style="width: 500px!important;"
-                       {% if field.value %} value="{{ field.value }}" {% endif %}>
+                    name="{{ field.name }}"
+                    class="{% if field.errors %} error{% endif %} narrower-input"
+                    id="{{ field.id_for_label }}"
+                    style="width: 500px!important;"
+                    {% if field.value %}
+                        value="{{ field.value }}"
+                    {% endif %}>
                 {% if field.errors %}
                 <div class="error-message">
                     {{ field.errors }}

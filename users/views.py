@@ -1,13 +1,15 @@
 from collections import OrderedDict
+from datetime import datetime
 from pprint import pprint
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views import View
-from django.views.generic import ListView
+from django.views.generic import ListView, UpdateView
 
 from users.forms import UserLoginForm, CustomUserEditForm, UserProfileEditForm
 from users.models import CustomUser, Role
@@ -40,19 +42,15 @@ class ProfileView(View):
         return render(request, self.template_name)
 
 
-class EditProfileView(View):
-    template_name = 'user/edit_profile.html'
+class EditProfileView(LoginRequiredMixin, UpdateView):
+    model = CustomUser  # Замените на вашу модель профиля пользователя
+    form_class = UserProfileEditForm  # Замените на вашу форму обновления профиля
+    template_name = 'user/edit_profile.html'  # Замените на ваш шаблон обновления профиля
+    success_url = reverse_lazy('users:profile')  # URL, на который перейдет пользователь после успешного обновления
 
-    def get(self, request):
-        form = UserProfileEditForm(instance=request.user)
-        return render(request, self.template_name, {'form': form})
-
-    def post(self, request):
-        form = UserProfileEditForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect('users:profile')
-        return render(request, self.template_name, {'form': form})
+    def get_object(self, queryset=None):
+        user = self.request.user
+        return user
 
 
 class Staff(LoginRequiredMixin, ListView):
@@ -85,7 +83,6 @@ class Staff(LoginRequiredMixin, ListView):
                 staff_by_role[role] = list(users_with_role)
             except:
                 pass
-
 
         # Получаем остальные роли и добавляем их в словарь
         other_roles = Role.objects.exclude(name__in=desired_roles)

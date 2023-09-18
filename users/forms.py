@@ -53,17 +53,13 @@ class UserProfileEditForm(forms.ModelForm):
         fields = ['first_name', 'last_name', 'email', 'photo', 'phone_number', 'telegram_id', 'card_details',
                   'birth_date', 'hobbies']
 
-    def clean_phone_number(self):
-        phone_number = self.cleaned_data['phone_number']
-        # Добавьте здесь дополнительные проверки, если необходимо
-        return phone_number
+        widgets = {
+            'birth_date': forms.DateInput(attrs={'type': 'date'}),
+        }
 
-    def clean_telegram_id(self):
-        telegram_id = self.cleaned_data['telegram_id']
-        # Добавьте здесь дополнительные проверки, если необходимо
-        return telegram_id
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def clean_card_details(self):
-        card_details = self.cleaned_data['card_details']
-        # Добавьте здесь дополнительные проверки, если необходимо
-        return card_details
+        if self.instance.birth_date:
+            birth_date_str = self.instance.birth_date.strftime('%Y-%m-%d')
+            self.initial['birth_date'] = birth_date_str
