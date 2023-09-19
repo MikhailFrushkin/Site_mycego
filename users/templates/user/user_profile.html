@@ -77,6 +77,7 @@
                         <span class="user-name-small">Не указан</span>
                         {% endif %}
                     </li>
+                    {% if request.user.is_staff %}
                     <li class="active">
                         <a href="#">Email:</a>
                         {% if profile.email %}
@@ -97,6 +98,7 @@
                         <span class="user-name-small">Не указаны</span>
                         {% endif %}
                     </li>
+                    {% endif %}
                     <li class="active">
                         <a href="#">Увлечения:</a>
                         <span class="user-name-small">{{ profile.hobbies }}</span>

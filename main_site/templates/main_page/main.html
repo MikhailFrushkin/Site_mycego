@@ -14,5 +14,25 @@
 {% endblock %}
 
 {% block content %}
+<table class="table-responsive-sm">
+    <thead>
+    <tr>
+        <th scope="col">Сотрудник</th>
 
+        {% for day in days %}
+        <th scope="col">{{ day }}</th>
+        {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+        {% for user, value in user_works_day.items %}
+            <tr>
+            <td>{{user}}</td>
+            {% for hour in value %}
+                <td>{{hour}}</td>
+            {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock %}
