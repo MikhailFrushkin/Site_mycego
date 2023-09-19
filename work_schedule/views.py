@@ -13,8 +13,9 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView, TemplateView
 from loguru import logger
+from openpyxl.utils import get_column_letter
 from openpyxl.workbook import Workbook
-
+from django.apps import apps
 from users.models import CustomUser
 from utils.utils import get_year_week
 from work_schedule.forms import AppointmentForm
@@ -190,49 +191,69 @@ class EditWork(LoginRequiredMixin, TemplateView):
     login_url = '/users/login/'
     success_url = reverse_lazy('work:edit_work')
 
-    def create_excel_file(self, queryset):
+    def create_excel_file(self, queryset, week):
         workbook = Workbook()
         worksheet = workbook.active
-        worksheet.title = 'Appointments'
+        worksheet.title = 'Записи на работу'
 
-        # Здесь вы можете настроить столбцы в вашем файле Excel,
-        # добавив заголовки и данные из вашего queryset
-        worksheet['A1'] = 'ID'
-        worksheet['B1'] = 'User'
-        worksheet['C1'] = 'Date'
-        worksheet['D1'] = 'Start Time'
-        worksheet['E1'] = 'End Time'
-        worksheet['F1'] = 'Comment'
-        worksheet['G1'] = 'Duration'
-        worksheet['H1'] = 'Verified'
+        # Получите модель 'Appointment' из вашего приложения
+        appointment_model = apps.get_model(app_label='work_schedule', model_name='Appointment')
 
-        row_num = 2
-        for appointment in queryset:
-            worksheet.cell(row=row_num, column=1, value=appointment.id)
-            worksheet.cell(row=row_num, column=2, value=appointment.user.username)
-            worksheet.cell(row=row_num, column=3, value=appointment.date)
-            worksheet.cell(row=row_num, column=4, value=appointment.start_time)
-            worksheet.cell(row=row_num, column=5, value=appointment.end_time)
-            worksheet.cell(row=row_num, column=6, value=appointment.comment)
-            worksheet.cell(row=row_num, column=7, value=appointment.duration)
-            worksheet.cell(row=row_num, column=8, value=appointment.verified)
+        # Получите метаданные модели, чтобы получить поля
+        model_fields = appointment_model._meta.fields
 
-            row_num += 1
+        # Добавьте столбец "Role" к заголовкам столбцов
+        headers = [field.verbose_name for field in model_fields]
+        headers.append('Должность')
+
+        # Создайте заголовки столбцов на основе полей модели
+        for col_num, header in enumerate(headers, 1):
+            worksheet.cell(row=1, column=col_num, value=header)
+
+        # Заполните данные из queryset
+        for row_num, appointment in enumerate(queryset, 2):
+            for col_num, field in enumerate(model_fields, 1):
+                cell_value = getattr(appointment, field.name)
+
+                # Получите должность пользователя и добавьте ее в конец строки
+                if field.name == 'user' and isinstance(cell_value, CustomUser):
+                    worksheet.cell(row=row_num, column=col_num, value=cell_value.username)
+                    worksheet.cell(row=row_num, column=len(headers), value=cell_value.role.name)
+                else:
+                    worksheet.cell(row=row_num, column=col_num, value=cell_value)
+
+                max_length = len(str(cell_value))
+                column_letter = get_column_letter(col_num)
+                if worksheet.column_dimensions[column_letter].width is None or worksheet.column_dimensions[
+                    column_letter].width < max_length:
+                    worksheet.column_dimensions[column_letter].width = max_length
 
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename=appointments.xlsx'
+        response['Content-Disposition'] = f'attachment; filename={week} week.xlsx'
         workbook.save(response)
 
         return response
 
-    # Ваша существующая view
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        print(queryset)
         if 'download_excel' in request.GET:
-            # Если в URL есть параметр 'download_excel', вызовите функцию
-            # для создания и скачивания Excel файла
-            excel_response = self.create_excel_file(queryset)
+            try:
+                year = self.request.GET.get('year', None)
+                week = self.request.GET.get('week', None)
+                if not year or not week:
+                    import datetime
+                    today = datetime.date.today()
+                    year = today.year
+                    week = today.isocalendar()[1]
+
+                queryset = Appointment.objects.filter(
+                    date__year=year,
+                    date__week=week
+                )
+
+            except:
+                pass
+            excel_response = self.create_excel_file(queryset, week)
             return excel_response
 
         context = self.get_context_data()

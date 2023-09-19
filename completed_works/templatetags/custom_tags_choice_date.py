@@ -56,12 +56,16 @@ def choice_date(year=None, week=None, monday=None, sunday=None):
                                id="text_field_2">
 
                         <button type="submit" class="btn-lg">Выбрать</button>
+                        
                     </div>
                 </form>
                 <div>
                     <h4>
                         С {monday} по {sunday}
                     </h4>
+                </div>
+                <div>
+                <a class="fw-4 fs-20" href="?download_excel=1&year={year}&week={week}">Скачать Excel</a>
                 </div>
             </div>
         </div>
