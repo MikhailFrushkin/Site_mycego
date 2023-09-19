@@ -25,6 +25,7 @@ urlpatterns = [
     path('work/', include('work_schedule.urls', namespace='work')),
     path('completed_works/', include('completed_works.urls', namespace='completed_works')),
     path('effectiveness/', include('effectiveness.urls', namespace='effectiveness')),
+    path('pay_sheet/', include('pay_sheet.urls', namespace='pay_sheet')),
     path('download/', include('download_files.urls', namespace='download')),
     path('', include('main_site.urls', namespace='main_site')),
 ]

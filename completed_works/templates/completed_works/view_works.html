@@ -6,96 +6,13 @@
 {% endblock %}
 
 {% block link %}
-
+<link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'my_js/myjs.js' %}"></script>
 {% endblock %}
 
 {% block content %}
-<style>
-    .narrower-input {
-    width: 240px!important;
-    margin-bottom: 5px!important;
-}
 
-#box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 320px;
-  height: auto;
-  color: white;
-  font-family: 'Raleway';
-  font-size: 2.5rem;
-  margin-bottom: 40px;
-
-}
-.gradient-border {
-  --borderWidth: 5px;
-  background: #1D1F20;
-  position: relative;
-  border-radius: var(--borderWidth);
-}
-.gradient-border:after {
-  content: '';
-  position: absolute;
-  top: calc(-1 * var(--borderWidth));
-  left: calc(-1 * var(--borderWidth));
-  height: calc(100% + var(--borderWidth) * 2);
-  width: calc(100% + var(--borderWidth) * 2);
-  background: linear-gradient(60deg, #f79533, #f37055, #ef4e7b, #a166ab, #5073b8, #1098ad, #07b39b, #6fba82);
-  border-radius: calc(2 * var(--borderWidth));
-  z-index: -1;
-  animation: animatedgradient 3s ease alternate infinite;
-  background-size: 300% 300%;
-}
-
-@keyframes animatedgradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-:root {
-  /* violet */
-  --primary-color: 111, 76, 255;
-
-  /* white */
-  --text-color: 256, 256, 256;
-}
-.btn-grad {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 18px;
-  padding: 12px 32px;
-  margin: 1rem;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-  border-radius: 10px;
-}
-
-.btn-gradient-border {
-  color: rgba(var(--text-color));
-  border: 2px double transparent;
-      background-image: linear-gradient(rgb(13, 14, 33), rgb(13, 14, 33)), radial-gradient(circle at left top, rgb(1, 110, 218), rgb(217, 0, 192));
-  background-origin: border-box;
-  background-clip: padding-box, border-box;
-}
-.btn-grad:hover {
-  transition: all 0.3s ease;
-}
-.btn-glow:hover {
-  box-shadow: rgba(var(--primary-color), 0.5) 0px 0px 20px 0px;
-}
-button:disabled {
-opacity: 0.1;
-}
-
-</style>
 <div class="container text-center">
     <div class="row justify-content-md-center">
         {% for work_list in work_records_data %}
@@ -103,7 +20,7 @@ opacity: 0.1;
             <div class="gradient-border" id="box">
                 <div>
                     <p>
-                        {{ work_list.user.last_name }} {{ work_list.user.first_name }}
+                        {{ work_list.user.last_name }} {{ work_list.user.first_name }} ({{ work_list.hours }} час(ов))
                     </p>
                     <p>
                         {{ work_list.date }}
@@ -146,9 +63,23 @@ opacity: 0.1;
                         </div>
                         {% endfor %}
                         {% if not work_list.is_checked %}
-                        <button type="submit" class="btn-grad btn-gradient-border btn-glow">Сохранить</button>
+                        <form method="post" action="{% url 'completed_works:delete_work_record' work_list.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-grad btn-gradient-border btn-glow">Сохранить</button>
+                        </form>
+
+                        <form method="post" action="{% url 'completed_works:delete_work_record' work_list.id %}"
+                              id="delete-form-{{ work_list.id }}">
+                            {% csrf_token %}
+                            <button type="button" class="btn-grad btn-gradient-border btn-glow"
+                                    onclick="confirmDelete({{ work_list.id }})">
+                                Удалить
+                            </button>
+                        </form>
+
                         {% else %}
                         <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Сохранить</button>
+                        <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Удалить</button>
                         {% endif %}
                         <br>
                     </form>
@@ -159,4 +90,12 @@ opacity: 0.1;
         {% endfor %}
     </div>
 </div>
+<script>
+function confirmDelete(workRecordId) {
+    if (confirm('Вы уверены, что хотите удалить эту запись?')) {
+        // Если пользователь подтвердил удаление, отправьте форму.
+        document.getElementById('delete-form-' + workRecordId).submit();
+    }
+}
+</script>
 {% endblock %}

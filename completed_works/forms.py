@@ -6,7 +6,7 @@ from django.db.models import Q
 class WorkRecordForm(forms.ModelForm):
     class Meta:
         model = WorkRecord
-        fields = ['works']  # Выбираем поля, которые будут отображаться в форме
+        fields = ['hours', 'works']  # Выбираем поля, которые будут отображаться в форме
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)  # Получаем пользователя из kwargs

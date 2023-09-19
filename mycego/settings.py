@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'completed_works',
     'effectiveness',
     'dbbackup',
+    'pay_sheet',
 
 ]
 

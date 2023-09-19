@@ -79,8 +79,10 @@ class ViewWorks(LoginRequiredMixin, ListView, FormView):
 
         for work_list in work_lists:
             work_record_data = {
+                'id': work_list.id,
                 'user': work_list.user,
                 'date': work_list.date,
+                'hours': work_list.hours,
                 'is_checked': work_list.is_checked,
                 'works': work_list.workrecordquantity_set.values('id', 'standard__name', 'quantity')
             }
@@ -149,8 +151,10 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
 
             for work_list in work_lists:
                 work_record_data = {
+                    'id': work_list.id,
                     'user': work_list.user,
                     'date': work_list.date,
+                    'hours': work_list.hours,
                     'is_checked': work_list.is_checked,
                     'works': work_list.workrecordquantity_set.values('id', 'standard__name', 'quantity')
                 }
@@ -163,3 +167,16 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
         context['work_lists_dict'] = work_lists_dict
         context['year'], context['week'] = get_year_week(self.request.GET, 'list_work')
         return context
+
+
+def delete_work_record(request, work_record_id):
+    # Получите объект WorkRecord по его идентификатору
+    work_record = WorkRecord.objects.get(id=work_record_id)
+    print(work_record)
+    # Проверьте, что текущий пользователь равен владельцу записи и is_checked=False
+    if request.user == work_record.user and not work_record.is_checked:
+        # Удаляем запись
+        work_record.delete()
+
+    # После удаления, перенаправьте пользователя на нужную страницу
+    return redirect('completed_works:completed_works_view')

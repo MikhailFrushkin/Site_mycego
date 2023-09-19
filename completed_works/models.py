@@ -18,6 +18,7 @@ class Standards(models.Model):
 
 class WorkRecord(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name='Сотрудник')
+    hours = models.IntegerField(verbose_name='Кол-во часов', default=0)
     date = models.DateField(verbose_name='Дата')
     is_checked = models.BooleanField(verbose_name='Проверено', default=False)
     works = models.ManyToManyField(Standards, verbose_name='Виды работ', blank=True)
@@ -41,3 +42,4 @@ class WorkRecordQuantity(models.Model):
     class Meta:
         verbose_name = "Количество работы"
         verbose_name_plural = "Количества работы"
+
