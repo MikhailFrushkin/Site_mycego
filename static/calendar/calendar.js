@@ -118,9 +118,9 @@ function addEventListeners() {
             let targetWeek;
 
             if (currentDate.getDay() === 0) {
-                targetWeek = currentWeek + 2; // Добавляем 2 недели для воскресенья
+                targetWeek = currentWeek + 1; // Добавляем 2 недели для воскресенья
             } else {
-                targetWeek = currentWeek + 1; // Добавляем 1 неделю для других дней
+                targetWeek = currentWeek + 0; // Добавляем 1 неделю для других дней
             }
 
 

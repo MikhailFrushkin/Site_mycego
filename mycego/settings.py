@@ -38,6 +38,7 @@ INTERNAL_IPS = [
 
 INSTALLED_APPS = [
     'jazzmin',
+    'django_apscheduler',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
     'download_files',
     'completed_works',
     'effectiveness',
+    'dbbackup',
 
 ]
 
@@ -99,6 +101,7 @@ DATABASES = {
         'PORT': '',  # Порт базы данных (по умолчанию пусто)
     }
 }
+print(DATABASES['default']['NAME'])
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
@@ -203,3 +206,6 @@ EMAIL_HOST_PASSWORD = "kfTcbN4AHTxkHhVxLica"
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 DEFAULT_FROM_EMAIL = 'mycego@mail.ru'
+
+DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
+DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'backup/')}

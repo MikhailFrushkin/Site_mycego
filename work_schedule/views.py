@@ -6,13 +6,14 @@ from django.db import models
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import F, Case, When, Value
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.views.generic import FormView, ListView
+from django.views.generic import FormView, ListView, TemplateView
 from loguru import logger
+from openpyxl.workbook import Workbook
 
 from users.models import CustomUser
 from utils.utils import get_year_week
@@ -184,11 +185,58 @@ class WorkSchedule(LoginRequiredMixin, FormView):
         return self.render_to_response(self.get_context_data(form=form, appointments=appointments))
 
 
-class EditWork(LoginRequiredMixin, ListView):
-    model = Appointment
+class EditWork(LoginRequiredMixin, TemplateView):
     template_name = 'work/edit_work.html'
     login_url = '/users/login/'
     success_url = reverse_lazy('work:edit_work')
+
+    def create_excel_file(self, queryset):
+        workbook = Workbook()
+        worksheet = workbook.active
+        worksheet.title = 'Appointments'
+
+        # Здесь вы можете настроить столбцы в вашем файле Excel,
+        # добавив заголовки и данные из вашего queryset
+        worksheet['A1'] = 'ID'
+        worksheet['B1'] = 'User'
+        worksheet['C1'] = 'Date'
+        worksheet['D1'] = 'Start Time'
+        worksheet['E1'] = 'End Time'
+        worksheet['F1'] = 'Comment'
+        worksheet['G1'] = 'Duration'
+        worksheet['H1'] = 'Verified'
+
+        row_num = 2
+        for appointment in queryset:
+            worksheet.cell(row=row_num, column=1, value=appointment.id)
+            worksheet.cell(row=row_num, column=2, value=appointment.user.username)
+            worksheet.cell(row=row_num, column=3, value=appointment.date)
+            worksheet.cell(row=row_num, column=4, value=appointment.start_time)
+            worksheet.cell(row=row_num, column=5, value=appointment.end_time)
+            worksheet.cell(row=row_num, column=6, value=appointment.comment)
+            worksheet.cell(row=row_num, column=7, value=appointment.duration)
+            worksheet.cell(row=row_num, column=8, value=appointment.verified)
+
+            row_num += 1
+
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename=appointments.xlsx'
+        workbook.save(response)
+
+        return response
+
+    # Ваша существующая view
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        print(queryset)
+        if 'download_excel' in request.GET:
+            # Если в URL есть параметр 'download_excel', вызовите функцию
+            # для создания и скачивания Excel файла
+            excel_response = self.create_excel_file(queryset)
+            return excel_response
+
+        context = self.get_context_data()
+        return self.render_to_response(context)
 
     def get_queryset(self):
         if hasattr(self, '_queryset'):
