@@ -34,3 +34,20 @@ def get_year_week(data, type=None):
             week = today.isocalendar()[1] + 1
         logger.error('ошибка', ex)
     return year, week
+
+
+def get_dates(year, week_number):
+    import datetime
+    # Создаем объект даты для первого дня года
+    first_day_of_year = datetime.date(year, 1, 1)
+    # Вычисляем дату понедельника первой недели года
+    days_to_add = 0 - first_day_of_year.weekday()
+    monday_of_week_1 = first_day_of_year + datetime.timedelta(days=days_to_add)
+    # Вычисляем дату понедельника заданной недели
+    days_to_add = (week_number) * 7
+    monday_of_given_week = monday_of_week_1 + datetime.timedelta(days=days_to_add)
+
+    # Вычисляем дату воскресенья заданной недели
+    sunday_of_given_week = monday_of_given_week + datetime.timedelta(days=6)
+
+    return monday_of_given_week, sunday_of_given_week

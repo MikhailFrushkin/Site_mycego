@@ -12,6 +12,7 @@ from django.views.generic import TemplateView
 
 from completed_works.models import WorkRecord, WorkRecordQuantity
 from users.models import CustomUser
+from utils.utils import get_dates
 from work_schedule.models import Appointment
 
 
@@ -131,23 +132,23 @@ class StatisticView(LoginRequiredMixin, TemplateView):
             for week in weeks:
                 user_work_dict = {}
 
-                users = Appointment.objects.filter(verified=True).values_list('user', flat=True).distinct().order_by(
-                    'user')
-                for user_id in users:
-                    user = get_object_or_404(CustomUser, pk=user_id)
+                users = CustomUser.objects.filter(status_work=True)
+                for user in users:
+                    print(user)
                     queryset = Appointment.objects.filter(
                         user=user,
-                        date__week=week
+                        date__week=week,
+                        verified=True
                     )
                     appointments_duration = queryset.aggregate(total_duration=Sum('duration'), total_day=Count('date'))
+                    temp_dict = {
+                        'hours': 0,
+                        'hours_work_current_week': 0,
+                        'average_hours': 0,
+                        'days_without_work': 0,
+                    }
 
                     if appointments_duration['total_duration']:
-                        temp_dict = {
-                            'hours': 0,
-                            'hours_work_current_week': 0,
-                            'average_hours': 0,
-                            'days_without_work': 0,
-                        }
                         total_seconds = appointments_duration['total_duration'].total_seconds()
                         hours = int(total_seconds // 3600 or 0)
                         temp_dict['hours'] = hours
@@ -187,10 +188,11 @@ class StatisticView(LoginRequiredMixin, TemplateView):
                             days_difference = None
                         temp_dict['days_without_work'] = (closest_date, days_difference)
 
-                        user_work_dict[user] = temp_dict
+                    user_work_dict[user] = temp_dict
                 sorted_dict = dict(sorted(user_work_dict.items(), key=lambda x: str(x[0])))
-                user_works_dict[week] = sorted_dict
-            full_dict[year] = dict(sorted(user_works_dict.items(), key=lambda x: x[0], reverse=True))
+                monday_of_given_week, sunday_of_given_week = get_dates(year, week)
+                user_works_dict[(week, monday_of_given_week, sunday_of_given_week)] = sorted_dict
+            full_dict[year] = dict(sorted(user_works_dict.items(), key=lambda x: x[0][0], reverse=True))
         context['full_dict'] = full_dict
         # pprint(context)
         return context

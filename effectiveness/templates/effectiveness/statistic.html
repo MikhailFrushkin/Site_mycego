@@ -28,7 +28,9 @@
     {% for year, weeks in full_dict.items %}
         <h3>{% trans 'Год' %}: {{ year }}</h3>
         {% for week, user_work_dict in weeks.items %}
-            <h4>{% trans 'Неделя' %}: {{ week }}</h4>
+            <h4>{% trans 'Неделя' %}: {{ week.0 }}</h4>
+            <h4>{{ week.1 }} - {{ week.2 }}</h4>
+            <br>
             <table>
                 <thead>
                     <tr>
