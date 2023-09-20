@@ -13,8 +13,9 @@
     <p>{% trans 'Сколько работников за время было' %}: {{ total_employees }}</p>
     <p>{% trans 'Сколько работников работает' %}: {{ total_employees_work }}</p>
     <p>{% trans 'Сколько активных работников сейчас' %}: {{ active_employees }}</p>
-
+    <br>
     <h4>{% trans 'Список неактивных сотрудников' %}</h4>
+    <br>
     {% if inactive_employees %}
     <ul>
         {% for employee in inactive_employees %}
@@ -22,6 +23,7 @@
         {% endfor %}
     </ul>
     {% endif %}
+    <br><br>
     <h2>{% trans 'Статистика по неделям' %}</h2>
     {% for year, weeks in full_dict.items %}
         <h3>{% trans 'Год' %}: {{ year }}</h3>
@@ -31,7 +33,8 @@
                 <thead>
                     <tr>
                         <th>{% trans 'Пользователь' %}</th>
-                        <th>{% trans 'Отработано часов' %}</th>
+                        <th>{% trans 'Часов по графику в неделю' %}</th>
+                        <th>{% trans 'Отработанно' %}</th>
                         <th>{% trans 'Среднее количество часов в день' %}</th>
                         <th>{% trans 'Дни без работы' %}</th>
                     </tr>
@@ -41,6 +44,7 @@
                         <tr>
                             <td>{{ user }}</td>
                             <td>{{ user_data.hours }}</td>
+                            <td>{{ user_data.hours_work_current_week }}</td>
                             <td>{{ user_data.average_hours }}</td>
                             <td>{{ user_data.days_without_work.1 }}({{ user_data.days_without_work.0 }})</td>
                         </tr>

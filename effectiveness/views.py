@@ -5,7 +5,6 @@ from pprint import pprint
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Sum, F
 from django.db.models import Q
-from django.db.models.functions import ExtractWeekDay, ExtractHour
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -14,6 +13,15 @@ from django.views.generic import TemplateView
 from completed_works.models import WorkRecord, WorkRecordQuantity
 from users.models import CustomUser
 from work_schedule.models import Appointment
+
+
+def today_current():
+    import datetime
+    today = datetime.date.today()
+    year = today.year
+    week = today.isocalendar()[1]
+    print(year, week)
+    return year, week
 
 
 class Effectiveness(LoginRequiredMixin, TemplateView):
@@ -88,6 +96,8 @@ class StatisticView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         current_date = timezone.now()
 
+        current_year, current_week = today_current()
+
         # 1. сколько работников за время было
         context['total_employees'] = CustomUser.objects.count()
         # сколько работников работает
@@ -110,11 +120,12 @@ class StatisticView(LoginRequiredMixin, TemplateView):
                             values_list('date', flat=True).distinct().order_by('date'))
         week_data = defaultdict(set)
         for date in appointment_list:
-            year = date.year
-            week = date.strftime('%U')
+            year = int(date.year)
+            week = int(date.strftime('%U'))
             week_data[year].add(week)
 
         full_dict = {}
+
         for year, weeks in week_data.items():
             user_works_dict = {}
             for week in weeks:
@@ -124,30 +135,51 @@ class StatisticView(LoginRequiredMixin, TemplateView):
                     'user')
                 for user_id in users:
                     user = get_object_or_404(CustomUser, pk=user_id)
-                    appointments_duration = Appointment.objects.filter(
+                    queryset = Appointment.objects.filter(
                         user=user,
                         date__week=week
-                    ).aggregate(total_duration=Sum('duration'), total_day=Count('date'))
+                    )
+                    appointments_duration = queryset.aggregate(total_duration=Sum('duration'), total_day=Count('date'))
+
                     if appointments_duration['total_duration']:
                         temp_dict = {
                             'hours': 0,
+                            'hours_work_current_week': 0,
                             'average_hours': 0,
                             'days_without_work': 0,
                         }
                         total_seconds = appointments_duration['total_duration'].total_seconds()
                         hours = int(total_seconds // 3600 or 0)
                         temp_dict['hours'] = hours
+                        if year == current_year and week >= current_week:
+                            start_of_week = current_date - timedelta(days=current_date.weekday())
+                            appointments_duration_current_date = queryset.filter(
+                                date__range=(start_of_week, current_date)
+                            ).aggregate(
+                                total_duration=Sum('duration'),
+                                total_day=Count('date')
+                            )
 
-                        days = appointments_duration['total_day']
-                        temp_dict['average_hours'] = int(hours / days)
+                            if appointments_duration_current_date['total_duration']:
+                                total_seconds = appointments_duration_current_date['total_duration'].total_seconds()
+                                hours = int(total_seconds // 3600 or 0)
+                                temp_dict['hours_work_current_week'] = hours
+                                days = appointments_duration_current_date['total_day']
+                                temp_dict['average_hours'] = int(hours / days)
+                            else:
+                                temp_dict['hours_work_current_week'] = 0
+                        else:
+                            temp_dict['hours_work_current_week'] = hours
+                            days = appointments_duration['total_day']
+                            temp_dict['average_hours'] = int(hours / days)
 
                         closest_appointment = Appointment.objects.filter(
                             user=user,
-                            date__lt=current_date
+                            date__lt=current_date + timedelta(days=1)
                         ).order_by('-date').first()
                         if closest_appointment:
                             closest_date = datetime.combine(closest_appointment.date,
-                                                            datetime.min.time())  # Convert to datetime
+                                                            datetime.min.time())
                             closest_date = timezone.make_aware(closest_date, timezone.get_current_timezone())
                             days_difference = (current_date - closest_date).days
                         else:
@@ -156,9 +188,9 @@ class StatisticView(LoginRequiredMixin, TemplateView):
                         temp_dict['days_without_work'] = (closest_date, days_difference)
 
                         user_work_dict[user] = temp_dict
-
-                user_works_dict[week] = user_work_dict
-            full_dict[year] = user_works_dict
+                sorted_dict = dict(sorted(user_work_dict.items(), key=lambda x: str(x[0])))
+                user_works_dict[week] = sorted_dict
+            full_dict[year] = dict(sorted(user_works_dict.items(), key=lambda x: x[0], reverse=True))
         context['full_dict'] = full_dict
         # pprint(context)
         return context
