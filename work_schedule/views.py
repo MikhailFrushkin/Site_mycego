@@ -186,6 +186,19 @@ class WorkSchedule(LoginRequiredMixin, FormView):
         return self.render_to_response(self.get_context_data(form=form, appointments=appointments))
 
 
+class GrafUser(LoginRequiredMixin, ListView):
+    model = Appointment
+    template_name = 'work/graf_user.html'
+    login_url = '/users/login/'
+    success_url = reverse_lazy('work:graf_user')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        appointments = Appointment.objects.filter(user=self.request.user, verified=True).order_by('date')
+        context['appointments'] = appointments
+        return context
+
+
 class EditWork(LoginRequiredMixin, TemplateView):
     template_name = 'work/edit_work.html'
     login_url = '/users/login/'
@@ -328,10 +341,10 @@ class EditWork(LoginRequiredMixin, TemplateView):
                     # Объединяем два списка с использованием логического ИЛИ
                     updated_work_hours = [a | b for a, b in zip(existing_work_hours, work_hours)]
                     # Обновляем запись в словаре
-                    user_dict[appointment.user] = updated_work_hours
+                    user_dict[(appointment.user, appointment.verified)] = updated_work_hours
                 else:
                     # Если записи нет, создаем новую
-                    user_dict[appointment.user] = work_hours
+                    user_dict[(appointment.user, appointment.verified)] = work_hours
             work_hours_count = {hour: sum([user_work_hours[hour] for user_work_hours in user_dict.values()]) for
                                 hour in range(12)}
             work_schedule[(date_appointment, f'table-{index}')] = (user_dict, work_hours_count, flag, role_dict)
@@ -345,14 +358,3 @@ class EditWork(LoginRequiredMixin, TemplateView):
         return context
 
 
-class GrafUser(LoginRequiredMixin, ListView):
-    model = Appointment
-    template_name = 'work/graf_user.html'
-    login_url = '/users/login/'
-    success_url = reverse_lazy('work:graf_user')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        appointments = Appointment.objects.filter(user=self.request.user, verified=True).order_by('date')
-        context['appointments'] = appointments
-        return context

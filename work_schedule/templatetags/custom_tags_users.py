@@ -6,7 +6,11 @@ register = template.Library()
 
 @register.simple_tag
 def custom_dropdown(user_name, hours, users, num):
-    html = f'<tr><th scope="row">{num}</th>'
+    if user_name[1]:
+        mes = ''
+    else:
+        mes = '(не подтверждено)'
+    html = f'<tr><th scope="row">{num}    {mes}</th>'
 
     for hour in hours:
         html += '<td><select class="form-select'
@@ -17,7 +21,7 @@ def custom_dropdown(user_name, hours, users, num):
         html += ' w-auto text-white" aria-label="Запись">'
 
         if hour:
-            html += f'<option selected>{user_name}</option>'
+            html += f'<option selected>{user_name[0]}</option>'
         else:
             html += '<option selected>Нет</option>'
 
