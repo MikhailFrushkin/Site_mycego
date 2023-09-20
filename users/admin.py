@@ -10,7 +10,7 @@ class CustomUserAdmin(UserAdmin):
     form = CustomUserChangeForm
     model = CustomUser
 
-    list_display = ('username', 'role', 'status_work')
+    list_display = ('id', 'username', 'role', 'status_work')
 
     fieldsets = UserAdmin.fieldsets + (
         ('Доп. инофрмация', {'fields': ('role', 'status_work', 'photo', 'phone_number',

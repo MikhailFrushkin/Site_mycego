@@ -12,7 +12,14 @@ def db_backup():
 def start():
     scheduler = BackgroundScheduler()
     scheduler.add_jobstore(DjangoJobStore(), 'default')
-    scheduler.add_job(db_backup, 'interval', minutes=720, jobstore='default', id='day_backup', replace_existing=True)
+
+    # Установите желаемое время для выполнения резервного копирования базы данных
+    backup_time = "04:00"  # Например, 4:00 утра
+
+    # Запустите задачу каждый день в указанное время
+    scheduler.add_job(db_backup, 'cron', hour=backup_time.split(':')[0], minute=backup_time.split(':')[1],
+                      jobstore='default', id='day_backup', replace_existing=True)
+
     register_events(scheduler)
     print('Создался backup')
     scheduler.start()
