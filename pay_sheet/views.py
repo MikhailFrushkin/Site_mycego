@@ -144,8 +144,8 @@ class PaySheet(LoginRequiredMixin, TemplateView):
             salary = sum([day_hour * user.role.salary for day_hour in users_dict[user]['week_hours_work']])
 
         users_dict[user]['salary'] = salary
-
         #высчитывание коэффецента к зарплате
+        mess = ''
         try:
             work_totals_dict = calculate_work_totals_for_week(user, users_dict[user]['hours'], monday, sunday)
             kf = sum([i[1] for i in work_totals_dict.values()]) * 100
@@ -153,13 +153,18 @@ class PaySheet(LoginRequiredMixin, TemplateView):
 
             if users_dict[user]['hours'] < 20:
                 result_salary = 0
+                mess = 'Отработанно меньше 20 часов'
             elif kf >= 80:
                 result_salary = salary
             else:
                 result_salary = round(salary * kf / 100, 2)
+                mess = 'Коэффецент меньше 80%'
+
             users_dict[user]['result_salary'] = result_salary
         except Exception as ex:
             pass
+        users_dict[user]['comment'] = mess
+
         pprint(context)
         logger.success(datetime.datetime.now() - time_start)
         return context

@@ -1,4 +1,6 @@
 from django import forms
+
+from users.models import CustomUser
 from .models import WorkRecord, Standards, WorkRecordQuantity
 from django.db.models import Q
 
@@ -24,6 +26,32 @@ class WorkRecordForm(forms.ModelForm):
                     standards = standards.filter(type_for_printer=False)
             except Exception as ex:
                 print(ex)
+        for standard in standards.order_by('id'):
+            self.fields[f'{standard.name}'] = forms.IntegerField(
+                label=standard.name,
+                initial=0,
+                required=False
+            )
+
+
+class WorkRecordFormAdmin(forms.ModelForm):
+    user = forms.ModelChoiceField(
+        queryset=CustomUser.objects.filter(status_work=True),
+        label='Сотрудник',
+        widget=forms.Select(attrs={'class': 'form-select form-select-lg mb-3'})
+    )
+    class Meta:
+        model = WorkRecord
+        fields = ['user', 'date', 'hours']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(WorkRecordFormAdmin, self).__init__(*args, **kwargs)
+
+        standards = Standards.objects.all()
+
         for standard in standards.order_by('id'):
             self.fields[f'{standard.name}'] = forms.IntegerField(
                 label=standard.name,

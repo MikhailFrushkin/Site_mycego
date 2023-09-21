@@ -1,0 +1,89 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+{% block title %}
+{% trans 'Лист выполненных работ' %}
+{% endblock %}
+
+{% block link %}
+<link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'my_js/myjs.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="gradient-border" id="box" style="width:400px!important;">
+    <form method="post">
+        {% csrf_token %}
+        <div class="input-group mb-3">
+            <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ form.user.label }}</span>
+            <select name="{{ form.user.name }}" class="form-select">
+                <option value="" selected disabled hidden>Выберите пользователя</option>
+                {% for user in form.user.field.queryset %}
+                    <option value="{{ user.pk }}" {% if user.pk == form.user.value %}selected{% endif %}>
+                        {{ user }}
+                    </option>
+                {% endfor %}
+            </select>
+            {% if form.user.errors %}
+            <div class="error-message">
+                {{ form.user.errors }}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="input-group mb-3">
+            <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ form.date.label }}</span>
+            <input type="{{ form.date.field.widget.input_type }}"
+                   name="{{ form.date.name }}"
+                   class="{% if form.date.errors %} error{% endif %} narrower-input2"
+                   id="{{ form.date.id_for_label }}"
+                   placeholder="0"
+                   {% if form.date.value %} value="{{ form.date.value }}" {% endif %}>
+            {% if form.date.errors %}
+            <div class="error-message">
+                {{ form.date.errors }}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="input-group mb-3">
+            <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ form.hours.label }}</span>
+            <input type="{{ form.hours.field.widget.input_type }}"
+                   name="{{ form.hours.name }}"
+                   class="{% if form.hours.errors %} error{% endif %} narrower-input2"
+                   id="{{ form.hours.id_for_label }}"
+                   placeholder="0"
+                   {% if form.hours.value %} value="{{ form.hours.value }}" {% endif %}>
+            {% if form.hours.errors %}
+            <div class="error-message">
+                {{ form.hours.errors }}
+            </div>
+            {% endif %}
+        </div>
+
+        {% for field in form %}
+        {% if field.name != 'user' and field.name != 'date' and field.name != 'hours' %}
+        <div class="input-group mb-3">
+            <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ field.label }}</span>
+            <input type="{{ field.field.widget.input_type }}"
+                   name="{{ field.name }}"
+                   class="{% if field.errors %} error{% endif %} narrower-input2"
+                   id="{{ field.id_for_label }}"
+                   placeholder="0"
+                   {% if field.value %} value="{{ field.value }}" {% endif %}>
+            {% if field.errors %}
+            <div class="error-message">
+                {{ field.errors }}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+
+        <div class="centered-button">
+            <button type="submit" class="btn-grad btn-gradient-border btn-glow">Отправить</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -11,7 +11,7 @@ from loguru import logger
 
 from users.models import CustomUser
 from utils.utils import get_year_week
-from .forms import WorkRecordForm, WorkRecordQuantityForm
+from .forms import WorkRecordForm, WorkRecordQuantityForm, WorkRecordFormAdmin
 from .models import WorkRecordQuantity, Standards, WorkRecord
 
 
@@ -60,6 +60,49 @@ def create_work_record(request):
             return redirect('completed_works:completed_works_view')
 
     return render(request, 'completed_works/completed_works.html', {'form': form})
+
+
+def create_work_record_admin_add(request):
+    form = WorkRecordFormAdmin()
+    if request.method == 'POST' and request.user.is_staff:
+        print(request.POST)
+        try:
+            work_record = form.save(commit=False)
+            work_record.is_checked = False
+            work_record.user = CustomUser.objects.get(id=request.POST['user'])
+            work_record.hours = int(request.POST['hours'])
+            work_record.date = datetime.datetime.strptime(request.POST['date'], '%Y-%m-%d')
+        except Exception as ex:
+            print(ex)
+            messages.error(request, 'Ошибки в полях')
+            return redirect('completed_works:completed_works_admin_add')
+        try:
+            exec_work_records = WorkRecord.objects.get(user=work_record.user, date=work_record.date)
+            messages.error(request, 'Запись на эту дату существует')
+            return redirect('completed_works:completed_works_admin_add')
+        except:
+            standards = Standards.objects.all()
+
+            # Проверка, что все поля quantity не равны нулю
+            has_non_zero_quantity = False
+            for standard in standards:
+                quantity = request.POST.get(standard.name, None)
+                if quantity is not None and quantity != 0:
+                    has_non_zero_quantity = True
+                    break
+            if has_non_zero_quantity:
+                work_record.save()
+                for standard in standards:
+                    quantity = request.POST.get(standard.name, None)
+                    if not quantity:
+                        quantity = 0
+                    WorkRecordQuantity.objects.create(work_record=work_record, standard=standard, quantity=quantity)
+                return redirect('completed_works:completed_works_view')
+            else:
+                messages.error(request, 'Ни одно количество не указано или все равно нулю.')
+                return render(request, 'completed_works/completed_works_admin_add.html', {'form': form})
+
+    return render(request, 'completed_works/completed_works_admin_add.html', {'form': form})
 
 
 class ViewWorks(LoginRequiredMixin, ListView, FormView):
