@@ -143,11 +143,16 @@
                                             </a>
                                         </li>
                                         <li class="menu-item">
-                                            <a href="{% url 'pay_sheet:pay_sheet' %}">
+                                            <a href="#">
                                                 Расчетный лист
                                             </a>
                                         </li>
                                         {% if request.user.is_staff %}
+                                        <li class="menu-item">
+                                            <a href="{% url 'pay_sheet:pay_sheet' %}">
+                                                Расчетные листы
+                                            </a>
+                                        </li>
                                         <li class="menu-item">
                                             <a href="{% url 'effectiveness:effectiveness_statistic' %}">
                                                 Статистика

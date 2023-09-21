@@ -14,7 +14,80 @@
 {% endblock %}
 
 {% block content %}
-
+<style>
+    .card.card-body {
+    background-color: inherit;
+}
+</style>
 {% choice_date year week monday sunday %}
+<h3>С {{monday}} по {{sunday}}</h3>
+<br><br>
+<p style="font-size: 16px;">Всего часов отработанно: {{ total_hours }} ч.</p>
+<p style="font-size: 16px;">По графику насчитано: {{ total_salary }} р.</p>
+<p style="font-size: 16px;">Итого к выплате: {{ total_result_salary }} р.</p>
+<br><br>
+
+<table class="table-responsive-sm">
+    <thead>
+    <tr style="font-size: 16px;">
+        <th scope="col" style="width: 3%;">№</th>
+        <th scope="col" style="width: 15%;">Сотрудник</th>
+        <th scope="col" style="width: 10%;">Должность</th>
+        <th scope="col" style="width: 7%;">Ставка</th>
+        <th scope="col" style="width: 7%;">Отработано часов</th>
+        <th scope="col" style="width: 7%;">Сумма</th>
+        <th scope="col" style="width: 11%;">Работы</th>
+        <th scope="col" style="width: 5%;">Дней по 12 часов</th>
+        <th scope="col" style="width: 8%;">Коэффицент</th>
+        <th scope="col" style="width: 7%;">Итоговая сумма</th>
+        <th scope="col" style="width: 10%;">Премия</th>
+        <th scope="col" style="width: 10%;">Штраф</th>
+        <th scope="col" style="width: 10%;">Комментарий</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for user, value in users_dict.items %}
+    <tr style="font-size: 16px;">
+        <th scope="row">{{ forloop.counter }}</th>
+        <td>{{user}}</td>
+        <td>{{user.role.name}}</td>
+        <td>{{user.role.salary}} <br>руб/час</td>
+
+        <td>{{value.hours}} ч.</td>
+        <td>{{value.salary}} р.</td>
+
+        <td>
+            <p>
+                <a class="btn-lg" data-bs-toggle="collapse" href="#collapseExample{{ forloop.counter }}" role="button"
+                   aria-expanded="false" aria-controls="collapseExample">
+                    Все работы
+                </a>
+            </p>
+            <div class="collapse" id="collapseExample{{ forloop.counter }}">
+                <div class="card card-body">
+                    {% for i, j in value.works.items %}
+                    <span style="font-size: 12px!important;">{{ forloop.counter }}.{{i}} - {{j.0}}</span>
+                    <br>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </td>
+
+        <td>{{value.count_of_12}}</td>
+        <td>{{value.kf}} %</td>
+        <td>{{value.result_salary}} р.</td>
+        <td>
+            <input type="number" name="bonus_{{ forloop.counter }}" placeholder="Премия" min="0">
+        </td>
+        <td>
+            <input type="number" name="penalty_{{ forloop.counter }}" placeholder="Штраф" min="0">
+        </td>
+        <td>{{value.comment}}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
 
 {% endblock %}

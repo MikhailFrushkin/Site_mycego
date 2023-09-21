@@ -1,17 +1,11 @@
 import datetime
 
-from pprint import pprint
-
-from django.apps import apps
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.http import Http404
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 from loguru import logger
-from openpyxl.utils import get_column_letter
-from openpyxl.workbook import Workbook
 
 from completed_works.models import WorkRecord, WorkRecordQuantity, Standards
 from users.models import CustomUser
@@ -93,10 +87,14 @@ class PaySheet(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        if not self.request.user.is_staff:
+            raise Http404
         time_start = datetime.datetime.now()
         users_dict = {}
+        total_salary = 0
+        total_result_salary = 0
 
-        user = get_object_or_404(CustomUser, id=self.request.user.id)
+        # user = get_object_or_404(CustomUser, id=self.request.user.id)
 
         year = self.request.GET.get('year', None)
         week = self.request.GET.get('week', None)
@@ -104,68 +102,93 @@ class PaySheet(LoginRequiredMixin, TemplateView):
             today = datetime.date.today()
             year = today.year
             week = today.isocalendar()[1]
-        monday, sunday = get_dates(year, week)
-
-        queryset_appointments = Appointment.objects.filter(user=user, date__year=year, date__week=week)
-
-        queryset_work_lists = WorkRecord.objects.filter(user=user, date__year=year, date__week=week)
-
-        week_hours_work = []
-        for i in range(7):
-            date_day = monday + datetime.timedelta(days=i)
-            try:
-                duration_day = sum([int(i.duration.total_seconds() / 3600) for i in queryset_appointments.filter(user=user, date=date_day)])
-                week_hours_work.append(duration_day)
-            except Exception as ex:
-                print(ex)
-                week_hours_work.append(0)
-
-        users_dict[user] = {'week_hours_work': week_hours_work}
-        users_dict[user]['hours'] = sum(users_dict[user]['week_hours_work'])
-        count_of_12 = users_dict[user]['week_hours_work'].count(12)
-        users_dict[user]['count_of_12'] = count_of_12
-
-        users_dict[user]['flag'] = True if count_of_12 >= 3 else False
-        context['users_dict'] = users_dict
-        context['year'], context['week'] = get_year_week(self.request.GET)
-
-        #Высчитывание зарплаты по часам
-        salary = 0
-        if user.role.name == 'Упаковщик' or user.role.name == 'Упаковщик 2':
-            if users_dict[user]['flag']:
-                for day_hour in users_dict[user]['week_hours_work']:
-                    if day_hour == 12:
-                        salary += 12 * 150
-                    else:
-                        salary += day_hour * 120
-            else:
-                salary = sum([day_hour * 120 for day_hour in users_dict[user]['week_hours_work']])
         else:
-            salary = sum([day_hour * user.role.salary for day_hour in users_dict[user]['week_hours_work']])
+            year, week = int(year), int(week)
+        monday, sunday = get_dates(year, week)
+        for user in CustomUser.objects.all():
+            queryset_appointments = Appointment.objects.filter(user=user, date__year=year, date__week=week,
+                                                               verified=True)
 
-        users_dict[user]['salary'] = salary
-        #высчитывание коэффецента к зарплате
-        mess = ''
-        try:
-            work_totals_dict = calculate_work_totals_for_week(user, users_dict[user]['hours'], monday, sunday)
-            kf = sum([i[1] for i in work_totals_dict.values()]) * 100
-            users_dict[user]['kf'] = kf
+            week_hours_work = []
+            for i in range(7):
+                date_day = monday + datetime.timedelta(days=i)
+                try:
+                    duration_day = sum([int(i.duration.total_seconds() / 3600) for i in
+                                        queryset_appointments.filter(user=user, date=date_day)])
+                    week_hours_work.append(duration_day)
+                except Exception as ex:
+                    print(ex)
+                    week_hours_work.append(0)
 
-            if users_dict[user]['hours'] < 20:
-                result_salary = 0
-                mess = 'Отработанно меньше 20 часов'
-            elif kf >= 80:
-                result_salary = salary
+            users_dict[user] = {'week_hours_work': week_hours_work}
+            users_dict[user]['hours'] = sum(users_dict[user]['week_hours_work'])
+            count_of_12 = users_dict[user]['week_hours_work'].count(12)
+            users_dict[user]['count_of_12'] = count_of_12
+
+            users_dict[user]['flag'] = True if count_of_12 >= 3 else False
+
+
+            # Высчитывание зарплаты по часам
+            salary = 0
+            mess = ''
+
+            if user.role.name == 'Упаковщик 2':
+                if users_dict[user]['flag']:
+                    for day_hour in users_dict[user]['week_hours_work']:
+                        if day_hour == 12:
+                            salary += 12 * 150
+                        else:
+                            salary += day_hour * 120
+                else:
+                    salary = sum([day_hour * 120 for day_hour in users_dict[user]['week_hours_work']])
+                    mess = 'Не отработано 3 дня по 12ч.'
             else:
-                result_salary = round(salary * kf / 100, 2)
-                mess = 'Коэффецент меньше 80%'
+                salary = sum([day_hour * user.role.salary for day_hour in users_dict[user]['week_hours_work']])
 
-            users_dict[user]['result_salary'] = result_salary
-        except Exception as ex:
-            pass
-        users_dict[user]['comment'] = mess
+            users_dict[user]['salary'] = salary
+            total_salary += salary
+            # высчитывание коэффецента к зарплате
+            try:
+                work_totals_dict = calculate_work_totals_for_week(user, users_dict[user]['hours'], monday, sunday)
+                if work_totals_dict:
+                    users_dict[user]['works'] = work_totals_dict
+                    kf = sum([i[1] for i in work_totals_dict.values()]) * 100
+                    users_dict[user]['kf'] = round(kf, 2)
 
-        pprint(context)
+                    if users_dict[user]['hours'] < 20 and user.role.name == 'Упаковщик':
+                        result_salary = 0
+                        mess = 'Отработанно меньше 20 часов'
+                    elif kf >= 80:
+                        result_salary = salary
+                    else:
+                        result_salary = round(salary * kf / 100, 2)
+                        mess = 'Коэффецент меньше 80%'
+
+                    users_dict[user]['result_salary'] = result_salary
+                    total_result_salary += result_salary
+                else:
+                    users_dict[user]['works'] = {}
+                    users_dict[user]['kf'] = 0
+                    users_dict[user]['result_salary'] = 0
+                    mess = 'Не работал'
+                    if user.status_work == False:
+                        mess = 'Уволен'
+            except Exception as ex:
+                pass
+            users_dict[user]['comment'] = mess
+        sorted_dict = dict(sorted(users_dict.items(), key=lambda x: str(x[0])))
+        context['users_dict'] = sorted_dict
+
+        timedelta_tuples = Appointment.objects.filter(date__week=week, verified=True).values_list('duration')
+        timedelta_list = [item[0] for item in timedelta_tuples]
+        total_hours = int(sum([i.total_seconds() for i in timedelta_list]) // 3600)
+        context['total_hours'] = total_hours
+        context['total_salary'] = total_salary
+        context['total_result_salary'] = total_result_salary
+
+        context['year'], context['week'] = get_year_week(self.request.GET, 'salary')
+        context['monday'], context['sunday'] = monday, sunday
+        # pprint(context)
         logger.success(datetime.datetime.now() - time_start)
         return context
 
@@ -175,14 +198,17 @@ def calculate_work_totals_for_week(user, hours, week_start_date, week_end_date):
     work_records = WorkRecord.objects.filter(user=user, date__range=(week_start_date, week_end_date), is_checked=True)
 
     # Используйте агрегацию, чтобы вычислить сумму работы для каждого вида работы
-    work_totals = WorkRecordQuantity.objects.filter(work_record__in=work_records).values('standard').annotate(total_quantity=Sum('quantity'))
+    work_totals = WorkRecordQuantity.objects.filter(work_record__in=work_records).values('standard').annotate(
+        total_quantity=Sum('quantity'))
 
     # Создайте словарь, в котором ключами будут объекты модели Standards, а значениями - суммарное количество работы
     work_totals_dict = {}
-    for work_total in work_totals:
-        standard_id = work_total['standard']
-        total_quantity = work_total['total_quantity']
-        standard = Standards.objects.get(pk=standard_id)
-        work_totals_dict[standard] = (total_quantity, total_quantity / (hours * standard.standard))
+    if work_totals:
+        for work_total in work_totals:
+            standard_id = work_total['standard']
+            total_quantity = work_total['total_quantity']
+            if total_quantity > 0:
+                standard = Standards.objects.get(pk=standard_id)
+                work_totals_dict[standard] = (total_quantity, total_quantity / (hours * standard.standard))
 
     return work_totals_dict

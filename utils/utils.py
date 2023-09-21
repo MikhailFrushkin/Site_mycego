@@ -28,7 +28,7 @@ def get_year_week(data, type=None):
     except Exception as ex:
         today = datetime.date.today()
         year = today.year
-        if type == 'list_work':
+        if type == 'list_work' or type == 'salary':
             week = today.isocalendar()[1]
         else:
             week = today.isocalendar()[1] + 1
