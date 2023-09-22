@@ -2,13 +2,14 @@ from datetime import timedelta
 
 from django.utils import timezone
 from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from loguru import logger
 import locale
 from users.models import CustomUser
 from work_schedule.models import Appointment
 
 
-class MainPage(TemplateView):
+class MainPage(LoginRequiredMixin, TemplateView):
     template_name = 'main_page/main.html'
     login_url = '/users/login/'
 
