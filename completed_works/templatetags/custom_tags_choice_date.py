@@ -8,7 +8,7 @@ register = template.Library()
 
 
 @register.simple_tag
-def choice_date(year=None, week=None, monday=None, sunday=None):
+def choice_date(year=None, week=None, monday=None, sunday=None, download_excel=True):
     if not year:
         today = datetime.date.today()
         year = today.year
@@ -50,11 +50,17 @@ def choice_date(year=None, week=None, monday=None, sunday=None):
                         С {monday} по {sunday}
                     </h4>
                 </div>
-                <div>
+        """
+    if download_excel:
+        html += """
+        <div>
                 <a class="fw-4 fs-20" href="?download_excel=1&year={year}&week={week}">Скачать Excel</a>
                 </div>
             </div>
         </div>
         """
-
+    else:
+        html += """
+        </div>
+        </div>"""
     return mark_safe(html)

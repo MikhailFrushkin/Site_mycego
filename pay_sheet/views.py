@@ -1,13 +1,19 @@
 import datetime
-
+import json
+from pprint import pprint
+import locale
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum
-from django.http import Http404
+from django.http import Http404, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
+from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
 from loguru import logger
 
 from completed_works.models import WorkRecord, WorkRecordQuantity, Standards
+from pay_sheet.models import PaySheetModel
 from users.models import CustomUser
 from utils.utils import get_year_week, get_dates
 from work_schedule.models import Appointment
@@ -17,73 +23,6 @@ class PaySheet(LoginRequiredMixin, TemplateView):
     template_name = 'pay_sheet/pay_sheet.html'
     login_url = '/users/login/'
     success_url = reverse_lazy('pay_sheet:pay_sheet')
-
-    # def create_excel_file(self, queryset, week):
-    #     workbook = Workbook()
-    #     worksheet = workbook.active
-    #     worksheet.title = 'Записи на работу'
-    #
-    #     # Получите модель 'Appointment' из вашего приложения
-    #     appointment_model = apps.get_model(app_label='work_schedule', model_name='Appointment')
-    #
-    #     # Получите метаданные модели, чтобы получить поля
-    #     model_fields = appointment_model._meta.fields
-    #
-    #     # Добавьте столбец "Role" к заголовкам столбцов
-    #     headers = [field.verbose_name for field in model_fields]
-    #     headers.append('Должность')
-    #
-    #     # Создайте заголовки столбцов на основе полей модели
-    #     for col_num, header in enumerate(headers, 1):
-    #         worksheet.cell(row=1, column=col_num, value=header)
-    #
-    #     # Заполните данные из queryset
-    #     for row_num, appointment in enumerate(queryset, 2):
-    #         for col_num, field in enumerate(model_fields, 1):
-    #             cell_value = getattr(appointment, field.name)
-    #
-    #             # Получите должность пользователя и добавьте ее в конец строки
-    #             if field.name == 'user' and isinstance(cell_value, CustomUser):
-    #                 worksheet.cell(row=row_num, column=col_num, value=cell_value.username)
-    #                 worksheet.cell(row=row_num, column=len(headers), value=cell_value.role.name)
-    #             else:
-    #                 worksheet.cell(row=row_num, column=col_num, value=cell_value)
-    #
-    #             max_length = len(str(cell_value))
-    #             column_letter = get_column_letter(col_num)
-    #             if worksheet.column_dimensions[column_letter].width is None or worksheet.column_dimensions[
-    #                 column_letter].width < max_length:
-    #                 worksheet.column_dimensions[column_letter].width = max_length
-    #
-    #     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    #     response['Content-Disposition'] = f'attachment; filename={week} week.xlsx'
-    #     workbook.save(response)
-    #
-    #     return response
-    #
-    # def get(self, request, *args, **kwargs):
-    #     queryset = self.get_queryset()
-    #     if 'download_excel' in request.GET:
-    #         try:
-    #             year = self.request.GET.get('year', None)
-    #             week = self.request.GET.get('week', None)
-    #             if not year or not week:
-    #                 today = datetime.date.today()
-    #                 year = today.year
-    #                 week = today.isocalendar()[1]
-    #
-    #             queryset = Appointment.objects.filter(
-    #                 date__year=year,
-    #                 date__week=week
-    #             )
-    #         except:
-    #             pass
-    #
-    #         excel_response = self.create_excel_file(queryset, week)
-    #         return excel_response
-    #
-    #     context = self.get_context_data()
-    #     return self.render_to_response(context)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -117,7 +56,6 @@ class PaySheet(LoginRequiredMixin, TemplateView):
                                         queryset_appointments.filter(user=user, date=date_day)])
                     week_hours_work.append(duration_day)
                 except Exception as ex:
-                    print(ex)
                     week_hours_work.append(0)
 
             users_dict[user] = {'week_hours_work': week_hours_work}
@@ -126,7 +64,6 @@ class PaySheet(LoginRequiredMixin, TemplateView):
             users_dict[user]['count_of_12'] = count_of_12
 
             users_dict[user]['flag'] = True if count_of_12 >= 3 else False
-
 
             # Высчитывание зарплаты по часам
             salary = 0
@@ -176,6 +113,15 @@ class PaySheet(LoginRequiredMixin, TemplateView):
             except Exception as ex:
                 pass
             users_dict[user]['comment'] = mess
+
+            try:
+                row = PaySheetModel.objects.get(user=user, week=week, year=year)
+                users_dict[user]['bonus'] = row.bonus
+                users_dict[user]['penalty'] = row.penalty
+            except:
+                users_dict[user]['bonus'] = 0
+                users_dict[user]['penalty'] = 0
+
         sorted_dict = dict(sorted(users_dict.items(), key=lambda x: str(x[0])))
         context['users_dict'] = sorted_dict
 
@@ -212,3 +158,102 @@ def calculate_work_totals_for_week(user, hours, week_start_date, week_end_date):
                 work_totals_dict[standard] = (total_quantity, total_quantity / (hours * standard.standard))
 
     return work_totals_dict
+
+
+@login_required
+@require_POST
+def created_salary_check(request):
+    try:
+        locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
+        data_str = list(request.POST.keys())[0]
+        data_dict = json.loads(data_str)
+
+        rowData = data_dict.get('rowData', [])
+        year = data_dict.get('year')
+        week = data_dict.get('week')
+        clean_data = map(clean_data_post, rowData)
+        dict_pays = {}
+        for row in clean_data:
+            try:
+
+                user = CustomUser.objects.get(username=row[0])
+                temp = {
+                    'year': year,
+                    'week': week,
+                    'role': row[1],
+                    'role_salary': row[2],
+                    'hours': round(float(row[3]), 2) if row[3] != '' else 0,
+                    'salary': round(float(row[4]), 2) if row[4] != '' else 0,
+                    'works': row[5],
+                    'count_of_12': int(row[6]) if row[6] != '' else 0,
+                    'kf': round(float(row[7]), 2) if row[7] != '' else 0,
+                    'result_salary': round(float(row[8]), 2) if row[8] != '' else 0,
+                    'bonus': round(abs(float(row[9])), 2) if row[9] != '' else 0,
+                    'penalty': round(abs(float(row[10])), 2) if row[10] != '' else 0,
+                    'comment': row[11],
+                }
+                temp['result_salary'] = round(temp['result_salary'] + temp['bonus'] - temp['penalty'], 2)
+                dict_pays[user] = temp
+            except Exception as ex:
+                print(ex)
+
+        try:
+            # Цикл для создания и сохранения объектов PaySheetModel
+            for user, data in dict_pays.items():
+                try:
+                    # Проверяем существование записи для данного пользователя, недели и года
+                    pay_sheet = PaySheetModel.objects.get(user=user, year=data['year'], week=data['week'])
+                    # Обновляем поля записи данными из запроса
+                    pay_sheet.role = data['role']
+                    pay_sheet.role_salary = data['role_salary']
+                    pay_sheet.hours = data['hours']
+                    pay_sheet.salary = data['salary']
+                    pay_sheet.works = data['works']
+                    pay_sheet.count_of_12 = data['count_of_12']
+                    pay_sheet.kf = data['kf']
+                    pay_sheet.result_salary = data['result_salary']
+                    pay_sheet.bonus = data['bonus']
+                    pay_sheet.penalty = data['penalty']
+                    pay_sheet.comment = data['comment']
+                    pay_sheet.save()
+                except PaySheetModel.DoesNotExist:
+                    # Если запись не существует, создаем новую
+                    pay_sheet = PaySheetModel(
+                        user=user,
+                        year=data['year'],
+                        week=data['week'],
+                        role=data['role'],
+                        role_salary=data['role_salary'],
+                        hours=data['hours'],
+                        salary=data['salary'],
+                        works=data['works'],
+                        count_of_12=data['count_of_12'],
+                        kf=data['kf'],
+                        result_salary=data['result_salary'],
+                        bonus=data['bonus'],
+                        penalty=data['penalty'],
+                        comment=data['comment'],
+                    )
+                    pay_sheet.save()
+
+            return JsonResponse({'message': 'Успешно'})
+        except Exception as ex:
+            print(ex)
+            return JsonResponse({'message': 'Произошла ошибка'})
+
+    except Exception as ex:
+        print(ex)
+        return JsonResponse({'message': 'Произошла ошибка'})
+
+
+def clean_data_post(row):
+    output_row = [i.replace('\n', '')
+                  .replace('  ', '')
+                  .replace('Все работы', '')
+                  .replace('р.', '')
+                  .replace('%', '')
+                  .replace('ч.', '')
+                  .replace(',', '.')
+                  .replace('руб/час', '').strip()
+                  for i in row]
+    return output_row

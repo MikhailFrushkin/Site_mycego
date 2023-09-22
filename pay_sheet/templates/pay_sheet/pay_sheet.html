@@ -19,7 +19,7 @@
     background-color: inherit;
 }
 </style>
-{% choice_date year week monday sunday %}
+{% choice_date year week monday sunday False %}
 <h3>С {{monday}} по {{sunday}}</h3>
 <br><br>
 <p style="font-size: 16px;">Всего часов отработанно: {{ total_hours }} ч.</p>
@@ -27,7 +27,7 @@
 <p style="font-size: 16px;">Итого к выплате: {{ total_result_salary }} р.</p>
 <br><br>
 
-<table class="table-responsive-sm">
+<table class="table-responsive-sm" id="{{week}}">
     <thead>
     <tr style="font-size: 16px;">
         <th scope="col" style="width: 3%;">№</th>
@@ -66,22 +66,21 @@
             <div class="collapse" id="collapseExample{{ forloop.counter }}">
                 <div class="card card-body">
                     {% for i, j in value.works.items %}
-                    <span style="font-size: 12px!important;">{{ forloop.counter }}.{{i}} - {{j.0}}</span>
+                    <span style="font-size: 12px!important;">{{i}} - {{j.0}};</span>
                     <br>
                     {% endfor %}
                 </div>
             </div>
-
         </td>
 
         <td>{{value.count_of_12}}</td>
         <td>{{value.kf}} %</td>
         <td>{{value.result_salary}} р.</td>
         <td>
-            <input type="number" name="bonus_{{ forloop.counter }}" placeholder="Премия" min="0">
+            <input type="number" name="bonus" placeholder="Премия" min="0" value="{{value.bonus}}">
         </td>
         <td>
-            <input type="number" name="penalty_{{ forloop.counter }}" placeholder="Штраф" min="0">
+            <input type="number" name="penalty" placeholder="Штраф" min="0" value="{{value.penalty}}">
         </td>
         <td>{{value.comment}}</td>
     </tr>
@@ -89,5 +88,64 @@
     </tbody>
 </table>
 
+<button class="btn btn-success w-auto btn-save" onclick="saveTableData({{week}}, {{year}}, {{week}})">
+    Сформировать расчетные листы
+</button>
+
+<script>
+    function saveTableData(tableId, year, week) {
+    const table = document.getElementById(tableId);
+    const rowDataList = [];
+    if (!table) {
+        console.error('Таблица не найдена');
+        return;
+    }
+
+    const rows = table.querySelectorAll('tbody tr');
+
+    rows.forEach(function (row) {
+        const rowData = [];
+        const cells = row.querySelectorAll('td');
+
+        cells.forEach(function (cell) {
+            const input = cell.querySelector('input[type="number"]');
+            if (input) {
+                const name = input.name;
+                const value = input.value;
+                rowData.push(value)
+            } else {
+                rowData.push(cell.textContent);
+            }
+        });
+
+        rowDataList.push(rowData)
+    });
+
+    const xhr = new XMLHttpRequest();
+    var csrftoken = getCookie('csrftoken');
+    xhr.open('POST', '/pay_sheet/created_salary_check/', true); // Замените на реальный URL сервера
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-CSRFToken', csrftoken);
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                console.log('Данные успешно отправлены на сервер');
+                location.reload();
+                // Здесь можно обрабатывать ответ сервера, если необходимо
+            } else {
+                console.error('Произошла ошибка при отправке данных на сервер');
+            }
+        }
+    };
+
+    const dataToSend = {
+        rowData: rowDataList,
+        year: year,
+        week: week,
+        };
+    xhr.send(JSON.stringify(dataToSend));
+    }
+</script>
 
 {% endblock %}
