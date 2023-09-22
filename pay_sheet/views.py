@@ -4,12 +4,13 @@ from pprint import pprint
 import locale
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.db.models import Sum
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
-from django.views.generic import TemplateView, ListView
+from django.views.generic import TemplateView, ListView, DetailView
 from loguru import logger
 
 from completed_works.models import WorkRecord, WorkRecordQuantity, Standards
@@ -19,8 +20,7 @@ from utils.utils import get_year_week, get_dates
 from work_schedule.models import Appointment
 
 
-class PaySheet(LoginRequiredMixin, ListView):
-    model = PaySheetModel
+class PaySheet(LoginRequiredMixin, TemplateView):
     template_name = 'pay_sheet/pay_sheet.html'
     login_url = '/users/login/'
     success_url = reverse_lazy('pay_sheet:pay_sheet')
@@ -38,13 +38,16 @@ class PaySheet(LoginRequiredMixin, ListView):
 
         year = self.request.GET.get('year', None)
         week = self.request.GET.get('week', None)
+        today = datetime.date.today()
+        current_week = today.isocalendar()[1]
+
         if not year or not week:
-            today = datetime.date.today()
             year = today.year
-            week = today.isocalendar()[1]
+            week = today.isocalendar()[1] - 1
         else:
             year, week = int(year), int(week)
         monday, sunday = get_dates(year, week)
+        print(year, week)
         for user in CustomUser.objects.all():
             queryset_appointments = Appointment.objects.filter(user=user, date__year=year, date__week=week,
                                                                verified=True)
@@ -87,32 +90,40 @@ class PaySheet(LoginRequiredMixin, ListView):
             total_salary += salary
             # высчитывание коэффецента к зарплате
             try:
-                work_totals_dict = calculate_work_totals_for_week(user, users_dict[user]['hours'], monday, sunday)
-                if work_totals_dict:
-                    users_dict[user]['works'] = work_totals_dict
-                    kf = sum([i[1] for i in work_totals_dict.values()]) * 100
-                    users_dict[user]['kf'] = round(kf, 2)
+                if users_dict[user]['hours'] != 0:
+                    work_totals_dict = calculate_work_totals_for_week(user, users_dict[user]['hours'], monday, sunday)
+                    logger.debug(user)
+                    logger.debug(work_totals_dict)
+                    if len(work_totals_dict) != 0:
+                        users_dict[user]['works'] = work_totals_dict
+                        kf = sum([i[1] for i in work_totals_dict.values()]) * 100
+                        users_dict[user]['kf'] = round(kf, 2)
 
-                    if users_dict[user]['hours'] < 20 and user.role.name == 'Упаковщик':
-                        result_salary = 0
-                        mess = 'Отработанно меньше 20 часов'
-                    elif kf >= 80:
-                        result_salary = salary
+                        if users_dict[user]['hours'] < 20 and user.role.name == 'Упаковщик':
+                            result_salary = 0
+                            mess = 'Отработанно меньше 20 часов'
+                        elif kf >= 80:
+                            result_salary = salary
+                        else:
+                            result_salary = round(salary * kf / 100, 2)
+                            mess = 'Коэффецент меньше 80%'
+
+                        users_dict[user]['result_salary'] = result_salary
+                        total_result_salary += result_salary
                     else:
-                        result_salary = round(salary * kf / 100, 2)
-                        mess = 'Коэффецент меньше 80%'
-
-                    users_dict[user]['result_salary'] = result_salary
-                    total_result_salary += result_salary
+                        users_dict[user]['works'] = {}
+                        users_dict[user]['kf'] = 0
+                        users_dict[user]['result_salary'] = 0
+                        mess = 'Нет сдельных листов'
+                        if user.status_work == False:
+                            mess = 'Уволен'
                 else:
                     users_dict[user]['works'] = {}
                     users_dict[user]['kf'] = 0
                     users_dict[user]['result_salary'] = 0
                     mess = 'Не работал'
-                    if user.status_work == False:
-                        mess = 'Уволен'
             except Exception as ex:
-                pass
+                print(ex)
             users_dict[user]['comment'] = mess
 
             try:
@@ -133,9 +144,12 @@ class PaySheet(LoginRequiredMixin, ListView):
         context['total_salary'] = total_salary
         context['total_result_salary'] = total_result_salary
 
-        context['year'], context['week'] = get_year_week(self.request.GET, 'salary')
+        context['year'], context['week'] = year, week
         context['monday'], context['sunday'] = monday, sunday
-        # pprint(context)
+
+        context['pay_sheets'] = PaySheetModel.objects.filter(year=year, week=week)
+        context['flag_button'] = False if current_week <= week else True
+        # pprint(context['users_dict'])
         logger.success(datetime.datetime.now() - time_start)
         return context
 
@@ -258,3 +272,44 @@ def clean_data_post(row):
                   .replace('руб/час', '').strip()
                   for i in row]
     return output_row
+
+
+class PaySheetListView(LoginRequiredMixin, ListView):
+    model = PaySheetModel
+    template_name = 'pay_sheet/list_user_pay_sheets.html'
+    context_object_name = 'pay_sheets'
+
+    def get_queryset(self):
+        current_user = self.request.user
+        # Фильтруем записи по пользователю, делающему запрос
+        queryset = PaySheetModel.objects.filter(user=current_user).order_by('-year', '-week')
+
+        # Вы можете добавить дополнительные фильтры или сортировку, если необходимо
+        # queryset = queryset.filter(дополнительные условия)
+
+        return queryset
+
+
+class PaySheetDetailView(LoginRequiredMixin, DetailView):
+    model = PaySheetModel
+    template_name = 'pay_sheet/pay_sheet_detail.html'
+    context_object_name = 'pay_sheet'
+    slug_field = 'pk'
+    slug_url_kwarg = 'pk'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        print(context)
+        if not self.test_func():
+            raise PermissionDenied
+        pay_sheet = self.get_object()
+        print(pay_sheet)
+        context['monday'], context['sunday'] = get_dates(pay_sheet.year, pay_sheet.week)
+        return context
+
+    def test_func(self):
+        # Получите объект записи, к которой осуществляется доступ
+        pay_sheet = self.get_object()
+
+        # Проверьте, что текущий пользователь - владелец записи или имеет права is_staff
+        return self.request.user == pay_sheet.user or self.request.user.is_staff

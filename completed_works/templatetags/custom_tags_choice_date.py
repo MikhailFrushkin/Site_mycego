@@ -8,11 +8,13 @@ register = template.Library()
 
 
 @register.simple_tag
-def choice_date(year=None, week=None, monday=None, sunday=None, download_excel=True):
+def choice_date(year=None, week=None, monday=None, sunday=None, download_excel=True, type_week=None):
     if not year:
         today = datetime.date.today()
         year = today.year
         week = today.isocalendar()[1]
+        if type_week:
+            week = today.isocalendar()[1] - 1
     if not monday:
         try:
             monday, sunday = get_dates(int(year), int(week))

@@ -5,7 +5,7 @@
 {% load custom_tags_choice_date %}
 
 {% block title %}
-{% trans 'Расчетный лист' %}
+{% trans 'Расчетные листы' %}
 {% endblock %}
 
 {% block link %}
@@ -19,12 +19,49 @@
     background-color: inherit;
 }
 </style>
-{% choice_date year week monday sunday False %}
-<h3>С {{monday}} по {{sunday}}</h3>
-<br><br>
-<p style="font-size: 16px;">Всего часов отработанно: {{ total_hours }} ч.</p>
-<p style="font-size: 16px;">По графику насчитано: {{ total_salary }} р.</p>
-<p style="font-size: 16px;">Итого к выплате: {{ total_result_salary }} р.</p>
+{% choice_date year week monday sunday False True %}
+
+<div class="container" style="margin: 0; margin-top: 20px;width: 100%;">
+    <div class="row align-items-start">
+        <div class="col">
+            <h3>С {{monday}} по {{sunday}}</h3>
+            <br><br>
+            <p style="font-size: 16px;">Всего часов отработано: {{ total_hours }} ч.</p>
+            <p style="font-size: 16px;">По графику насчитано: {{ total_salary }} р.</p>
+            <p style="font-size: 16px;">Итого к выплате: {{ total_result_salary }} р.</p>
+        </div>
+        <div class="col d-flex flex-column align-items-center">
+            <button class="btn-grad btn-gradient-border btn-glow" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseExample"
+                    aria-expanded="false" aria-controls="collapseExample">
+                Все расчетные листы
+            </button>
+            <div class="collapse" id="collapseExample">
+                <div class="card card-body" style="background-color:#130518;color:#198754!important;">
+                    <ol class="list-group list-group-numbered" style="font-size:14px;">
+                        {% for item in pay_sheets %}
+                        <li class="list-group-item" style="background-color:#130518;">
+                            <a href="{% url 'pay_sheet:pay_sheet_detail' item.id %}">{{item}}</a>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+            </div>
+        </div>
+        <div class="col d-flex flex-column align-items-center">
+            {% if flag_button %}
+            <button class="btn-grad btn-gradient-border btn-glow" onclick="saveTableData({{week}}, {{year}}, {{week}})">
+                Сформировать расчетные листы
+            </button>
+            {% else %}
+            <button class="btn-grad btn-gradient-border btn-glow" disabled>Сформировать расчетные листы</button>
+            <br>
+            <p class="text-center">Когда ты уже всё, а неделя еще нет</p>
+            {%endif%}
+        </div>
+    </div>
+</div>
+
 <br><br>
 
 <table class="table-responsive-sm" id="{{week}}">
@@ -49,7 +86,7 @@
     {% for user, value in users_dict.items %}
     <tr style="font-size: 16px;">
         <th scope="row">{{ forloop.counter }}</th>
-        <td>{{user}}</td>
+        <td><a href="{% url 'users:user_profile' user.id %}">{{user}}</a></td>
         <td>{{user.role.name}}</td>
         <td>{{user.role.salary}} <br>руб/час</td>
 
@@ -88,9 +125,6 @@
     </tbody>
 </table>
 
-<button class="btn btn-success w-auto btn-save" onclick="saveTableData({{week}}, {{year}}, {{week}})">
-    Сформировать расчетные листы
-</button>
 
 <script>
     function saveTableData(tableId, year, week) {

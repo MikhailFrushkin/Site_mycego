@@ -1,0 +1,33 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+{% load custom_tags_users %}
+{% load custom_tags_choice_date %}
+
+{% block title %}
+{% trans 'Расчетный лист' %}
+{% endblock %}
+
+{% block link %}
+<link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+
+<div class="card card-body" style="background-color:#130518;color:#198754!important;">
+    <ol class="list-group list-group-numbered" style="font-size:18px;">
+        {% if pay_sheets%}
+        {% for item in pay_sheets %}
+        <li class="list-group-item" style="background-color:#130518;">
+            <a href="{% url 'pay_sheet:pay_sheet_detail' item.id %}">{{item}}</a>
+        </li>
+        {% endfor %}
+        {% else %}
+        <h3>Дааа... Пока здесь пусто</h3>
+        {% endif %}
+    </ol>
+</div>
+
+{% endblock %}

@@ -11,7 +11,7 @@ class PaySheetModel(models.Model):
     role = models.CharField(verbose_name='Должность', max_length=50)
     role_salary = models.CharField(verbose_name='Ставка', max_length=10)
     hours = models.DecimalField(verbose_name='Часы', max_digits=10, decimal_places=2)
-    salary = models.DecimalField(verbose_name='Разплата по ставке', max_digits=10, decimal_places=2)
+    salary = models.DecimalField(verbose_name='Зарплата по ставке', max_digits=10, decimal_places=2)
     works = models.TextField(verbose_name='Выполненые работы')
     count_of_12 = models.IntegerField(verbose_name='Отработанно дней по 12 часов')
     kf = models.DecimalField(verbose_name='Коэффицент', max_digits=10, decimal_places=2)
