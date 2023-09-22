@@ -9,7 +9,7 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, ListView
 from loguru import logger
 
 from completed_works.models import WorkRecord, WorkRecordQuantity, Standards
@@ -19,7 +19,8 @@ from utils.utils import get_year_week, get_dates
 from work_schedule.models import Appointment
 
 
-class PaySheet(LoginRequiredMixin, TemplateView):
+class PaySheet(LoginRequiredMixin, ListView):
+    model = PaySheetModel
     template_name = 'pay_sheet/pay_sheet.html'
     login_url = '/users/login/'
     success_url = reverse_lazy('pay_sheet:pay_sheet')
