@@ -32,6 +32,11 @@
         <br><br>
     </div>
 </div>
+<div class="centered-button">
+    <button class="btn-grad btn-gradient-border btn-glow" id="save-all-button">
+        Утвердить все
+    </button>
+</div>
 
 {%for key, value in work_lists_dict.items %}
 <div class="collapse" id="collapseExample{{ forloop.counter }}">
@@ -104,5 +109,17 @@
     </div>
 </div>
 {% endfor %}
-
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var saveAllButton = document.getElementById('save-all-button');
+        if (saveAllButton) {
+            saveAllButton.addEventListener("click", function(event) {
+                event.preventDefault(); // Отменяем действие по умолчанию (переход по ссылке)
+                if (confirm('Вы уверены, что хотите сохранить все записи за эту неделю?')) {
+                    window.location.href = "{% url 'completed_works:save_all_row' week %}";
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

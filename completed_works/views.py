@@ -4,6 +4,7 @@ from pprint import pprint
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum, Q
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, FormView, TemplateView
@@ -153,6 +154,19 @@ def update_work_quantities(request):
     return redirect('completed_works:completed_works_view')
 
 
+def delete_work_record(request, work_record_id):
+    # Получите объект WorkRecord по его идентификатору
+    work_record = WorkRecord.objects.get(id=work_record_id)
+    print(work_record)
+    # Проверьте, что текущий пользователь равен владельцу записи и is_checked=False
+    if request.user == work_record.user and not work_record.is_checked:
+        # Удаляем запись
+        work_record.delete()
+
+    # После удаления, перенаправьте пользователя на нужную страницу
+    return redirect('completed_works:completed_works_view')
+
+
 class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
     model = WorkRecord
     form_class = WorkRecordQuantityForm
@@ -212,14 +226,13 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
         return context
 
 
-def delete_work_record(request, work_record_id):
-    # Получите объект WorkRecord по его идентификатору
-    work_record = WorkRecord.objects.get(id=work_record_id)
-    print(work_record)
-    # Проверьте, что текущий пользователь равен владельцу записи и is_checked=False
-    if request.user == work_record.user and not work_record.is_checked:
-        # Удаляем запись
-        work_record.delete()
-
-    # После удаления, перенаправьте пользователя на нужную страницу
-    return redirect('completed_works:completed_works_view')
+def save_all_row(request, week):
+    if request.user.is_staff:
+        works_records = WorkRecord.objects.filter(date__week=week)
+        for item in works_records:
+            item.is_checked = True
+            item.save()
+            print(item)
+        messages.success(request, f'Все записи сохранены за {week} неделю')
+        redirect('completed_works:completed_works_view_admin')
+    return redirect('completed_works:completed_works_view_admin')

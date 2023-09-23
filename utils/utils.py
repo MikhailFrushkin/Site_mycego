@@ -32,7 +32,6 @@ def get_year_week(data, type=None):
             week = today.isocalendar()[1]
         else:
             week = today.isocalendar()[1] + 1
-        logger.error('ошибка', ex)
     return year, week
 
 
