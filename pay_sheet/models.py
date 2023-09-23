@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 
 from users.models import CustomUser
 
@@ -30,3 +32,11 @@ class PaySheetModel(models.Model):
 
     def __str__(self):
         return f'{self.user}-{self.year}_{self.week}'
+
+
+@receiver(pre_save, sender=PaySheetModel)
+def validate_result_salary(sender, instance, **kwargs):
+    if instance.result_salary < 0:
+        instance.comment = f"штраф больше зп на {abs(instance.result_salary)}"
+        instance.result_salary = 0
+

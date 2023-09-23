@@ -2,16 +2,20 @@ import datetime
 import json
 from pprint import pprint
 import locale
+
+from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Sum
-from django.http import Http404, JsonResponse
+from django.http import Http404, JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView, ListView, DetailView
 from loguru import logger
+from openpyxl.utils import get_column_letter
+from openpyxl.workbook import Workbook
 
 from completed_works.models import WorkRecord, WorkRecordQuantity, Standards
 from pay_sheet.models import PaySheetModel
@@ -24,6 +28,87 @@ class PaySheet(LoginRequiredMixin, TemplateView):
     template_name = 'pay_sheet/pay_sheet.html'
     login_url = '/users/login/'
     success_url = reverse_lazy('pay_sheet:pay_sheet')
+
+    def create_excel_file(self, queryset):
+        workbook = Workbook()
+        worksheet = workbook.active
+        worksheet.title = 'Расчет'
+
+        # Получите модель 'Appointment' из вашего приложения
+        pay_sheet_model = apps.get_model(app_label='pay_sheet', model_name='PaySheetModel')
+
+        # Получите метаданные модели, чтобы получить поля
+        model_fields = pay_sheet_model._meta.fields
+
+        # Добавьте столбец "Role" к заголовкам столбцов
+        headers = [field.verbose_name for field in model_fields]
+        headers.append('Телефон')
+        headers.append('Карта')
+
+        # Создайте заголовки столбцов на основе полей модели
+        for col_num, header in enumerate(headers, 1):
+            worksheet.cell(row=1, column=col_num, value=header)
+
+        # Заполните данные из queryset
+        for row_num, appointment in enumerate(queryset, 2):
+            for col_num, field in enumerate(model_fields, 1):
+                cell_value = getattr(appointment, field.name)
+
+                # Получите должность пользователя и добавьте ее в конец строки
+                if field.name == 'user' and isinstance(cell_value, CustomUser):
+                    worksheet.cell(row=row_num, column=col_num, value=cell_value.username)
+                    worksheet.cell(row=row_num, column=len(headers), value=cell_value.phone_number)
+                    worksheet.cell(row=row_num, column=len(headers), value=cell_value.card_details)
+                elif isinstance(cell_value, datetime.datetime):
+                    print(cell_value)
+                    data_str = str(cell_value)
+                    data_datetime = datetime.datetime.fromisoformat(data_str)
+                    # Форматирование даты и времени в требуемый формат
+                    formatted_str = data_datetime.strftime("%Y-%m-%d %H:%M:%S")
+                    worksheet.cell(row=row_num, column=col_num, value=formatted_str)
+
+                else:
+                    worksheet.cell(row=row_num, column=col_num, value=cell_value)
+
+                max_length = len(str(cell_value))
+                column_letter = get_column_letter(col_num)
+                if worksheet.column_dimensions[column_letter].width is None or worksheet.column_dimensions[
+                    column_letter].width < max_length:
+                    worksheet.column_dimensions[column_letter].width = max_length
+
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename=salary.xlsx'
+        workbook.save(response)
+
+        return response
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if 'download_excel' in request.GET:
+            print(queryset)
+            excel_response = self.create_excel_file(queryset)
+            return excel_response
+
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
+    def get_queryset(self):
+        if hasattr(self, '_queryset'):
+            return self._queryset
+
+        year = self.request.GET.get('year')
+        week = self.request.GET.get('week')
+        if not year or not week:
+            import datetime
+            today = datetime.date.today()
+            year = today.year
+            week = today.isocalendar()[1] - 1
+        queryset = PaySheetModel.objects.filter(
+            year=year,
+            week=week
+        )
+        self._queryset = queryset
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -47,7 +132,6 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         else:
             year, week = int(year), int(week)
         monday, sunday = get_dates(year, week)
-        print(year, week)
         for user in CustomUser.objects.all():
             queryset_appointments = Appointment.objects.filter(user=user, date__year=year, date__week=week,
                                                                verified=True)
@@ -92,8 +176,6 @@ class PaySheet(LoginRequiredMixin, TemplateView):
             try:
                 if users_dict[user]['hours'] != 0:
                     work_totals_dict = calculate_work_totals_for_week(user, users_dict[user]['hours'], monday, sunday)
-                    logger.debug(user)
-                    logger.debug(work_totals_dict)
                     if len(work_totals_dict) != 0:
                         users_dict[user]['works'] = work_totals_dict
                         kf = sum([i[1] for i in work_totals_dict.values()]) * 100
@@ -191,7 +273,7 @@ def created_salary_check(request):
         for row in clean_data:
             try:
 
-                user = CustomUser.objects.get(username=row[0])
+                user = CustomUser.objects.get(username=row[0].split('тел')[0])
                 temp = {
                     'year': year,
                     'week': week,
@@ -299,11 +381,9 @@ class PaySheetDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        print(context)
         if not self.test_func():
             raise PermissionDenied
         pay_sheet = self.get_object()
-        print(pay_sheet)
         context['monday'], context['sunday'] = get_dates(pay_sheet.year, pay_sheet.week)
         return context
 

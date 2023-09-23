@@ -10,7 +10,13 @@
 
 {% block link %}
 <link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
+<!--<link rel="stylesheet" href="{% static 'my_css/table.css' %}">-->
+<!--<script type="text/javascript" charset="utf8" src="{% static 'my_js/table.js' %}"></script>-->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">-->
+<!--<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>-->
+
 {% endblock %}
 
 {% block content %}
@@ -19,7 +25,7 @@
     background-color: inherit;
 }
 </style>
-{% choice_date year week monday sunday False True %}
+{% choice_date year week monday sunday %}
 
 <div class="container" style="margin: 0; margin-top: 20px;width: 100%;">
     <div class="row align-items-start">
@@ -34,7 +40,7 @@
             <button class="btn-grad btn-gradient-border btn-glow" type="button" data-bs-toggle="collapse"
                     data-bs-target="#collapseExample"
                     aria-expanded="false" aria-controls="collapseExample">
-                Все расчетные листы
+                Все расчетные листы {{pay_sheets.count}}
             </button>
             <div class="collapse" id="collapseExample">
                 <div class="card card-body" style="background-color:#130518;color:#198754!important;">
@@ -64,7 +70,7 @@
 
 <br><br>
 
-<table class="table-responsive-sm" id="{{week}}">
+<table class="display nowrap dataTable dtr-inline collapsed" id="{{week}}">
     <thead>
     <tr style="font-size: 16px;">
         <th scope="col" style="width: 3%;">№</th>
@@ -86,7 +92,14 @@
     {% for user, value in users_dict.items %}
     <tr style="font-size: 16px;">
         <th scope="row">{{ forloop.counter }}</th>
-        <td><a href="{% url 'users:user_profile' user.id %}">{{user}}</a></td>
+        <td>
+            <a href="{% url 'users:user_profile' user.id %}">
+                {{user}}
+            <br>
+                тел:{{user.phone_number}}
+            <br>
+                карта:{{user.card_details}}
+        </a></td>
         <td>{{user.role.name}}</td>
         <td>{{user.role.salary}} <br>руб/час</td>
 
@@ -180,6 +193,12 @@
         };
     xhr.send(JSON.stringify(dataToSend));
     }
+</script>
+<script>
+    let table = new DataTable('#{{week}}');
+    $(document).ready( function () {
+        $('#{{week}}').DataTable();
+    } );
 </script>
 
 {% endblock %}

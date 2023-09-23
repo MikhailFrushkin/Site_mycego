@@ -54,7 +54,7 @@ def choice_date(year=None, week=None, monday=None, sunday=None, download_excel=T
                 </div>
         """
     if download_excel:
-        html += """
+        html += f"""
         <div>
                 <a class="fw-4 fs-20" href="?download_excel=1&year={year}&week={week}">Скачать Excel</a>
                 </div>
