@@ -35,13 +35,6 @@ class UserLogout(LogoutView):
     template_name = 'user/login.html'
 
 
-class ProfileView(View):
-    template_name = 'user/profile.html'
-
-    def get(self, request):
-        return render(request, self.template_name)
-
-
 class EditProfileView(LoginRequiredMixin, UpdateView):
     model = CustomUser  # Замените на вашу модель профиля пользователя
     form_class = UserProfileEditForm  # Замените на вашу форму обновления профиля
@@ -96,12 +89,10 @@ class Staff(LoginRequiredMixin, ListView):
 
 
 def user_profile(request, user_id):
-    # Получаем пользователя по его идентификатору
-    print()
     profile = get_object_or_404(CustomUser, pk=user_id)
 
     context = {
-        'profile': profile,  # Если у вас есть профиль пользователя
+        'profile': profile,
     }
 
     return render(request, 'user/user_profile.html', context)

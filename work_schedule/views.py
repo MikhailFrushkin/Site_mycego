@@ -103,9 +103,9 @@ def update_appointment(request):
                 date_obj = datetime.strptime(formatted_date_str, "%d %m %Y г.")
                 break
         # Сначала удаляем старые записи
-        Appointment.objects.filter(date=date_obj).delete()
 
         rowData = data_dict.get('rowData', [])
+        appointment_list = []
         for data in rowData:
             unique_elements = {}
 
@@ -137,17 +137,24 @@ def update_appointment(request):
 
                         start_time = time(start_time, 0)
                         end_time = time(end_time, 0)
-
+                        user = CustomUser.objects.get(username=key)
+                        try:
+                            comment = Appointment.objects.get(user=user, date=date_obj).comment
+                        except:
+                            comment = f"Утверждено в {datetime.now()}"
                         appointment = Appointment(
-                            user=CustomUser.objects.get(username=key),
+                            user=user,
                             date=date_obj,
                             start_time=start_time,
                             end_time=end_time,
                             verified=True,
-                            comment=f"Утверждено в {datetime.now()}"
+                            comment=comment
                         )
-                        appointment.save()
+                        appointment_list.append(appointment)
 
+        Appointment.objects.filter(date=date_obj).delete()
+        for item in appointment_list:
+            item.save()
         return JsonResponse({'message': 'Appointment update successfully.'})
 
     except json.JSONDecodeError as e:
@@ -356,5 +363,3 @@ class EditWork(LoginRequiredMixin, TemplateView):
         print(context['year'], context['week'])
         logger.success(datetime.now() - time_start)
         return context
-
-
