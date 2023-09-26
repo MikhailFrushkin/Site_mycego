@@ -60,7 +60,6 @@ class PaySheet(LoginRequiredMixin, TemplateView):
                     worksheet.cell(row=row_num, column=len(headers), value=cell_value.phone_number)
                     worksheet.cell(row=row_num, column=len(headers), value=cell_value.card_details)
                 elif isinstance(cell_value, datetime.datetime):
-                    print(cell_value)
                     data_str = str(cell_value)
                     data_datetime = datetime.datetime.fromisoformat(data_str)
                     # Форматирование даты и времени в требуемый формат
@@ -85,7 +84,6 @@ class PaySheet(LoginRequiredMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         if 'download_excel' in request.GET:
-            print(queryset)
             excel_response = self.create_excel_file(queryset)
             return excel_response
 
@@ -118,8 +116,6 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         users_dict = {}
         total_salary = 0
         total_result_salary = 0
-
-        # user = get_object_or_404(CustomUser, id=self.request.user.id)
 
         year = self.request.GET.get('year', None)
         week = self.request.GET.get('week', None)
@@ -157,7 +153,7 @@ class PaySheet(LoginRequiredMixin, TemplateView):
             salary = 0
             mess = ''
 
-            if user.role.name == 'Упаковщик 2':
+            if user.role.name == 'Упаковщик 2' or user.role.name == 'Упаковщик':
                 if users_dict[user]['flag']:
                     for day_hour in users_dict[user]['week_hours_work']:
                         if day_hour == 12:
@@ -166,7 +162,7 @@ class PaySheet(LoginRequiredMixin, TemplateView):
                             salary += day_hour * 120
                 else:
                     salary = sum([day_hour * 120 for day_hour in users_dict[user]['week_hours_work']])
-                    mess = 'Не отработано 3 дня по 12ч.'
+                    mess += 'Не отработано 3 дня по 12ч.; '
             else:
                 salary = sum([day_hour * user.role.salary for day_hour in users_dict[user]['week_hours_work']])
 
@@ -181,31 +177,30 @@ class PaySheet(LoginRequiredMixin, TemplateView):
                         kf = sum([i[1] for i in work_totals_dict.values()]) * 100
                         users_dict[user]['kf'] = round(kf, 2)
 
-                        if users_dict[user]['hours'] < 20 and user.role.name == 'Упаковщик':
-                            result_salary = 0
-                            mess = 'Отработанно меньше 20 часов'
-                        elif kf >= 80:
+                        if users_dict[user]['hours'] < 20:
+                            mess += 'Отработанно меньше 20 часов; '
+                        if kf >= 80:
                             result_salary = salary
                         else:
-                            result_salary = round(salary * kf / 100, 2)
-                            mess = 'Коэффецент меньше 80%'
+                            result_salary = salary * kf / 100
+                            mess += 'Коэффецент меньше 80%; '
 
-                        users_dict[user]['result_salary'] = result_salary
+                        users_dict[user]['result_salary'] = round(result_salary, 2)
                         total_result_salary += result_salary
                     else:
                         users_dict[user]['works'] = {}
                         users_dict[user]['kf'] = 0
                         users_dict[user]['result_salary'] = 0
-                        mess = 'Нет сдельных листов'
+                        mess = 'Нет сдельных листов; '
                         if user.status_work == False:
-                            mess = 'Уволен'
+                            mess += 'Уволен;'
                 else:
                     users_dict[user]['works'] = {}
                     users_dict[user]['kf'] = 0
                     users_dict[user]['result_salary'] = 0
-                    mess = 'Не работал'
+                    mess += 'Не работал;'
             except Exception as ex:
-                print(ex)
+                logger.error(ex)
             users_dict[user]['comment'] = mess
 
             try:
@@ -216,7 +211,7 @@ class PaySheet(LoginRequiredMixin, TemplateView):
                 users_dict[user]['bonus'] = 0
                 users_dict[user]['penalty'] = 0
 
-        sorted_dict = dict(sorted(users_dict.items(), key=lambda x: str(x[0])))
+        sorted_dict = dict(sorted(users_dict.items(), key=lambda x: int(x[1]['hours']), reverse=True))
         context['users_dict'] = sorted_dict
 
         timedelta_tuples = Appointment.objects.filter(date__week=week, verified=True).values_list('duration')
@@ -224,7 +219,7 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         total_hours = int(sum([i.total_seconds() for i in timedelta_list]) // 3600)
         context['total_hours'] = total_hours
         context['total_salary'] = total_salary
-        context['total_result_salary'] = total_result_salary
+        context['total_result_salary'] = round(total_result_salary, 2)
 
         context['year'], context['week'] = year, week
         context['monday'], context['sunday'] = monday, sunday
@@ -273,7 +268,7 @@ def created_salary_check(request):
         for row in clean_data:
             try:
 
-                user = CustomUser.objects.get(username=row[0].split('тел')[0])
+                user = CustomUser.objects.get(username=row[0].split('тел:')[0])
                 temp = {
                     'year': year,
                     'week': week,
@@ -292,7 +287,7 @@ def created_salary_check(request):
                 temp['result_salary'] = round(temp['result_salary'] + temp['bonus'] - temp['penalty'], 2)
                 dict_pays[user] = temp
             except Exception as ex:
-                print(ex)
+                logger.error(ex)
 
         try:
             # Цикл для создания и сохранения объектов PaySheetModel
@@ -335,11 +330,11 @@ def created_salary_check(request):
 
             return JsonResponse({'message': 'Успешно'})
         except Exception as ex:
-            print(ex)
+            logger.error(ex)
             return JsonResponse({'message': 'Произошла ошибка'})
 
     except Exception as ex:
-        print(ex)
+        logger.error(ex)
         return JsonResponse({'message': 'Произошла ошибка'})
 
 

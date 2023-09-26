@@ -10,12 +10,8 @@
 
 {% block link %}
 <link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
-<!--<link rel="stylesheet" href="{% static 'my_css/table.css' %}">-->
-<!--<script type="text/javascript" charset="utf8" src="{% static 'my_js/table.js' %}"></script>-->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">-->
-<!--<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>-->
+<script src="{% static 'my_js/table.js' %}"></script>
 
 {% endblock %}
 
@@ -23,6 +19,16 @@
 <style>
     .card.card-body {
     background-color: inherit;
+}
+#myInput {
+  background-image: url('/css/searchicon.png'); /* Добавить значок поиска для ввода */
+  background-position: 10px 12px; /* Расположите значок поиска */
+  background-repeat: no-repeat; /* Не повторяйте изображение значка */
+  width: 100%; /* Полная ширина */
+  font-size: 16px; /* Увеличить размер шрифта */
+  padding: 12px 20px 12px 40px; /* Добавить немного отступов */
+  border: 1px solid #ddd; /* Добавить серую границу */
+  margin-bottom: 12px; /* Добавить некоторое пространство под входом */
 }
 </style>
 {% choice_date year week monday sunday %}
@@ -69,8 +75,8 @@
 </div>
 
 <br><br>
-
-<table class="display nowrap dataTable dtr-inline collapsed" id="{{week}}">
+<input type="text" id="myInput" onkeyup="myFunction()" placeholder="Поиск имен..">
+<table class="display nowrap dataTable dtr-inline collapsed sortable" id="{{week}}">
     <thead>
     <tr style="font-size: 16px;">
         <th scope="col" style="width: 3%;">№</th>
@@ -103,8 +109,8 @@
         <td>{{user.role.name}}</td>
         <td>{{user.role.salary}} <br>руб/час</td>
 
-        <td>{{value.hours}} ч.</td>
-        <td>{{value.salary}} р.</td>
+        <td>{{value.hours}}</td>
+        <td>{{value.salary}}</td>
 
         <td>
             <p>
@@ -124,8 +130,8 @@
         </td>
 
         <td>{{value.count_of_12}}</td>
-        <td>{{value.kf}} %</td>
-        <td>{{value.result_salary}} р.</td>
+        <td>{{value.kf}}</td>
+        <td>{{value.result_salary}}</td>
         <td>
             <input type="number" name="bonus" placeholder="Премия" min="0" value="{{value.bonus}}">
         </td>
@@ -200,5 +206,27 @@
         $('#{{week}}').DataTable();
     } );
 </script>
+<script>
+function myFunction() {
+  // Объявить переменные
+  var input, filter, table, tr, td, i, txtValue;
+  input = document.getElementById("myInput");
+  filter = input.value.toUpperCase();
+  table = document.getElementById("{{week}}");
+  tr = table.getElementsByTagName("tr");
 
+  // Перебирайте все строки таблицы и скрывайте тех, кто не соответствует поисковому запросу
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[0];
+    if (td) {
+      txtValue = td.textContent || td.innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+</script>
 {% endblock %}

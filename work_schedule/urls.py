@@ -9,6 +9,7 @@ urlpatterns = [
     path('edit_work/', EditWork.as_view(), name='edit_work'),
     path('graf_user/', GrafUser.as_view(), name='graf_user'),
 
+
     path('delete_row/', delete_appointment, name='delete_row'),
     path('update_rows/', update_appointment, name='update_rows'),
     path('ajax/', ajax_view, name='ajax_view'),

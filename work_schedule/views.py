@@ -306,7 +306,6 @@ class EditWork(LoginRequiredMixin, TemplateView):
         unique_dates = queryset.values_list('date', flat=True).distinct()
 
         work_schedule = {}
-
         for index, date_appointment in enumerate(unique_dates):
             user_dict = {}
             appointments = queryset.filter(date=date_appointment).annotate(
@@ -328,14 +327,17 @@ class EditWork(LoginRequiredMixin, TemplateView):
             appointments = appointments.order_by('custom_order')
             flag = True
             role_dict = {}
+            total_hours = 0
             for appointment in appointments:
                 role = appointment.user.role
+                hours_role = int(format_duration(appointment.duration).split(':')[0])
                 if role:
                     if role not in role_dict:
-                        role_dict[role] = 1
+                        role_dict[role] = [1, hours_role]
                     else:
-                        role_dict[role] += 1
-
+                        role_dict[role][0] += 1
+                        role_dict[role][1] += hours_role
+                    total_hours += hours_role
                 if appointment.verified == False:
                     flag = False
                 work_hours = [0] * 12
@@ -354,12 +356,12 @@ class EditWork(LoginRequiredMixin, TemplateView):
                     user_dict[(appointment.user, appointment.verified)] = work_hours
             work_hours_count = {hour: sum([user_work_hours[hour] for user_work_hours in user_dict.values()]) for
                                 hour in range(12)}
-            work_schedule[(date_appointment, f'table-{index}')] = (user_dict, work_hours_count, flag, role_dict)
+            work_schedule[(date_appointment, f'table-{index}')] = (user_dict, work_hours_count, flag, role_dict, total_hours)
 
         context['work_schedule'] = work_schedule
         context['users'] = CustomUser.objects.filter(status_work=True).distinct().order_by('username')
-
+        context['users_add'] = json.dumps([user.username for user in CustomUser.objects.filter(status_work=True).distinct().order_by('username')])
+        pprint(context['users'])
         context['year'], context['week'] = get_year_week(self.request.GET)
-        print(context['year'], context['week'])
         logger.success(datetime.now() - time_start)
         return context

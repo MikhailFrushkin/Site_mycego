@@ -174,7 +174,7 @@ function getISOWeek(date) {
 function getStartOfWeek(date) {
     const d = new Date(date);
     const dayOfWeek = d.getDay();
-    const diff = d.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Учитываем воскресенье
+    const diff = d.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) - 7; // Учитываем воскресенье
     d.setDate(diff);
     d.setHours(0, 0, 0, 0);
     return d;

@@ -104,18 +104,6 @@ class StatisticView(LoginRequiredMixin, TemplateView):
         # сколько работников работает
         context['total_employees_work'] = CustomUser.objects.filter(status_work=True).count()
 
-        # 2. сколько активных работников сейчас
-        active_employees = CustomUser.objects.filter(
-            Q(appointment__date__gte=current_date - timedelta(days=7)) | Q(appointment__date__isnull=True),
-            status_work=True
-        ).distinct().count()
-        context['active_employees'] = active_employees
-
-        # 3. Список неактивных сотрудников
-        inactive_employees = CustomUser.objects.filter(
-            Q(appointment__date__lt=current_date - timedelta(days=7)) & Q(status_work=True)
-        ).distinct()
-        context['inactive_employees'] = inactive_employees
 
         appointment_list = (Appointment.objects.filter(verified=True).
                             values_list('date', flat=True).distinct().order_by('date'))
@@ -126,15 +114,21 @@ class StatisticView(LoginRequiredMixin, TemplateView):
             week_data[year].add(week)
 
         full_dict = {}
+        # 2. сколько активных работников сейчас
+
+        context['active_employees'] = 0
+
+        # 3. Список неактивных сотрудников
+
+        context['inactive_employees'] = []
+        users = CustomUser.objects.filter(status_work=True)
 
         for year, weeks in week_data.items():
             user_works_dict = {}
             for week in weeks:
                 user_work_dict = {}
 
-                users = CustomUser.objects.filter(status_work=True)
                 for user in users:
-                    print(user)
                     queryset = Appointment.objects.filter(
                         user=user,
                         date__week=week,
@@ -173,7 +167,6 @@ class StatisticView(LoginRequiredMixin, TemplateView):
                             temp_dict['hours_work_current_week'] = hours
                             days = appointments_duration['total_day']
                             temp_dict['average_hours'] = int(hours / days)
-
                         closest_appointment = Appointment.objects.filter(
                             user=user,
                             date__lt=current_date + timedelta(days=1)
@@ -187,12 +180,33 @@ class StatisticView(LoginRequiredMixin, TemplateView):
                             closest_date = None
                             days_difference = None
                         temp_dict['days_without_work'] = (closest_date, days_difference)
-
                     user_work_dict[user] = temp_dict
+
                 sorted_dict = dict(sorted(user_work_dict.items(), key=lambda x: str(x[0])))
                 monday_of_given_week, sunday_of_given_week = get_dates(year, week)
                 user_works_dict[(week, monday_of_given_week, sunday_of_given_week)] = sorted_dict
             full_dict[year] = dict(sorted(user_works_dict.items(), key=lambda x: x[0][0], reverse=True))
+
+        for user in users:
+            closest_appointment = Appointment.objects.filter(
+                user=user,
+                date__lt=current_date + timedelta(days=1)
+            ).order_by('-date').first()
+            if closest_appointment:
+                closest_date = datetime.combine(closest_appointment.date,
+                                                datetime.min.time())
+                closest_date = timezone.make_aware(closest_date, timezone.get_current_timezone())
+                days_difference = (current_date - closest_date).days
+            else:
+                closest_date = None
+                days_difference = None
+            if not days_difference:
+                context['inactive_employees'].append((user, 'Нет дней в графике', 0))
+            elif days_difference >= 7:
+                context['inactive_employees'].append((user, closest_date, days_difference))
+            else:
+                context['active_employees'] += 1
+        context['inactive_employees'] = sorted(context['inactive_employees'], key=lambda x: x[2],reverse=True)
         context['full_dict'] = full_dict
         # pprint(context)
         return context

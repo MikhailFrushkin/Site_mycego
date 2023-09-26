@@ -131,13 +131,7 @@
 {% if request.user == profile or request.user.is_staff %}
 <div class="container text-left" style="margin-top:50px;">
     <div class="row align-items-start">
-        <div class="col">
-            <h3>Часы и выплаты</h3>
-            <p>Всего часов оплачено: {{summary_data.total_hours}} ч.</p>
-            <p>Всего выплаченно: {{summary_data.total_result_salary}} руб.</p>
-            <p>Всего премий: {{summary_data.total_bonus}} руб.</p>
-            <p>Всего штрафов: {{summary_data.total_penalty}} руб.</p>
-        </div>
+
         <div class="col">
             <h3>Выполненные работы:</h3>
             <br><br>
@@ -157,6 +151,14 @@
                 {% endfor %}
                 </tbody>
             </table>
+        </div>
+        <div class="col">
+            <h3>Часы и выплаты</h3>
+            <br>
+            <p>Всего часов оплачено: {{summary_data.total_hours}} ч.</p>
+            <p>Всего выплаченно: {{summary_data.total_result_salary}} руб.</p>
+            <p>Всего премий: {{summary_data.total_bonus}} руб.</p>
+            <p>Всего штрафов: {{summary_data.total_penalty}} руб.</p>
         </div>
     </div>
 </div>

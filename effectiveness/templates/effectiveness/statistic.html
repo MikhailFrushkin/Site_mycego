@@ -14,46 +14,56 @@
     <p>{% trans 'Сколько работников работает' %}: {{ total_employees_work }}</p>
     <p>{% trans 'Сколько активных работников сейчас' %}: {{ active_employees }}</p>
     <br>
-    <h4>{% trans 'Список неактивных сотрудников' %}</h4>
+    <button class="btn-grad btn-gradient-border btn-glow" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapseExample"
+            aria-expanded="false" aria-controls="collapseExample">
+        Список неактивных сотрудников
+    </button>
     <br>
-    {% if inactive_employees %}
-    <ul>
-        {% for employee in inactive_employees %}
-            <li>{{ employee }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
+    <div class="collapse" id="collapseExample">
+        <div class="card card-body" style="background-color:#130518;color:#198754!important;">
+            {% if inactive_employees %}
+            <ul>
+                {% for employee in inactive_employees %}
+                <li><a href="{% url 'users:user_profile' employee.0.id %}" style="font-size:14px;">{{ employee.0 }} (Дней отсутствует:
+                    {{employee.2}}({{employee.1}}))</a></li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+
     <br><br>
     <h2>{% trans 'Статистика по неделям' %}</h2>
     {% for year, weeks in full_dict.items %}
-        <h3>{% trans 'Год' %}: {{ year }}</h3>
-        {% for week, user_work_dict in weeks.items %}
-            <h4>{% trans 'Неделя' %}: {{ week.0 }}</h4>
-            <h4>{{ week.1 }} - {{ week.2 }}</h4>
-            <br>
-            <table>
-                <thead>
-                    <tr>
-                        <th>{% trans 'Пользователь' %}</th>
-                        <th>{% trans 'Часов по графику в неделю' %}</th>
-                        <th>{% trans 'Отработанно' %}</th>
-                        <th>{% trans 'Среднее количество часов в день' %}</th>
-                        <th>{% trans 'Дни без работы' %}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user, user_data in user_work_dict.items %}
-                        <tr>
-                            <td>{{ user }}</td>
-                            <td>{{ user_data.hours }}</td>
-                            <td>{{ user_data.hours_work_current_week }}</td>
-                            <td>{{ user_data.average_hours }}</td>
-                            <td>{{ user_data.days_without_work.1 }}({{ user_data.days_without_work.0 }})</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <h3>{% trans 'Год' %}: {{ year }}</h3>
+    {% for week, user_work_dict in weeks.items %}
+    <h4>{% trans 'Неделя' %}: {{ week.0 }}</h4>
+    <h4>{{ week.1 }} - {{ week.2 }}</h4>
+    <br>
+    <table>
+        <thead>
+        <tr>
+            <th>{% trans 'Пользователь' %}</th>
+            <th>{% trans 'Часов по графику в неделю' %}</th>
+            <th>{% trans 'Отработанно' %}</th>
+            <th>{% trans 'Среднее количество часов в день' %}</th>
+            <th>{% trans 'Дни без работы' %}</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for user, user_data in user_work_dict.items %}
+        <tr>
+            <td>{{ user }}</td>
+            <td>{{ user_data.hours }}</td>
+            <td>{{ user_data.hours_work_current_week }}</td>
+            <td>{{ user_data.average_hours }}</td>
+            <td>{{ user_data.days_without_work.1 }}({{ user_data.days_without_work.0 }})</td>
+        </tr>
         {% endfor %}
+        </tbody>
+    </table>
+    {% endfor %}
     {% endfor %}
 </div>
 {% endblock %}
