@@ -6,15 +6,17 @@ from django.db.models import Q
 
 
 class WorkRecordForm(forms.ModelForm):
+
     class Meta:
         model = WorkRecord
-        fields = ['hours', 'works']  # Выбираем поля, которые будут отображаться в форме
+        fields = ['date', 'hours']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+        }
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)  # Получаем пользователя из kwargs
         super(WorkRecordForm, self).__init__(*args, **kwargs)
-        del self.fields['works']
-
         standards = Standards.objects.all()
 
         if user and user.role:
@@ -36,7 +38,7 @@ class WorkRecordForm(forms.ModelForm):
 
 class WorkRecordFormAdmin(forms.ModelForm):
     user = forms.ModelChoiceField(
-        queryset=CustomUser.objects.filter(status_work=True),
+        queryset=CustomUser.objects.filter(status_work=True).order_by('username'),
         label='Сотрудник',
         widget=forms.Select(attrs={'class': 'form-select form-select-lg mb-3'})
     )

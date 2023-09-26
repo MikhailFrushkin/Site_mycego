@@ -57,7 +57,6 @@ class AppointmentForm(forms.ModelForm):
             # Получаем текущую дату
             current_date = date.today()
             current_day_of_week = current_date.strftime('%A')
-            print(type(current_date.weekday()), current_date.weekday())
             # Определяем текущую неделю в году
             current_week = current_date.isocalendar()[1]
             # Добавляем 2 недели к текущей неделе
@@ -66,12 +65,19 @@ class AppointmentForm(forms.ModelForm):
             else:
                 target_week = current_week
 
+            print('current_day_of_week', current_day_of_week)
+            print('target_week', target_week)
+
             # Определяем дату начала target_week (понедельник этой недели)
             start_date = current_date + dt.timedelta(weeks=target_week - current_week, days=-current_date.weekday())
-
+            print('start_date', start_date)
             # Создаем список дней для target_week
             days_in_target_week = [start_date + dt.timedelta(days=i) for i in range(14)]
+            print('days_in_target_week', days_in_target_week)
+
             end_day = start_date + dt.timedelta(days=14)
+            print('end_day', end_day)
+
             # Проверяем, если дата входит в список дней target_week
             if date not in days_in_target_week:
                 errors.append(ValidationError(f"Вы можете записаться на даты, начиная с {start_date} до  {end_day}."))

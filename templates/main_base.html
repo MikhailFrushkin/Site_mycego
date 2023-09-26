@@ -63,7 +63,7 @@
                             </div>
                         </div>
                         <div class="mobile-button"><span></span></div><!-- /.mobile-button -->
-                        <nav id="main-nav" class="main-nav">
+                        <nav id="main-nav" class="main-nav" style="justify-content: center;">
                             <ul id="menu-primary-menu" class="menu">
                                 <li class="menu-item menu-item-has-children current-menu-item">
                                     <a href="#">График</a>
@@ -112,18 +112,16 @@
                                     </ul>
                                     {% endif %}
                                 </li>
-                                {% if request.user.is_staff %}
                                 <li class="menu-item">
-                                    <a href="{% url 'effectiveness:effectiveness' %}">Эффективность</a>
+                                    <a href="{% url 'users:staff' %}">Сотрудники</a>
                                 </li>
+
+                                {% if request.user.is_staff %}
                                 <li class="menu-item">
                                     <a href="https://mycego.ru/admin/">Админка</a>
                                 </li>
                                 {% endif %}
 
-                                <li class="menu-item">
-                                    <a href="{% url 'users:staff' %}">Сотрудники</a>
-                                </li>
                                 {% if not request.user.is_authenticated %}
                                 <li>
                                     <a class="menu-item" href="{% url 'users:login' %}">Вход</a>
@@ -167,7 +165,6 @@
                                 {% endif%}
                             </ul>
                         </nav><!-- /#main-nav -->
-
                     </div>
                 </div>
             </div>

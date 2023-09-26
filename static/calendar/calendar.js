@@ -116,17 +116,21 @@ function addEventListeners() {
             let currentDate = new Date();
             let currentWeek = getISOWeek(currentDate); // Получаем текущую неделю
             let targetWeek;
-
+            console.log(currentDate)
             if (currentDate.getDay() === 0) {
                 targetWeek = currentWeek + 1; // Добавляем 2 недели для воскресенья
             } else {
-                targetWeek = currentWeek + 0; // Добавляем 1 неделю для других дней
+                targetWeek = currentWeek; //
             }
+            console.log(targetWeek)
 
 
             let startOfWeek = getStartOfWeek(currentDate, targetWeek); // Получаем начало целевой недели
             let endOfWeek = new Date(startOfWeek);
+
             endOfWeek.setDate(startOfWeek.getDate() + 14); // Добавляем 13 дней к началу недели
+            console.log(startOfWeek)
+            console.log(endOfWeek)
 
             // Проверяем, входит ли выбранная дата в диапазон целевой недели
             if (selectedDate >= startOfWeek && selectedDate <= endOfWeek) {
@@ -167,10 +171,12 @@ function getISOWeek(date) {
 }
 
 // Функция для получения начала недели
-function getStartOfWeek(date, weekNumber) {
+function getStartOfWeek(date) {
     const d = new Date(date);
-    d.setDate(d.getDate() + (weekNumber - getISOWeek(date)) * 7);
-    d.setDate(d.getDate() - d.getDay()); // Установка на понедельник
+    const dayOfWeek = d.getDay();
+    const diff = d.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Учитываем воскресенье
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
     return d;
 }
 

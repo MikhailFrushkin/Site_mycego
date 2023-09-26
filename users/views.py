@@ -11,6 +11,8 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView, UpdateView
 
+from completed_works.models import WorkRecord, WorkRecordQuantity
+from pay_sheet.models import PaySheetModel
 from users.forms import UserLoginForm, CustomUserEditForm, UserProfileEditForm
 from users.models import CustomUser, Role
 from work_schedule.models import Appointment
@@ -90,9 +92,40 @@ class Staff(LoginRequiredMixin, ListView):
 
 def user_profile(request, user_id):
     profile = get_object_or_404(CustomUser, pk=user_id)
+    pay_sheets = PaySheetModel.objects.filter(user=profile)
+    work_lists = WorkRecord.objects.filter(user=profile)
+
+    work_summary = {}
+    if len(work_lists) > 0:
+        for work_record in work_lists:
+            work_quantities = WorkRecordQuantity.objects.filter(work_record=work_record)
+
+            for work_quantity in work_quantities:
+                work_type = work_quantity.standard.name
+                quantity = work_quantity.quantity
+                if work_type in work_summary:
+                    work_summary[work_type] += quantity
+                else:
+                    work_summary[work_type] = quantity
+    sorted_work_summary = dict(sorted(work_summary.items(), key=lambda item: item[1], reverse=True))
+
+    summary_data = {
+        'total_hours': 0,
+        'total_result_salary': 0,
+        'total_bonus': 0,
+        'total_penalty': 0,
+    }
+
+    for pay_sheet in pay_sheets:
+        summary_data['total_hours'] += pay_sheet.hours
+        summary_data['total_result_salary'] += pay_sheet.result_salary
+        summary_data['total_bonus'] += pay_sheet.bonus
+        summary_data['total_penalty'] += pay_sheet.penalty
 
     context = {
         'profile': profile,
+        'work_summary': sorted_work_summary,
+        'summary_data': summary_data
     }
-
+    pprint(context)
     return render(request, 'user/user_profile.html', context)
