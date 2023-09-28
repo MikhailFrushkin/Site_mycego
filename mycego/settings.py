@@ -19,7 +19,6 @@ from django.utils.translation import gettext_lazy as _
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -54,7 +53,9 @@ INSTALLED_APPS = [
     'effectiveness',
     'dbbackup',
     'pay_sheet',
-
+    'tg_bot',
+    'rest_framework',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -67,6 +68,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "debug_toolbar.middleware.DebugToolbarMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Замените на порт и домен вашего фронтенда
+    "http://127.0.0.1:8000",  # Замените на порт вашего бэкенда
 ]
 
 ROOT_URLCONF = 'mycego.urls'
@@ -89,7 +96,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mycego.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 DATABASES = {
@@ -102,7 +108,6 @@ DATABASES = {
         'PORT': '',  # Порт базы данных (по умолчанию пусто)
     }
 }
-print(DATABASES['default']['NAME'])
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
@@ -113,6 +118,16 @@ print(DATABASES['default']['NAME'])
 #         'PORT': 5432,           # По умолчанию, PostgreSQL использует порт 5432
 #     }
 # }
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
+    ]
+}
 
 
 # Password validation
@@ -132,7 +147,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -159,7 +173,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static')
 ]
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -195,7 +208,6 @@ settings.SILENCED_SYSTEM_CHECKS = ['admin.E408']
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
-
 PASSWORD_RESET_TIMEOUT = 3600  # Срок действия сброса пароля в секундах (1 час)
 PASSWORD_RESET_TIMEOUT_DAYS = 1  # Срок действия сброса пароля в днях (1 день)
 
@@ -210,3 +222,4 @@ DEFAULT_FROM_EMAIL = 'mycego@mail.ru'
 
 DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'backup/')}
+

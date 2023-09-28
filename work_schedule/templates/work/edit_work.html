@@ -93,7 +93,7 @@
 
         {% for user_name, hours in value.0.items %}
         <tr>
-            <th scope="row">{{ forloop.counter }}</th>
+            <th scope="row">{{ forloop.counter }} {% if user_name.1%} {%else%}<br>(Не проверено){%endif%}</th>
             {% for hour in hours %}
             <td>
                 <select class="form-select
