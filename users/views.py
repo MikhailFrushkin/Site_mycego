@@ -41,12 +41,17 @@ class EditProfileView(LoginRequiredMixin, UpdateView):
     model = CustomUser  # Замените на вашу модель профиля пользователя
     form_class = UserProfileEditForm  # Замените на вашу форму обновления профиля
     template_name = 'user/edit_profile.html'  # Замените на ваш шаблон обновления профиля
-    success_url = reverse_lazy('users:profile')  # URL, на который перейдет пользователь после успешного обновления
+    success_url = reverse_lazy('users:user_profile')  # URL, на который перейдет пользователь после успешного обновления
 
     def get_object(self, queryset=None):
         user = self.request.user
         return user
 
+    def get_success_url(self):
+        # Получаем user_id текущего пользователя
+        user_id = self.request.user.id
+        # Генерируем URL с передачей user_id
+        return reverse_lazy('users:user_profile', kwargs={'user_id': user_id})
 
 class Staff(LoginRequiredMixin, ListView):
     model = CustomUser

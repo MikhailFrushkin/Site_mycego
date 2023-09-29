@@ -2,12 +2,14 @@ import json
 import locale
 from datetime import date, timedelta, datetime, time
 from pprint import pprint
+
+from django.core.paginator import Paginator
 from django.db import models
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import F, Case, When, Value
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -43,9 +45,13 @@ def ajax_view(request):
                 end_date = date(today.year, today.month + 1, 1)
             appointments = Appointment.objects.filter(date__gte=start_date, date__lt=end_date)
         elif selected_date == 'all':
-            appointments = Appointment.objects.all()
+            today = date.today()
+            start_of_week = today - timedelta(days=today.weekday())
+            appointments = Appointment.objects.filter(date__gte=start_of_week)
         elif selected_date == 'my':
-            appointments = Appointment.objects.filter(user_id=request.user.id)
+            today = date.today()
+            start_of_week = today - timedelta(days=today.weekday())
+            appointments = Appointment.objects.filter(user_id=request.user.id, date__gte=start_of_week)
         else:
             appointments = Appointment.objects.filter(date=selected_date)
 
@@ -167,10 +173,26 @@ class WorkSchedule(LoginRequiredMixin, FormView):
     success_url = reverse_lazy('work:work_page')
     form_class = AppointmentForm
     context_object_name = 'appointments'
+    paginate_by = 50  # Установите количество записей на странице
 
     def get(self, request, *args, **kwargs):
-        appointments = Appointment.objects.all()
-        return self.render_to_response(self.get_context_data(form=self.get_form(), appointments=appointments))
+        today = date.today()
+        start_of_week = today - timedelta(days=today.weekday())
+        appointments = Appointment.objects.filter(date__gte=start_of_week)
+
+        paginator = Paginator(appointments, self.paginate_by)
+        page_number = request.GET.get('page')
+
+        page = paginator.get_page(page_number)
+        return render(
+            request,
+            self.template_name,
+            {
+                'form': self.get_form(),
+                'appointments': page.object_list,
+                'page': page,
+            }
+        )
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -184,13 +206,21 @@ class WorkSchedule(LoginRequiredMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['appointments'] = kwargs.get('appointments', [])
+        print(context)
         return context
 
     def form_invalid(self, form):
-        # Обработка случая, когда форма невалидна (возникли ошибки валидации)
-        appointments = Appointment.objects.all()
-        return self.render_to_response(self.get_context_data(form=form, appointments=appointments))
+        today = date.today()
+        start_of_week = today - timedelta(days=today.weekday())
+        appointments = Appointment.objects.filter(date__gte=start_of_week)
+        return render(
+            self.request,
+            self.template_name,
+            {
+                'form': form,
+                'appointments': appointments,  # Оставьте appointments в контексте
+            }
+        )
 
 
 class GrafUser(LoginRequiredMixin, ListView):

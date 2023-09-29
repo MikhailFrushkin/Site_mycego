@@ -63,7 +63,7 @@ class AppointmentForm(forms.ModelForm):
             if current_day_of_week == 'Sunday':
                 target_week = current_week + 1
             else:
-                target_week = current_week - 1
+                target_week = current_week
 
             print('current_day_of_week', current_day_of_week)
             print('target_week', target_week)

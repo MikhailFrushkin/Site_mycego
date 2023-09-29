@@ -7,6 +7,8 @@
 <link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'my_js/myjs.js' %}"></script>
+<script src="{% static 'my_js/table.js' %}"></script>
+
 {% endblock %}
 
 {% block title %}
@@ -31,8 +33,10 @@
 <div class="collapse" id="collapseExample{{ forloop.counter }}">
     <div class="container text-center">
         <div class="row justify-content-md-center">
+            <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Поиск имен.."
+                   style="margin-bottom: 10px;margin-top: 10px; width: 30%;">
         </div>
-        <table class="table-responsive-sm">
+        <table class="table-responsive-sm" id="myTable">
             <thead>
             <tr>
                 <th scope="col">Сотрудник</th>
