@@ -231,7 +231,11 @@ class GrafUser(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        appointments = Appointment.objects.filter(user=self.request.user, verified=True).order_by('date')
+        today = date.today()
+        start_of_week = today - timedelta(days=today.weekday())
+
+        appointments = Appointment.objects.filter(user=self.request.user, verified=True,
+                                                  date__gte=start_of_week).order_by('date')
         context['appointments'] = appointments
         return context
 
@@ -386,11 +390,13 @@ class EditWork(LoginRequiredMixin, TemplateView):
                     user_dict[(appointment.user, appointment.verified)] = work_hours
             work_hours_count = {hour: sum([user_work_hours[hour] for user_work_hours in user_dict.values()]) for
                                 hour in range(12)}
-            work_schedule[(date_appointment, f'table-{index}')] = (user_dict, work_hours_count, flag, role_dict, total_hours)
+            work_schedule[(date_appointment, f'table-{index}')] = (
+            user_dict, work_hours_count, flag, role_dict, total_hours)
 
         context['work_schedule'] = work_schedule
         context['users'] = CustomUser.objects.filter(status_work=True).distinct().order_by('username')
-        context['users_add'] = json.dumps([user.username for user in CustomUser.objects.filter(status_work=True).distinct().order_by('username')])
+        context['users_add'] = json.dumps(
+            [user.username for user in CustomUser.objects.filter(status_work=True).distinct().order_by('username')])
         pprint(context['users'])
         context['year'], context['week'] = get_year_week(self.request.GET)
         logger.success(datetime.now() - time_start)

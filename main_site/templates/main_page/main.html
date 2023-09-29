@@ -16,6 +16,24 @@
 {% endblock %}
 
 {% block content %}
+<style>
+    .carousel-item img {
+       height: 300px; /* Максимальная высота для изображения */
+       width: auto!important; /* Автоматический расчет ширины на основе высоты и пропорций */
+       display: block; /* Делаем изображение блочным элементом */
+       margin: 0 auto; /* Центрируем изображение по горизонтали */
+       vertical-align: middle; /* Центрируем изображение по вертикали */
+   }
+       /* Убираем фоновый эффект у кнопок управления каруселью */
+   .carousel-control-prev,
+   .carousel-control-next {
+       background-color: transparent!important;
+       border: none!important; /* Убираем бордер */
+   }
+    .text-article p {
+    white-space: pre-line;
+}
+</style>
 <div class="container text-center">
     <div class="row justify-content-md-center">
         <button class="depth"
@@ -59,6 +77,75 @@
         </table>
     </div>
 </div>
+
+{% for item in announcements %}
+<div class="tf-section flat-blog home3" style="padding: 30px 0;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12 col-sm-12">
+                <div class="heading-section style center" style="padding: 0 50px;">
+                    <article class="sc-card-article blog-article">
+                        <div class="text-article" style="margin-bottom:10px;">
+                            <h2>{{ item.title }}</h2>
+                        </div>
+                        {% if item.images %}
+                        <div id="carouselExampleRide{{ forloop.counter }}" class="carousel slide" style="margin-bottom:20px;"
+                             data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                {% for image in item.images.all %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ item.title }}">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button class="carousel-control-prev" type="button"
+                                    data-bs-target="#carouselExampleRide{{ forloop.counter }}"
+                                    data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Предыдущий</span>
+                            </button>
+                            <button class="carousel-control-next" type="button"
+                                    data-bs-target="#carouselExampleRide{{ forloop.counter }}"
+                                    data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Следующий</span>
+                            </button>
+                        </div>
+                        {% endif %}
+                        <div class="post" style="padding: 0;">
+                            <div class="text-article" style="text-align: left;font-size: 14px;">
+                                {{ item.content|linebreaksbr }}
+                            </div>
+                            {% if item.url %}
+                            <div class="text-article">
+                                <p>Ссылка: <a href="{{ item.url }}">{{ item.url }}</a></p>
+                            </div>
+                            {% endif %}
+                            <div class="meta-info style">
+                                <div class="author">
+                                    <div class="info">
+                                        {% if item.author.first_name %}
+                                        <h5> Опубликовано: <a class="text-color-3"
+                                                              href="{% url 'users:user_profile' item.author.id %}">
+                                            {{ item.last_name }} {{ item.first_name }}</a></h5>
+                                        {% else %}
+                                        <h5> Опубликовано: <a class="text-color-3"
+                                                              href="{% url 'users:user_profile' item.author.id %}">
+                                            {{ item.author }}</a></h5>
+                                        {% endif%}
+                                        <div class="date"><span class="text-color-6">{{ item.date_created }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 
 
 {% endblock %}

@@ -203,11 +203,11 @@
     <table class="table-responsive-sm">
         <thead>
         <tr>
-            <th scope="col" style="width: 3%; font-size: 16px;">#</th>
-            <th scope="col" style="width: 15%; font-size: 16px;">Имя</th>
+            <th scope="col" style="width: 4%; font-size: 16px;">#</th>
+            <th scope="col" style="width: 20%; font-size: 16px;">Имя</th>
             <th scope="col" style="width: 15%; font-size: 16px;">Дата</th>
-            <th scope="col" style="width: 10%; font-size: 16px;">С</th>
-            <th scope="col" style="width: 10%; font-size: 16px;">До</th>
+            <th scope="col" style="width: 7%; font-size: 16px;">С</th>
+            <th scope="col" style="width: 7%; font-size: 16px;">До</th>
             <th scope="col" style="width: 15%; font-size: 16px;">Время работы</th>
             <th scope="col" style="width: 10%; font-size: 16px;">Утверждено</th>
             <th scope="col" style="width: 10%; font-size: 16px;">Действие</th>
@@ -229,9 +229,10 @@
             {% endif %}
             <td>
                 {% if item.user.id != user.id or item.verified %}
-                <button class="btn btn-secondary" disabled>Удалить</button>
+                <button class="btn btn-secondary" style="width: 100%;" disabled>Удалить</button>
                 {% else %}
-                <button class="btn btn-danger" onclick="deleteAppointment({{ item.id }})">Удалить</button>
+                <button class="btn btn-danger" style="width: 100%;" onclick="deleteAppointment({{ item.id }})">Удалить
+                </button>
                 {% endif %}
             </td>
         </tr>
@@ -245,7 +246,8 @@
         <span class="step-links">
             {% if page.has_previous %}
                 <button class="btn-lg" onclick="window.location.href='?page=1'">&laquo; первая</button>
-                <button class="btn-lg" onclick="window.location.href='?page={{ page.previous_page_number }}'">предыдущая</button>
+                <button class="btn-lg"
+                        onclick="window.location.href='?page={{ page.previous_page_number }}'">предыдущая</button>
             {% endif %}
 
             <span class="current-page btn-lg">
@@ -253,7 +255,8 @@
             </span>
 
             {% if page.has_next %}
-                <button class="btn-lg" onclick="window.location.href='?page={{ page.next_page_number }}'">следующая</button>
+                <button class="btn-lg"
+                        onclick="window.location.href='?page={{ page.next_page_number }}'">следующая</button>
                 <button class="btn-lg" onclick="window.location.href='?page={{ page.paginator.num_pages }}'">последняя &raquo;</button>
             {% endif %}
         </span>

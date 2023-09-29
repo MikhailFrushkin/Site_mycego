@@ -135,10 +135,13 @@ class ViewWorks(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        from datetime import date, timedelta
         user_id = int(request.data.get('user'))
         user = CustomUser.objects.get(pk=user_id)
         try:
-            work_list = WorkRecord.objects.filter(user=user)
+            today = date.today()
+            start_of_week = today - timedelta(days=today.weekday() + 7)
+            work_list = WorkRecord.objects.filter(user=user, date__gte=start_of_week)
             return JsonResponse({'data': [(i.id, i.date, i.is_checked) for i in work_list]})
         except Exception as ex:
             return Response({'data': 'Не найденно!'}, status=HTTP_401_UNAUTHORIZED)

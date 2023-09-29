@@ -1,10 +1,13 @@
 from datetime import timedelta
 
+from django.core.paginator import Paginator
 from django.utils import timezone
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from loguru import logger
 import locale
+
+from main_site.models import Announcement
 from users.models import CustomUser
 from work_schedule.models import Appointment
 
@@ -47,4 +50,11 @@ class MainPage(LoginRequiredMixin, TemplateView):
         sorted_user_works_day = dict(sorted(user_works_day.items(), key=lambda x: x[0].username))
         context['days'] = [day.strftime("%d %B") for day in (first_day_of_current_week + timedelta(days=day) for day in range(7))]
         context['user_works_day'] = sorted_user_works_day
+
+        # Добавляем объявления с пагинацией
+        announcements = Announcement.objects.all().order_by('-is_pinned', '-date_created')
+        paginator = Paginator(announcements, 10)
+        page_number = self.request.GET.get('page')
+        page = paginator.get_page(page_number)
+        context['announcements'] = page
         return context
