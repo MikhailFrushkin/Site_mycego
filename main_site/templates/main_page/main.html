@@ -18,7 +18,7 @@
 {% block content %}
 <style>
     .carousel-item img {
-       height: 300px; /* Максимальная высота для изображения */
+       height: 500px; /* Максимальная высота для изображения */
        width: auto!important; /* Автоматический расчет ширины на основе высоты и пропорций */
        display: block; /* Делаем изображение блочным элементом */
        margin: 0 auto; /* Центрируем изображение по горизонтали */
@@ -127,7 +127,7 @@
                                         {% if item.author.first_name %}
                                         <h5> Опубликовано: <a class="text-color-3"
                                                               href="{% url 'users:user_profile' item.author.id %}">
-                                            {{ item.last_name }} {{ item.first_name }}</a></h5>
+                                            {{ item.author.last_name }} {{ item.author.first_name }}</a></h5>
                                         {% else %}
                                         <h5> Опубликовано: <a class="text-color-3"
                                                               href="{% url 'users:user_profile' item.author.id %}">
