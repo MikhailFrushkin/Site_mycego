@@ -1,7 +1,9 @@
 {% extends 'main_base.html' %}
 {% load i18n %}
 {% load static %}
+{% load cache %}
 
+{% cache 6000 main %}
 
 {% block link %}
 <link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
@@ -146,6 +148,5 @@
     </div>
 </div>
 {% endfor %}
-
-
 {% endblock %}
+{% endcache %}

@@ -1,18 +1,20 @@
 {% extends 'main_base.html' %}
 {% load i18n %}
 {% load static %}
+{% load cache %}
 {% block title %}
 {% trans 'Лист выполненных работ' %}
 {% endblock %}
 
 {% block link %}
+{% cache 6000 completed_works %}
 <link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'my_js/myjs.js' %}"></script>
+{% endcache %}
 {% endblock %}
 
 {% block content %}
-
 <div class="gradient-border" id="box" style="width:400px!important;">
     <form method="post">
         {% csrf_token %}
@@ -39,4 +41,5 @@
         </div>
     </form>
 </div>
+
 {% endblock %}
