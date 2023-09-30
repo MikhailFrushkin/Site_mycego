@@ -48,7 +48,7 @@ class MainPage(LoginRequiredMixin, TemplateView):
                 hours_list.append(hours_work)
             user_works_day[user] = hours_list
         sorted_user_works_day = dict(sorted(user_works_day.items(), key=lambda x: x[0].username))
-        context['days'] = [day.strftime("%d %B") for day in (first_day_of_current_week + timedelta(days=day) for day in range(7))]
+        context['days'] = [day.strftime("%d.%m") for day in (first_day_of_current_week + timedelta(days=day) for day in range(7))]
         context['user_works_day'] = sorted_user_works_day
 
         # Добавляем объявления с пагинацией
