@@ -2,7 +2,7 @@
 {% load cache %}
 {% load i18n %}
 {% load static %}
-
+{% cache 6000 main_head %}
 <html lang="en" class="light-theme">
 <head>
     <!-- Required meta tags -->
@@ -31,17 +31,17 @@
 
     <!-- Reponsive -->
     <link rel="stylesheet" type="text/css" href="{% static 'nufti/assets/dist/responsive.css' %} ">
-
-    {% block link %}{% endblock %}
     <title>{% block title %} {% trans 'Главная страница' %} {% endblock %}</title>
     <link rel="stylesheet" href="{% static 'calendar/calendar.css' %}">
+    <link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
 
     <script src="{% static 'calendar/calendar.js' %}"></script>
     <script src="{% static 'my_js/table.js' %}"></script>
+    <script src="{% static 'my_js/myjs.js' %}"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
-            crossorigin="anonymous"></script>
+<!--    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"-->
+<!--            integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"-->
+<!--            crossorigin="anonymous"></script>-->
     <style>
         .page-content{
             margin-left: 50px!important;
@@ -59,6 +59,9 @@
         }
     </style>
 
+
+    {% endcache %}
+    {% block link %}{% endblock %}
 </head>
 <body>
 

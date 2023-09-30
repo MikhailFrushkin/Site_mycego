@@ -1,6 +1,7 @@
 {% extends 'main_base.html' %}
 {% load i18n %}
 {% load static %}
+{% load cache %}
 
 {% block link %}
 <style>
@@ -42,6 +43,8 @@
 {% endblock %}
 
 {% block content %}
+{% cache 600 staff %}
+
 {% for key, value in staff_by_role.items %}
 <span class="staff-name">{{ key }}</span>
 <br>
@@ -87,5 +90,6 @@
 <script src="{% static 'nufti/assets/js/bootstrap.min.js' %}"></script>
 <script src="{% static 'nufti/assets/js/swiper-bundle.min.js' %}"></script>
 <script src="{% static 'nufti/assets/js/wow.min.js' %}"></script>
+{% endcache %}
 
 {% endblock %}
