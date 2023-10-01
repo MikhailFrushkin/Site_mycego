@@ -3,16 +3,14 @@
 {% load static %}
 {% load cache %}
 
-{% cache 6000 main %}
-
 {% block link %}
-
 {% endblock %}
 
 {% block title %}
 {% trans 'Главная страница' %}
 {% endblock %}
 
+{% cache 6000 main %}
 {% block content %}
 <style>
     .carousel-item img {
@@ -55,10 +53,10 @@
         <table class="table-responsive-sm" id="myTable">
             <thead>
             <tr>
-                <th scope="col" style="width: 20%;">Сотрудник</th>
+                <th scope="col" style="width: 18%;">Сотрудник</th>
 
                 {% for day in days %}
-                <th scope="col" style="width: 10%;">{{ day }}</th>
+                <th scope="col" style="width: 12%;">{{ day }}</th>
                 {% endfor %}
             </tr>
             </thead>
@@ -87,7 +85,8 @@
                             <h2>{{ item.title }}</h2>
                         </div>
                         {% if item.images %}
-                        <div id="carouselExampleRide{{ forloop.counter }}" class="carousel slide" style="margin-bottom:20px;"
+                        <div id="carouselExampleRide{{ forloop.counter }}" class="carousel slide"
+                             style="margin-bottom:20px;"
                              data-bs-ride="carousel">
                             <div class="carousel-inner">
                                 {% for image in item.images.all %}

@@ -31,7 +31,6 @@
 
     <!-- Reponsive -->
     <link rel="stylesheet" type="text/css" href="{% static 'nufti/assets/dist/responsive.css' %} ">
-    <title>{% block title %} {% trans 'Главная страница' %} {% endblock %}</title>
     <link rel="stylesheet" href="{% static 'calendar/calendar.css' %}">
     <link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
 
@@ -59,8 +58,8 @@
         }
     </style>
 
-
     {% endcache %}
+    <title>{% block title %} {% trans 'Главная страница' %} {% endblock %}</title>
     {% block link %}{% endblock %}
 </head>
 <body>
