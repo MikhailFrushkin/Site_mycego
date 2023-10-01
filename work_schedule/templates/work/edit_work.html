@@ -98,7 +98,7 @@
 
         {% for user_name, hours in value.0.items %}
         <tr>
-            <th scope="row">{{ forloop.counter }} {% if user_name.1%} {%else%}<br>(Не проверено){%endif%}</th>
+            <th scope="row" style="font-size:10px;">{{ forloop.counter }}. {{user_name.2}} {% if user_name.1%} {%else%}<br>(Не проверено){%endif%}</th>
             {% for hour in hours %}
             <td>
                 <select class="form-select
@@ -301,16 +301,17 @@
     xhr.send(JSON.stringify(dataToSend));
     }
 </script>
+{% cache 300 user_list %}
 <script>
     $(document).ready(function () {
         var users = JSON.parse('{{ users_add|escapejs }}');
-
-        $("select").on("click", function () {
+        console.log(users);
+        $("select").on("focus", function () {
             var select = $(this);
 
             // Проверяем, были ли уже добавлены варианты
             if (!select.data("options-added")) {
-                // Добавляем пару вариантов для выбора
+                // Добавляем варианты для выбора
                 for (var i = 0; i < users.length; i++) {
                     select.append('<option style="color: #ffffff;" value="' + users[i] + '">' + users[i] + '</option>');
                 }
@@ -320,4 +321,5 @@
         });
     });
 </script>
+{% endcache %}
 {% endblock %}

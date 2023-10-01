@@ -335,69 +335,57 @@ class EditWork(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         time_start = datetime.now()
-        queryset = self.get_queryset()
+        queryset = self.get_queryset().select_related('user__role')
 
         unique_dates = queryset.values_list('date', flat=True).distinct()
 
         work_schedule = {}
         for index, date_appointment in enumerate(unique_dates):
             user_dict = {}
-            appointments = queryset.filter(date=date_appointment).annotate(
-                user_role=F('user__role__name')
-            )
-            # Задайте порядок сортировки с помощью функции Case
-            appointments = appointments.annotate(
-                custom_order=Case(
-                    When(user_role="Руководитель", then=Value(1)),
-                    When(user_role="Руководитель склада", then=Value(2)),
-                    When(user_role="Сервисный инженер", then=Value(3)),
-                    When(user_role="Печатник", then=Value(4)),
-                    default=Value(5),  # Для всех остальных ролей
-                    output_field=models.IntegerField(),
-                )
-            )
+            appointments = queryset.filter(date=date_appointment)
 
-            # Теперь сортируйте результаты по полю 'custom_order', чтобы получить желаемый порядок
-            appointments = appointments.order_by('custom_order')
-            flag = True
             role_dict = {}
             total_hours = 0
+            flag = True
+
             for appointment in appointments:
                 role = appointment.user.role
                 hours_role = int(format_duration(appointment.duration).split(':')[0])
+
                 if role:
-                    if role not in role_dict:
-                        role_dict[role] = [1, hours_role]
+                    if role.name not in role_dict:
+                        role_dict[role.name] = [1, hours_role]
                     else:
-                        role_dict[role][0] += 1
-                        role_dict[role][1] += hours_role
+                        role_dict[role.name][0] += 1
+                        role_dict[role.name][1] += hours_role
                     total_hours += hours_role
-                if appointment.verified == False:
+
+                if not appointment.verified:
                     flag = False
+
                 work_hours = [0] * 12
                 start_hour = appointment.start_time.hour
                 end_hour = appointment.end_time.hour
                 for i in range(start_hour - 9, end_hour - 9):
-                    work_hours[i] = 1  # Помечаем часы, когда пользователь работает
-                if appointment.user in user_dict:
-                    existing_work_hours = user_dict[appointment.user]
-                    # Объединяем два списка с использованием логического ИЛИ
+                    work_hours[i] = 1
+
+                user_key = (appointment.user.username, appointment.verified, appointment.user.role)
+                if user_key in user_dict:
+                    existing_work_hours = user_dict[user_key]
                     updated_work_hours = [a | b for a, b in zip(existing_work_hours, work_hours)]
-                    # Обновляем запись в словаре
-                    user_dict[(appointment.user, appointment.verified)] = updated_work_hours
+                    user_dict[user_key] = updated_work_hours
                 else:
-                    # Если записи нет, создаем новую
-                    user_dict[(appointment.user, appointment.verified)] = work_hours
-            work_hours_count = {hour: sum([user_work_hours[hour] for user_work_hours in user_dict.values()]) for
-                                hour in range(12)}
+                    user_dict[user_key] = work_hours
+            sorted_user_dict = dict(sorted(user_dict.items(), key=lambda item: item[0][2].name))
+            work_hours_count = {hour: sum(user_work_hours[hour] for user_work_hours in user_dict.values()) for hour in range(12)}
+
             work_schedule[(date_appointment, f'table-{index}')] = (
-            user_dict, work_hours_count, flag, role_dict, total_hours)
+                sorted_user_dict, work_hours_count, flag, role_dict, total_hours
+            )
 
         context['work_schedule'] = work_schedule
         context['users'] = CustomUser.objects.filter(status_work=True).distinct().order_by('username')
-        context['users_add'] = json.dumps(
-            [user.username for user in CustomUser.objects.filter(status_work=True).distinct().order_by('username')])
-        pprint(context['users'])
+        context['users_add'] = json.dumps([user.username for user in context['users']])
         context['year'], context['week'] = get_year_week(self.request.GET)
         logger.success(datetime.now() - time_start)
         return context
