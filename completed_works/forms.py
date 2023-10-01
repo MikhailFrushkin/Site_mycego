@@ -9,7 +9,7 @@ class WorkRecordForm(forms.ModelForm):
 
     class Meta:
         model = WorkRecord
-        fields = ['date', 'hours']
+        fields = ['date']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
         }
