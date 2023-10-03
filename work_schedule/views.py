@@ -7,8 +7,8 @@ from django.core.paginator import Paginator
 from django.db import models
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import F, Case, When, Value
-from django.http import JsonResponse, HttpResponse
+from django.db.models import F, Case, When, Value, Q
+from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -232,10 +232,35 @@ class GrafUser(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         today = date.today()
-        start_of_week = today - timedelta(days=today.weekday())
 
-        appointments = Appointment.objects.filter(user=self.request.user, verified=True,
-                                                  date__gte=start_of_week).order_by('date')
+        selected_month = self.request.GET.get('selected_month')
+        print(selected_month)
+
+        if selected_month and selected_month.isdigit():
+            selected_month = int(selected_month)
+        else:
+            selected_month = today.month
+
+        # Создаем объект datetime для первого дня указанного месяца
+        start_of_month = datetime(today.year, selected_month, 1).date()
+
+        # Находим последний день текущего месяца
+        if selected_month == 12:
+            end_of_month = datetime(today.year + 1, 1, 1).date()
+        else:
+            end_of_month = datetime(today.year, selected_month + 1, 1).date()
+
+        # Вычитаем 1 день из последнего дня, чтобы получить последний день текущего месяца
+        end_of_month -= timedelta(days=1)
+        print(start_of_month)
+        print(end_of_month)
+
+        appointments = Appointment.objects.filter(
+            Q(user=self.request.user),
+            Q(date__gte=start_of_month),
+            Q(date__lte=end_of_month)
+        ).order_by('date')
+
         context['appointments'] = appointments
         return context
 
