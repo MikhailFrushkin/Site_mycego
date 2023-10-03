@@ -98,11 +98,18 @@
 
         {% for user_name, hours in value.0.items %}
         <tr>
-            <th scope="row" style="font-size:10px;">{{ forloop.counter }}. {{user_name.2}} {% if user_name.1%} {%else%}<br>(Не проверено){%endif%}</th>
+            <th scope="row" style="font-size:10px;">{{ forloop.counter }}. {{user_name.2}} {% if user_name.1%}
+                {%else%}<br>(Не проверено){%endif%}
+            </th>
             {% for hour in hours %}
             <td>
                 <select class="form-select
-                        {% if hour %} bg-primary {% else %} bg-dark{% endif %} text-white"
+                        {% if hour %} bg-primary
+                        {% if not user_name.1 %}
+                        bg-danger
+                        {% endif %}
+                        {% else %} bg-dark{% endif %}
+                        text-white"
                         aria-label="Запись"
                 >
                     {% if hour %}
@@ -134,50 +141,50 @@
 
 
 <script>
-   $(document).ready(function () {
-    // Добавляем обработчик события input для всех инпутов
-    $('input[id^="searchInput"]').on('input', function () {
-        var counter = $(this).attr('id').match(/\d+/)[0]; // Получаем counter из id инпута
-        var searchText = $(this).val().toLowerCase();
+    $(document).ready(function () {
+     // Добавляем обработчик события input для всех инпутов
+     $('input[id^="searchInput"]').on('input', function () {
+         var counter = $(this).attr('id').match(/\d+/)[0]; // Получаем counter из id инпута
+         var searchText = $(this).val().toLowerCase();
 
-        // Проверяем, что введенный текст не является пустой строкой
-        if (searchText.trim() === '') {
-            $('table tr').removeClass('bnt-yellow'); // Убираем подсветку, если строка пуста
-            return;
-        }
+         // Проверяем, что введенный текст не является пустой строкой
+         if (searchText.trim() === '') {
+             $('table tr').removeClass('bnt-yellow'); // Убираем подсветку, если строка пуста
+             return;
+         }
 
-        var foundRow = null;
+         var foundRow = null;
 
-        // Проходимся по всем строкам таблицы с указанным counter
-        $('#collapseExample' + counter + ' table tbody tr').each(function () {
-            var rowText = $(this).text().toLowerCase();
-            var row = $(this);
+         // Проходимся по всем строкам таблицы с указанным counter
+         $('#collapseExample' + counter + ' table tbody tr').each(function () {
+             var rowText = $(this).text().toLowerCase();
+             var row = $(this);
 
-            if (rowText.indexOf(searchText) !== -1) {
-                row.addClass('bnt-yellow');
-                foundRow = row;
-            } else {
-                row.removeClass('bnt-yellow');
-            }
-        });
+             if (rowText.indexOf(searchText) !== -1) {
+                 row.addClass('bnt-yellow');
+                 foundRow = row;
+             } else {
+                 row.removeClass('bnt-yellow');
+             }
+         });
 
-        if (foundRow) {
-            var rowOffset = foundRow.offset().top;
-            $('html, body').animate({
-                scrollTop: rowOffset
-            }, 500);
-        } else {
-             console.log('stop');
-            // Если ничего не найдено, останавливаем прокрутку
-            $('html, body').stop(); // Остановить текущую анимацию прокрутки
-        }
-    });
+         if (foundRow) {
+             var rowOffset = foundRow.offset().top;
+             $('html, body').animate({
+                 scrollTop: rowOffset
+             }, 500);
+         } else {
+              console.log('stop');
+             // Если ничего не найдено, останавливаем прокрутку
+             $('html, body').stop(); // Остановить текущую анимацию прокрутки
+         }
+     });
 
-    // Добавляем обработчик события blur для всех инпутов
-    $('input[id^="searchInput"]').on('blur', function () {
-        $('table tr').removeClass('bnt-yellow');
-    });
-});
+     // Добавляем обработчик события blur для всех инпутов
+     $('input[id^="searchInput"]').on('blur', function () {
+         $('table tr').removeClass('bnt-yellow');
+     });
+ });
 
 
 </script>
