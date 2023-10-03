@@ -128,10 +128,12 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         else:
             year, week = int(year), int(week)
         monday, sunday = get_dates(year, week)
-        for user in CustomUser.objects.all():
+        user_list = CustomUser.objects.all()
+        for user in user_list:
             queryset_appointments = Appointment.objects.filter(user=user, date__year=year, date__week=week,
                                                                verified=True)
-
+            if len(queryset_appointments) == 0:
+                continue
             week_hours_work = []
             for i in range(7):
                 date_day = monday + datetime.timedelta(days=i)
