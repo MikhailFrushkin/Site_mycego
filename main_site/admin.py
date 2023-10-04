@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Announcement, Image
+from .models import Announcement, Image, Category, Knowledge, Link, Attachment, GoodLink, CategoryGoodLink
 
 
 class ImageInline(admin.TabularInline):
@@ -19,3 +19,36 @@ class AnnouncementAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Image)
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description')
+
+
+@admin.register(Knowledge)
+class KnowledgeAdmin(admin.ModelAdmin):
+    list_display = ('title', 'category', 'author', 'created_at', 'updated_at')
+    list_filter = ('category', 'author')
+    search_fields = ('title', 'content')
+    filter_horizontal = ('links', 'attachments')
+
+
+@admin.register(Link)
+class LinkAdmin(admin.ModelAdmin):
+    list_display = ('title', 'url')
+
+
+@admin.register(GoodLink)
+class GoodLinkAdmin(admin.ModelAdmin):
+    list_display = ('title', 'url')
+
+
+@admin.register(Attachment)
+class AttachmentAdmin(admin.ModelAdmin):
+    list_display = ('file',)
+
+
+@admin.register(CategoryGoodLink)
+class CategoryGoodLinkAdmin(admin.ModelAdmin):
+    list_display = ('name',)

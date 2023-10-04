@@ -2,12 +2,12 @@ from datetime import timedelta
 
 from django.core.paginator import Paginator
 from django.utils import timezone
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from loguru import logger
 import locale
 
-from main_site.models import Announcement
+from main_site.models import Announcement, Category, GoodLink, Knowledge
 from users.models import CustomUser
 from work_schedule.models import Appointment
 
@@ -48,7 +48,8 @@ class MainPage(LoginRequiredMixin, TemplateView):
                 hours_list.append(hours_work)
             user_works_day[user] = hours_list
         sorted_user_works_day = dict(sorted(user_works_day.items(), key=lambda x: x[0].username))
-        context['days'] = [day.strftime("%d.%m") for day in (first_day_of_current_week + timedelta(days=day) for day in range(7))]
+        context['days'] = [day.strftime("%d.%m") for day in
+                           (first_day_of_current_week + timedelta(days=day) for day in range(7))]
         context['user_works_day'] = sorted_user_works_day
 
         # Добавляем объявления с пагинацией
@@ -57,4 +58,29 @@ class MainPage(LoginRequiredMixin, TemplateView):
         page_number = self.request.GET.get('page')
         page = paginator.get_page(page_number)
         context['announcements'] = page
+        return context
+
+
+class KnowledgeCategory(LoginRequiredMixin, TemplateView):
+    template_name = 'main_page/knowledge_category.html'
+    login_url = '/users/login/'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        knows = Knowledge.objects.all()
+        good_links = GoodLink.objects.all()
+
+        category_dict = {item.category: [] for item in knows}
+        good_links_dict = {item.category: [] for item in good_links}
+
+        for item in knows:
+            category_dict[item.category].append(item)
+
+        for item in good_links:
+            good_links_dict[item.category].append(item)
+
+        context['good_links'] = good_links_dict
+        context['category_dict'] = category_dict
+
         return context
