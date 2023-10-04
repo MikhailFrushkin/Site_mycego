@@ -6,64 +6,127 @@
 {% endblock %}
 
 {% block link %}
+<style>
+    li {
+    font-size:2rem;
+    }
+    p {
+    font-size:2rem;
+    }
+    .m-top {
+    margin-top: 2rem;
+    }
+    .my-selection {
+    height: 6rem;
+    }
+    .btn-glow {
+    width: 100%;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <p>{% trans 'Сколько работников за время было' %}: {{ total_employees }}</p>
+<div class="container" style="margin: 0; margin-top: 20px;width: 100%;">
+    <p>{% trans 'Сколько работников за все время было' %}: {{ total_employees }}</p>
     <p>{% trans 'Сколько работников работает' %}: {{ total_employees_work }}</p>
     <p>{% trans 'Сколько активных работников сейчас' %}: {{ active_employees }}</p>
     <br>
-    <button class="btn-grad btn-gradient-border btn-glow" type="button" data-bs-toggle="collapse"
-            data-bs-target="#collapseExample"
-            aria-expanded="false" aria-controls="collapseExample">
-        Список неактивных сотрудников
-    </button>
-    <br>
-    <div class="collapse" id="collapseExample">
-        <div class="card card-body" style="background-color:#130518;color:#198754!important;">
-            {% if inactive_employees %}
-            <ul>
-                {% for employee in inactive_employees %}
-                <li><a href="{% url 'users:user_profile' employee.0.id %}" style="font-size:14px;">{{ employee.0 }} (Дней отсутствует:
-                    {{employee.2}}({{employee.1}}))</a></li>
-                {% endfor %}
-            </ul>
-            {% endif %}
+    <div class="row align-items-start">
+        <div class="col">
+            <div class="my-selection">
+                <button class="btn-grad btn-gradient-border btn-glow" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseExampleInactive"
+                        aria-expanded="false" aria-controls="collapseExampleInactive">
+                    Список неактивных сотрудников
+                </button>
+            </div>
+
+            <div class="collapse" id="collapseExampleInactive">
+                <div class="card card-body" style="background-color:#130518;color:#198754!important;">
+                    {% if inactive_employees %}
+                    <ul>
+                        {% for employee in inactive_employees %}
+                        <li class="m-top"><a href="{% url 'users:user_profile' employee.0.id %}" target="_blank">
+                            {{ employee.0 }}
+                        </a></li>
+                        <li>Дней отсутствует:{{employee.2}}({{employee.1}})</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="my-selection">
+                <button class="btn-grad btn-gradient-border btn-glow" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseExampleMissingWork"
+                        aria-expanded="false" aria-controls="collapseExampleMissingWork">
+                    Нет выполненых работ
+                </button>
+            </div>
+            <div class="collapse" id="collapseExampleMissingWork">
+                <div class="card card-body" style="background-color:#130518;color:#198754!important;">
+                    <ul>
+                        {% for key, value in missing_appointments_dict.items %}
+                        <li class="m-top"><a href="{% url 'users:user_profile' key.id %}" target="_blank">
+                            {{ key }}
+                        </a></li>
+                        {% for i in value %}
+                        <li>{{ i }}</li>
+                        {% endfor %}
+                        {% endfor %}
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="my-selection">
+                <button class="btn-grad btn-gradient-border btn-glow" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseExampleMissingApp"
+                        aria-expanded="false" aria-controls="collapseExampleMissingApp">
+                    Нет в графике, но есть работы
+                </button>
+            </div>
+            <div class="collapse" id="collapseExampleMissingApp">
+                <div class="card card-body" style="background-color:#130518;color:#198754!important;">
+                    <ul>
+                        {% for key, value in missing_work_records_dict.items %}
+                        <li class="m-top"><a href="{% url 'users:user_profile' key.id %}" target="_blank">
+                            {{ key }}
+                        </a></li>
+                        {% for i in value %}
+                        <li>{{ i }}</li>
+                        {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="my-selection">
+                <button class="btn-grad btn-gradient-border btn-glow" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseExampleGood"
+                        aria-expanded="false" aria-controls="collapseExampleGood">
+                    Кф больше 200%
+                </button>
+            </div>
+            <div class="collapse" id="collapseExampleGood">
+                <div class="card card-body" style="background-color:#130518;color:#198754!important;">
+                    <ul>
+                        {% for key, value in very_good_works.items %}
+                        <li class="m-top"><a href="{% url 'users:user_profile' key.id %}" target="_blank">
+                            {{ key }}
+                        </a></li>
+                        {% for i in value %}
+                        <li><a href="{% url 'completed_works:workrecord_detail' i.2 %}" target="_blank">{{ i.0 }} - {{i.1}}%</a></li>
+                        {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
-
-    <br><br>
-    <h2>{% trans 'Статистика по неделям' %}</h2>
-    {% for year, weeks in full_dict.items %}
-    <h3>{% trans 'Год' %}: {{ year }}</h3>
-    {% for week, user_work_dict in weeks.items %}
-    <h4>{% trans 'Неделя' %}: {{ week.0 }}</h4>
-    <h4>{{ week.1 }} - {{ week.2 }}</h4>
-    <br>
-    <table>
-        <thead>
-        <tr>
-            <th>{% trans 'Пользователь' %}</th>
-            <th>{% trans 'Часов по графику в неделю' %}</th>
-            <th>{% trans 'Отработанно' %}</th>
-            <th>{% trans 'Среднее количество часов в день' %}</th>
-            <th>{% trans 'Дни без работы' %}</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for user, user_data in user_work_dict.items %}
-        <tr>
-            <td>{{ user }}</td>
-            <td>{{ user_data.hours }}</td>
-            <td>{{ user_data.hours_work_current_week }}</td>
-            <td>{{ user_data.average_hours }}</td>
-            <td>{{ user_data.days_without_work.1 }}({{ user_data.days_without_work.0 }})</td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    {% endfor %}
-    {% endfor %}
 </div>
+
 {% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+{% block title %}
+{% trans 'Лист выполненных работ' %}
+{% endblock %}
+
+{% block link %}
+{% endblock %}
+
+{% block content %}
+<h2>Детали работы сотрудника</h2>
+<p>Сотрудник: {{ object.user }}</p>
+<p>Дата: {{ object.date }}</p>
+<p>Часов по графику: {{ total_hours }} ч.</p>
+<p>Проверено: {% if object.is_checked %}Да{% else %}Нет{% endif %}</p>
+<br><br>
+<h3>Виды работ:</h3>
+{% for work in works %}
+<p>{{ work.standard.name }} - {{ work.quantity }} (Норматив: {{work.standard.standard}})</p>
+{% endfor %}
+{% endblock %}

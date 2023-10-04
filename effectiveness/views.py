@@ -3,12 +3,13 @@ from datetime import timedelta, datetime
 from pprint import pprint
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Sum, F
+from django.db.models import Count, Sum, F, Subquery, ExpressionWrapper, FloatField
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import TemplateView
+from loguru import logger
 
 from completed_works.models import WorkRecord, WorkRecordQuantity
 from users.models import CustomUser
@@ -97,116 +98,108 @@ class StatisticView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         current_date = timezone.now()
 
-        current_year, current_week = today_current()
+        total_employees = CustomUser.objects.count()
+        total_employees_work = CustomUser.objects.filter(status_work=True).count()
+        context['total_employees'] = total_employees
+        context['total_employees_work'] = total_employees_work
+        context['active_employees'] = total_employees_work
+        context['none_work'] = 0
+        appointment_dates = (Appointment.objects.filter(verified=True)
+                             .values_list('date', flat=True)
+                             .distinct()
+                             .order_by('date'))
 
-        # 1. сколько работников за время было
-        context['total_employees'] = CustomUser.objects.count()
-        # сколько работников работает
-        context['total_employees_work'] = CustomUser.objects.filter(status_work=True).count()
-
-
-        appointment_list = (Appointment.objects.filter(verified=True).
-                            values_list('date', flat=True).distinct().order_by('date'))
         week_data = defaultdict(set)
-        for date in appointment_list:
+        for date in appointment_dates:
             year = int(date.year)
             week = int(date.strftime('%U'))
             week_data[year].add(week)
 
-        full_dict = {}
-        # 2. сколько активных работников сейчас
+        inactive_employees = []
 
-        context['active_employees'] = 0
-
-        # 3. Список неактивных сотрудников
-
-        context['inactive_employees'] = []
-        users = CustomUser.objects.filter(status_work=True)
-
-        for year, weeks in week_data.items():
-            user_works_dict = {}
-            for week in weeks:
-                user_work_dict = {}
-
-                for user in users:
-                    queryset = Appointment.objects.filter(
-                        user=user,
-                        date__week=week,
-                        verified=True
-                    )
-                    appointments_duration = queryset.aggregate(total_duration=Sum('duration'), total_day=Count('date'))
-                    temp_dict = {
-                        'hours': 0,
-                        'hours_work_current_week': 0,
-                        'average_hours': 0,
-                        'days_without_work': 0,
-                    }
-
-                    if appointments_duration['total_duration']:
-                        total_seconds = appointments_duration['total_duration'].total_seconds()
-                        hours = int(total_seconds // 3600 or 0)
-                        temp_dict['hours'] = hours
-                        if year == current_year and week >= current_week:
-                            start_of_week = current_date - timedelta(days=current_date.weekday())
-                            appointments_duration_current_date = queryset.filter(
-                                date__range=(start_of_week, current_date)
-                            ).aggregate(
-                                total_duration=Sum('duration'),
-                                total_day=Count('date')
-                            )
-
-                            if appointments_duration_current_date['total_duration']:
-                                total_seconds = appointments_duration_current_date['total_duration'].total_seconds()
-                                hours = int(total_seconds // 3600 or 0)
-                                temp_dict['hours_work_current_week'] = hours
-                                days = appointments_duration_current_date['total_day']
-                                temp_dict['average_hours'] = int(hours / days)
-                            else:
-                                temp_dict['hours_work_current_week'] = 0
-                        else:
-                            temp_dict['hours_work_current_week'] = hours
-                            days = appointments_duration['total_day']
-                            temp_dict['average_hours'] = int(hours / days)
-                        closest_appointment = Appointment.objects.filter(
-                            user=user,
-                            date__lt=current_date + timedelta(days=1)
-                        ).order_by('-date').first()
-                        if closest_appointment:
-                            closest_date = datetime.combine(closest_appointment.date,
-                                                            datetime.min.time())
-                            closest_date = timezone.make_aware(closest_date, timezone.get_current_timezone())
-                            days_difference = (current_date - closest_date).days
-                        else:
-                            closest_date = None
-                            days_difference = None
-                        temp_dict['days_without_work'] = (closest_date, days_difference)
-                    user_work_dict[user] = temp_dict
-
-                sorted_dict = dict(sorted(user_work_dict.items(), key=lambda x: str(x[0])))
-                monday_of_given_week, sunday_of_given_week = get_dates(year, week)
-                user_works_dict[(week, monday_of_given_week, sunday_of_given_week)] = sorted_dict
-            full_dict[year] = dict(sorted(user_works_dict.items(), key=lambda x: x[0][0], reverse=True))
-
-        for user in users:
-            closest_appointment = Appointment.objects.filter(
+        for user in CustomUser.objects.filter(status_work=True):
+            closest_appointment = (Appointment.objects.filter(
                 user=user,
                 date__lt=current_date + timedelta(days=1)
-            ).order_by('-date').first()
+            ).order_by('-date').first())
+
+            closest_date = None
+            days_difference = None
+
             if closest_appointment:
-                closest_date = datetime.combine(closest_appointment.date,
-                                                datetime.min.time())
+                closest_date = datetime.combine(closest_appointment.date, datetime.min.time())
                 closest_date = timezone.make_aware(closest_date, timezone.get_current_timezone())
                 days_difference = (current_date - closest_date).days
             else:
-                closest_date = None
-                days_difference = None
-            if not days_difference:
-                context['inactive_employees'].append((user, 'Нет дней в графике', 0))
-            elif days_difference >= 7:
-                context['inactive_employees'].append((user, closest_date, days_difference))
-            else:
-                context['active_employees'] += 1
-        context['inactive_employees'] = sorted(context['inactive_employees'], key=lambda x: x[2],reverse=True)
-        context['full_dict'] = full_dict
+                context['none_work'] += 1
+            if days_difference is None or days_difference >= 7:
+                if days_difference is None:
+                   pass
+                else:
+                    inactive_employees.append((user, closest_date, days_difference))
+
+        context['inactive_employees'] = sorted(
+            inactive_employees, key=lambda x: x[2], reverse=True)
+        context['active_employees'] = context['active_employees'] - len(context['inactive_employees']) - context['none_work']
+
+        users = CustomUser.objects.all()
+        past_date = current_date - timezone.timedelta(weeks=1)
+        current_date = current_date - timezone.timedelta(days=1)
+        missing_appointments_dict = {}
+        missing_work_records_dict = {}
+
+        # Итерируемся по каждому пользователю
+        for user in users:
+            # Находим даты, у которых есть записи в модели Appointment, но нет в модели WorkRecord для данного пользователя
+            appointments_without_work_records = Appointment.objects.filter(
+                user=user, date__range=(past_date, current_date)
+            ).exclude(
+                date__in=WorkRecord.objects.filter(user=user, date__range=(past_date, current_date)).values(
+                    'date')
+            )
+            # Находим даты, у которых есть записи в модели WorkRecord, но нет в модели Appointment для данного пользователя
+            work_records_without_appointments = WorkRecord.objects.filter(
+                user=user, date__range=(past_date, current_date)
+            ).exclude(
+                date__in=Appointment.objects.filter(user=user, date__range=(past_date, current_date)).values(
+                    'date')
+            )
+
+            # Заполняем словари для данного пользователя
+            if len(appointments_without_work_records) > 0:
+                missing_appointments_dict[user] = list(
+                    appointments_without_work_records.values_list('date', flat=True))
+            if len(work_records_without_appointments) > 0:
+                missing_work_records_dict[user] = list(
+                    work_records_without_appointments.values_list('date', flat=True))
+
+        context['missing_appointments_dict'] = missing_appointments_dict
+        context['missing_work_records_dict'] = missing_work_records_dict
+
+        very_good_works = {}
+        # Получить все записи работы
+        work_records = WorkRecord.objects.filter(date__range=(past_date, current_date))
+
+        # Пройти по каждой группе записей и вычислить суммарное количество работы для каждой даты и сотрудника
+        for record in work_records:
+            id = record.id
+            date = record.date
+            user = record.user
+            total_hours = Appointment.objects.filter(user=user, date=date).aggregate(Sum('duration'))['duration__sum']
+            if total_hours:
+                total_hours = total_hours.total_seconds() / 3600
+                works = WorkRecordQuantity.objects.filter(work_record=record)
+                hours_work = 0
+                for work in works:
+                    if work.quantity > 0:
+                        hours_work += work.quantity / work.standard.standard
+                kf = round(hours_work / total_hours * 100, 2)
+                if kf > 200:
+                    if user in very_good_works:
+                        very_good_works[user].append((date, kf, id))
+                    else:
+                        very_good_works[user] = [(date, kf, id)]
         # pprint(context)
+        context['very_good_works'] = very_good_works
+
         return context

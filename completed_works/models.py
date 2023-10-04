@@ -43,3 +43,19 @@ class WorkRecordQuantity(models.Model):
         verbose_name = "Количество работы"
         verbose_name_plural = "Количества работы"
 
+
+# class WorkDelivery(models.Model):
+#     name = models.CharField(verbose_name='Имя поставки', max_length=100)
+#     created = models.DateTimeField(verbose_name='Создан')
+#     type = models.CharField(verbose_name='Тип', null=True, max_length=100)
+#     machin = models.CharField(verbose_name='Компьютер', null=True, max_length=100)
+#     found_arts = models.IntegerField(verbose_name='Найдено значков', null=True)
+#     num = models.IntegerField(verbose_name='Найдено значков', null=True)
+#     found_arts = models.IntegerField(verbose_name='Найдено значков', null=True)
+#
+#     def __str__(self):
+#         return f"{self.work_record} - {self.standard}"
+#
+#     class Meta:
+#         verbose_name = "Количество работы"
+#         verbose_name_plural = "Количества работы"

@@ -44,7 +44,7 @@ class WorkRecordFormAdmin(forms.ModelForm):
     )
     class Meta:
         model = WorkRecord
-        fields = ['user', 'date', 'hours']
+        fields = ['user', 'date']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
         }

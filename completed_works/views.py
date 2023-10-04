@@ -7,11 +7,12 @@ from django.db.models import Sum, Q
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import ListView, FormView, TemplateView
+from django.views.generic import ListView, FormView, TemplateView, DetailView
 from loguru import logger
 
 from users.models import CustomUser
 from utils.utils import get_year_week
+from work_schedule.models import Appointment
 from .forms import WorkRecordForm, WorkRecordQuantityForm, WorkRecordFormAdmin
 from .models import WorkRecordQuantity, Standards, WorkRecord
 
@@ -25,6 +26,12 @@ def create_work_record(request):
 
             work_record.user = request.user
             work_record.is_checked = False
+            date = request.POST['date']
+
+            existing_record = WorkRecord.objects.filter(user=work_record.user, date=date).first()
+            if existing_record:
+                messages.error(request, 'Запись уже существует для этой даты.')
+                return redirect('completed_works:completed_works_view')
 
             if work_record.user.role.name == 'Печатник':
                 standards = Standards.objects.filter(Q(type_for_printer=True) | Q(name='Другие работы(в минутах)'))
@@ -50,14 +57,6 @@ def create_work_record(request):
             else:
                 messages.error(request, 'Ни одно количество не указано или все равно нулю.')
                 return render(request, 'completed_works/completed_works.html', {'form': form})
-    else:
-        user = request.user
-        date = datetime.datetime.today()
-
-        existing_record = WorkRecord.objects.filter(user=user, date=date).first()
-        if existing_record:
-            messages.error(request, 'Запись уже существует для этой даты.')
-            return redirect('completed_works:completed_works_view')
 
     return render(request, 'completed_works/completed_works.html', {'form': form})
 
@@ -69,9 +68,8 @@ def create_work_record_admin_add(request):
             work_record = form.save(commit=False)
             work_record.is_checked = False
 
-            if request.POST['hours'] != '' and request.POST['date'] != '' and request.POST['user'] != '':
+            if request.POST['date'] != '' and request.POST['user'] != '':
                 work_record.user = CustomUser.objects.get(id=request.POST['user'])
-                work_record.hours = int(request.POST['hours'])
                 work_record.date = datetime.datetime.strptime(request.POST['date'], '%Y-%m-%d')
                 try:
                     exec_work_records = WorkRecord.objects.get(user=work_record.user, date=work_record.date)
@@ -247,3 +245,20 @@ def save_all_row(request, week):
         messages.success(request, f'Все записи сохранены за {week} неделю')
         redirect('completed_works:completed_works_view_admin')
     return redirect('completed_works:completed_works_view_admin')
+
+
+class WorkRecordDetailView(LoginRequiredMixin, DetailView):
+    model = WorkRecord
+    template_name = 'completed_works/view_works_details.html'
+    login_url = '/users/login/'
+    success_url = reverse_lazy('completed_works:workrecord_detail')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        works = WorkRecordQuantity.objects.filter(work_record=self.object, quantity__gt=0)
+        context['works'] = works
+        total_hours = Appointment.objects.filter(user=self.object.user, date=self.object.date).aggregate(Sum('duration'))['duration__sum']
+        if total_hours:
+            total_hours = total_hours.total_seconds() / 3600
+        context['total_hours'] = total_hours
+        return context
