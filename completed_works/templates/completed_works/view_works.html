@@ -59,31 +59,23 @@
                             <p>
                                 {{ item.standard__name }}
                             </p>
-                            <input type="text" name="quantity_{{ item.id }}" value="{{ item.quantity }}"
-                                   class="narrower-input">
+                            <input type="text" name="quantity_{{ item.id }}" value="{{ item.quantity }}" class="narrower-input">
                         </div>
                         {% endfor %}
                         {% if not work_list.is_checked %}
-                        <form method="post" action="{% url 'completed_works:delete_work_record' work_list.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn-grad btn-gradient-border btn-glow">Сохранить</button>
-                        </form>
-
-                        <form method="post" action="{% url 'completed_works:delete_work_record' work_list.id %}"
-                              id="delete-form-{{ work_list.id }}">
-                            {% csrf_token %}
-                            <button type="button" class="btn-grad btn-gradient-border btn-glow"
-                                    onclick="confirmDelete({{ work_list.id }})">
-                                Удалить
-                            </button>
-                        </form>
-
+                        <button type="submit" class="btn-grad btn-gradient-border btn-glow">Сохранить</button>
                         {% else %}
                         <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Сохранить</button>
-                        <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Удалить</button>
                         {% endif %}
-                        <br>
                     </form>
+                    {% if not work_list.is_checked %}
+                    <form method="post" action="{% url 'completed_works:delete_work_record' work_list.id %}" id="delete-form-{{ work_list.id }}">
+                        {% csrf_token %}
+                        <button type="button" class="btn-grad btn-gradient-border btn-glow" onclick="confirmDelete({{ work_list.id }})">Удалить</button>
+                    </form>
+                    {% else %}
+                    <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Удалить</button>
+                    {% endif %}
                 </div>
 
             </div>
@@ -92,11 +84,11 @@
     </div>
 </div>
 <script>
-function confirmDelete(workRecordId) {
-    if (confirm('Вы уверены, что хотите удалить эту запись?')) {
-        // Если пользователь подтвердил удаление, отправьте форму.
-        document.getElementById('delete-form-' + workRecordId).submit();
+    function confirmDelete(workRecordId) {
+        if (confirm('Вы уверены, что хотите удалить эту запись?')) {
+            // Если пользователь подтвердил удаление, отправьте форму.
+            document.getElementById('delete-form-' + workRecordId).submit();
+        }
     }
-}
 </script>
 {% endblock %}

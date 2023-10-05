@@ -50,9 +50,9 @@ def create_work_record(request):
                 work_record.save()
                 for standard in standards:
                     quantity = form.cleaned_data.get(standard.name, None)
-                    if not quantity:
-                        quantity = 0
-                    WorkRecordQuantity.objects.create(work_record=work_record, standard=standard, quantity=quantity)
+                    if quantity:
+
+                        WorkRecordQuantity.objects.create(work_record=work_record, standard=standard, quantity=quantity)
                 return redirect('completed_works:completed_works_view')
             else:
                 messages.error(request, 'Ни одно количество не указано или все равно нулю.')
@@ -159,14 +159,14 @@ def update_work_quantities(request):
             related_work_record.is_checked = True
             related_work_record.save()
             return redirect('completed_works:completed_works_view_admin')
-
     return redirect('completed_works:completed_works_view')
 
 
 def delete_work_record(request, work_record_id):
     # Получите объект WorkRecord по его идентификатору
     work_record = WorkRecord.objects.get(id=work_record_id)
-    print(work_record)
+    logger.debug(work_record)
+    logger.debug(request.POST)
     # Проверьте, что текущий пользователь равен владельцу записи и is_checked=False
     if request.user == work_record.user and not work_record.is_checked:
         # Удаляем запись
@@ -241,7 +241,6 @@ def save_all_row(request, week):
         for item in works_records:
             item.is_checked = True
             item.save()
-            print(item)
         messages.success(request, f'Все записи сохранены за {week} неделю')
         redirect('completed_works:completed_works_view_admin')
     return redirect('completed_works:completed_works_view_admin')
