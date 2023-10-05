@@ -19,17 +19,23 @@
 <style>
     .card.card-body {
     background-color: inherit;
-}
-#myInput {
-  background-image: url('/css/searchicon.png'); /* Добавить значок поиска для ввода */
-  background-position: 10px 12px; /* Расположите значок поиска */
-  background-repeat: no-repeat; /* Не повторяйте изображение значка */
-  width: 100%; /* Полная ширина */
-  font-size: 16px; /* Увеличить размер шрифта */
-  padding: 12px 20px 12px 40px; /* Добавить немного отступов */
-  border: 1px solid #ddd; /* Добавить серую границу */
-  margin-bottom: 12px; /* Добавить некоторое пространство под входом */
-}
+    }
+    #myInput {
+      background-image: url('/css/searchicon.png'); /* Добавить значок поиска для ввода */
+      background-position: 10px 12px; /* Расположите значок поиска */
+      background-repeat: no-repeat; /* Не повторяйте изображение значка */
+      width: 100%; /* Полная ширина */
+      font-size: 16px; /* Увеличить размер шрифта */
+      padding: 12px 20px 12px 40px; /* Добавить немного отступов */
+      border: 1px solid #ddd; /* Добавить серую границу */
+      margin-bottom: 12px; /* Добавить некоторое пространство под входом */
+    }
+    .mark-page4 {
+            z-index: 9;
+            right: 0%;
+            bottom: 80%;
+            animation: move5 8s infinite linear;
+        }
 </style>
 {% choice_date year week monday sunday %}
 
@@ -101,11 +107,11 @@
         <td>
             <a href="{% url 'users:user_profile' user.id %}">
                 {{user}}
-            <br>
+                <br>
                 тел:{{user.phone_number}}
-            <br>
+                <br>
                 карта:{{user.card_details}}
-        </a></td>
+            </a></td>
         <td>{{user.role.name}}</td>
         <td>{{user.role.salary}} <br>руб/час</td>
 
@@ -207,26 +213,26 @@
     } );
 </script>
 <script>
-function myFunction() {
-  // Объявить переменные
-  var input, filter, table, tr, td, i, txtValue;
-  input = document.getElementById("myInput");
-  filter = input.value.toUpperCase();
-  table = document.getElementById("{{week}}");
-  tr = table.getElementsByTagName("tr");
+    function myFunction() {
+      // Объявить переменные
+      var input, filter, table, tr, td, i, txtValue;
+      input = document.getElementById("myInput");
+      filter = input.value.toUpperCase();
+      table = document.getElementById("{{week}}");
+      tr = table.getElementsByTagName("tr");
 
-  // Перебирайте все строки таблицы и скрывайте тех, кто не соответствует поисковому запросу
-  for (i = 0; i < tr.length; i++) {
-    td = tr[i].getElementsByTagName("td")[0];
-    if (td) {
-      txtValue = td.textContent || td.innerText;
-      if (txtValue.toUpperCase().indexOf(filter) > -1) {
-        tr[i].style.display = "";
-      } else {
-        tr[i].style.display = "none";
+      // Перебирайте все строки таблицы и скрывайте тех, кто не соответствует поисковому запросу
+      for (i = 0; i < tr.length; i++) {
+        td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+          txtValue = td.textContent || td.innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            tr[i].style.display = "";
+          } else {
+            tr[i].style.display = "none";
+          }
+        }
       }
     }
-  }
-}
 </script>
 {% endblock %}
