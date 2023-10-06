@@ -91,9 +91,8 @@ def create_work_record_admin_add(request):
                     work_record.save()
                     for standard in standards:
                         quantity = request.POST.get(standard.name, None)
-                        if not quantity:
-                            quantity = 0
-                        WorkRecordQuantity.objects.create(work_record=work_record, standard=standard, quantity=quantity)
+                        if quantity:
+                            WorkRecordQuantity.objects.create(work_record=work_record, standard=standard, quantity=quantity)
                     return redirect('completed_works:completed_works_view_admin')
                 else:
                     messages.error(request, 'Ни одно количество не указано или все равно нулю.')

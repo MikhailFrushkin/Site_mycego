@@ -3,8 +3,10 @@ import datetime as dt
 from django import forms
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.utils import timezone
+from loguru import logger
 
-from .models import Appointment
+from .models import Appointment, VacationRequest
 
 # Создайте список с интервалом в 30 минут от 9:00 до 21:00
 HOUR_CHOICES = []
@@ -94,6 +96,37 @@ class AppointmentForm(forms.ModelForm):
 
         if errors:
             # Если есть ошибки, добавляем их в атрибуты формы
+            for error in errors:
+                self.add_error(None, error)
+
+        return cleaned_data
+
+
+class VacationRequestForm(forms.ModelForm):
+    class Meta:
+        model = VacationRequest
+        fields = ['start_date', 'end_date']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        errors = []
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        today = timezone.now().date()
+
+        if start_date and end_date:
+            delta = end_date - start_date
+            if delta.days < 7:
+                errors.append(ValidationError("Продолжительность отпуска должна быть не менее 7 дней."))
+
+            if start_date < today:
+                errors.append(ValidationError("Дата начала отпуска не может быть меньше текущей даты."))
+
+        if errors:
             for error in errors:
                 self.add_error(None, error)
 

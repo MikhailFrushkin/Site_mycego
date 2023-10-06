@@ -1,5 +1,5 @@
 from django.contrib import admin
-from work_schedule.models import Appointment
+from work_schedule.models import Appointment, VacationRequest
 
 
 class WorkSchedule(admin.ModelAdmin):
@@ -13,5 +13,15 @@ class WorkSchedule(admin.ModelAdmin):
 admin.site.register(Appointment, WorkSchedule)
 
 
+class VacationRequestAdmin(admin.ModelAdmin):
+    list_display = ('employee', 'start_date', 'end_date', 'duration')
+    search_fields = ('employee__username',)  # Поиск по имени сотрудника
+
+    def get_readonly_fields(self, request, obj=None):
+        # Делаем поле "Продолжительность" только для чтения
+        if obj:
+            return ['duration']
+        return []
 
 
+admin.site.register(VacationRequest, VacationRequestAdmin)

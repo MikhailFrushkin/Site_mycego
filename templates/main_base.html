@@ -105,11 +105,20 @@
                                             Подать заявку</a></li>
                                         <li class="menu-item"><a href="{% url 'work:graf_user' %}">
                                             Мой График
-                                        </a></li>
+                                        </a>
+                                        </li>
+                                        <li class="menu-item"><a href="{% url 'work:create_vacation_request' %}">
+                                            Заявка на отпуск
+                                        </a>
+                                        </li>
                                         {% if request.user.is_staff %}
                                         <li class="menu-item">
+                                            <a href="{% url 'work:vacation_admin' %}">
+                                                Все заявки <br>на отпуск
+                                            </a></li>
+                                        <li class="menu-item">
                                             <a href="{% url 'work:edit_work' %}">
-                                                Редактировать
+                                                Редактировать график
                                             </a></li>
                                         {% endif %}
                                     </ul>

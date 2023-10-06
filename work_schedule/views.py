@@ -3,15 +3,17 @@ import locale
 from datetime import date, timedelta, datetime, time
 from pprint import pprint
 
+from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import models
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import F, Case, When, Value, Q
 from django.http import JsonResponse, HttpResponse, Http404
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.views import View
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView, TemplateView
 from loguru import logger
@@ -20,8 +22,8 @@ from openpyxl.workbook import Workbook
 from django.apps import apps
 from users.models import CustomUser
 from utils.utils import get_year_week
-from work_schedule.forms import AppointmentForm
-from work_schedule.models import Appointment
+from work_schedule.forms import AppointmentForm, VacationRequestForm
+from work_schedule.models import Appointment, VacationRequest
 
 
 def format_duration(duration):
@@ -234,7 +236,6 @@ class GrafUser(LoginRequiredMixin, ListView):
         today = date.today()
 
         selected_month = self.request.GET.get('selected_month')
-        print(selected_month)
 
         if selected_month and selected_month.isdigit():
             selected_month = int(selected_month)
@@ -252,8 +253,6 @@ class GrafUser(LoginRequiredMixin, ListView):
 
         # Вычитаем 1 день из последнего дня, чтобы получить последний день текущего месяца
         end_of_month -= timedelta(days=1)
-        print(start_of_month)
-        print(end_of_month)
 
         appointments = Appointment.objects.filter(
             Q(user=self.request.user),
@@ -402,7 +401,8 @@ class EditWork(LoginRequiredMixin, TemplateView):
                 else:
                     user_dict[user_key] = work_hours
             sorted_user_dict = dict(sorted(user_dict.items(), key=lambda item: item[0][2].name))
-            work_hours_count = {hour: sum(user_work_hours[hour] for user_work_hours in user_dict.values()) for hour in range(12)}
+            work_hours_count = {hour: sum(user_work_hours[hour] for user_work_hours in user_dict.values()) for hour in
+                                range(12)}
 
             work_schedule[(date_appointment, f'table-{index}')] = (
                 sorted_user_dict, work_hours_count, flag, role_dict, total_hours
@@ -414,3 +414,114 @@ class EditWork(LoginRequiredMixin, TemplateView):
         context['year'], context['week'] = get_year_week(self.request.GET)
         logger.success(datetime.now() - time_start)
         return context
+
+
+class VacationRequestCreateView(LoginRequiredMixin, View):
+    template_name = 'work/vacation_request_form.html'
+    form_class = VacationRequestForm
+
+    def get(self, request):
+        form = self.form_class()
+        user = request.user
+        vacations = VacationRequest.objects.filter(employee=user)
+        return render(request, self.template_name, {'form': form, 'vacations': vacations})
+
+    def post(self, request):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            vacation_request = form.save(commit=False)
+            vacation_request.employee = request.user
+            logger.debug(request.POST)
+            overlapping_requests = VacationRequest.objects.filter(
+                employee=vacation_request.employee,
+                start_date__lte=request.POST['end_date'],
+                end_date__gte=request.POST['start_date']
+            )
+            logger.debug(overlapping_requests)
+            if len(overlapping_requests) > 0:
+                messages.error(self.request, "В выбранные даты уже существуют записи на отпуск.")
+
+            else:
+                vacation_request.save()
+                return redirect('work:create_vacation_request')
+        vacations = VacationRequest.objects.filter(employee=request.user)
+        return render(request, self.template_name, {'form': form, 'vacations': vacations})
+
+
+class VacationRequestAdmin(LoginRequiredMixin, TemplateView):
+    template_name = 'work/vacation_request_admin.html'
+    form_class = VacationRequestForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        vacations = VacationRequest.objects.all()
+        result = {}
+        month_dict = {
+            1: "Январь",
+            2: "Февраль",
+            3: "Март",
+            4: "Апрель",
+            5: "Май",
+            6: "Июнь",
+            7: "Июль",
+            8: "Август",
+            9: "Сентябрь",
+            10: "Октябрь",
+            11: "Ноябрь",
+            12: "Декабрь"
+        }
+        for vacation in vacations:
+            # Извлекаем месяц и год из начальной даты
+            month = vacation.start_date.month
+            year = vacation.start_date.year
+
+            # Получаем роль сотрудника
+            role = vacation.employee.role
+
+            # Создаем ключ для словаря result
+            key = (month_dict[month], year)
+
+            # Если ключ уже существует, добавляем продолжительность отпуска
+            if key in result:
+                if role in result[key]["roles"]:
+                    result[key]["roles"][role] += vacation.duration
+                else:
+                    result[key]["roles"][role] = vacation.duration
+
+                if role in result[key]["vacations"]:
+                    result[key]["vacations"][role].append(vacation)
+                else:
+                    result[key]["vacations"][role] = [vacation]
+
+            else:
+                result[key] = {
+                    "roles": {role: vacation.duration},
+                    "vacations": {role: [vacation]}
+                }
+
+
+        context['vacation_data'] = result
+
+        pprint(context)
+        return context
+
+
+def delete_vacation(request, vacation_id):
+    vacation = get_object_or_404(VacationRequest, pk=vacation_id)
+
+    if request.method == 'DELETE':
+        vacation.delete()
+        return JsonResponse({'message': 'Заявка успешно удалена'})
+
+    return redirect('work:vacation_admin')
+
+
+def confirm_vacation(request, vacation_id):
+    vacation = get_object_or_404(VacationRequest, pk=vacation_id)
+
+    if request.method == 'POST':
+        vacation.is_checked = True
+        vacation.save()
+        return JsonResponse({'message': 'Заявка успешно подтверждена'})
+
+    return redirect('work:vacation_admin')

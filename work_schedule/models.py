@@ -38,3 +38,25 @@ class Appointment(models.Model):
         self.duration = end_datetime - start_datetime
 
         super().save(*args, **kwargs)
+
+
+class VacationRequest(models.Model):
+    employee = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    is_checked = models.BooleanField(default=False)
+    duration = models.PositiveIntegerField(default=0, editable=False)
+
+    def save(self, *args, **kwargs):
+        # При сохранении объекта вычисляем продолжительность и обновляем поле duration
+        if self.start_date and self.end_date:
+            delta = self.end_date - self.start_date
+            self.duration = delta.days + 1  # Прибавляем 1, чтобы включить начальную и конечную даты
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Заявка на отпуск от {self.employee.username}"
+
+    class Meta:
+        verbose_name = 'Заявка на отпуск'
+        verbose_name_plural = 'Заявки на отпуск'
