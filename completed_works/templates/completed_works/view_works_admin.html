@@ -11,6 +11,26 @@
 <link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'my_js/myjs.js' %}"></script>
+<style>
+    h5 {
+    color: #000;
+    }
+    .mark-page4 {
+        z-index: 9;
+        right: 0%;
+        bottom: 80%;
+        animation: move5 8s infinite linear;
+    }
+    th {
+        font-size: 2rem;
+    }
+    td {
+        font-size: 1.5rem;
+    }
+    p {
+    word-wrap: break-word;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -38,77 +58,111 @@
     </button>
 </div>
 
+<br><br>
 {%for key, value in work_lists_dict.items %}
 <div class="collapse" id="collapseExample{{ forloop.counter }}">
-    <div class="container text-center">
-        <div class="row justify-content-md-center">
-            {% for work_list in value.0 %}
-            <div class="col col-lg-4">
-                <br>
-                <div class="gradient-border" id="box">
-                    <div>
-                        <p style="font-size: 2.5rem;">
-                            {{work_list.user}}
-                        </p>
-                        <p style="font-size: 2rem;">
-                            {{work_list.hours}} часа(ов)
-                        </p>
-                        <p>
-                            {{ work_list.user.role }}
-                        </p>
-                        <p>
-                            {{ work_list.date }}
-                        </p>
-                        {% if work_list.is_checked %}
-                        <p>
-                            <button type="button" class="btn btn-success">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                     class="bi bi-building-check"
-                                     viewBox="0 0 16 16">
-                                    <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm1.679-4.493-1.335 2.226a.75.75 0 0 1-1.174.144l-.774-.773a.5.5 0 0 1 .708-.708l.547.548 1.17-1.951a.5.5 0 1 1 .858.514Z"></path>
-                                    <path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6.5a.5.5 0 0 1-1 0V1H3v14h3v-2.5a.5.5 0 0 1 .5-.5H8v4H3a1 1 0 0 1-1-1V1Z"></path>
-                                    <path d="M4.5 2a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm3 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm3 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm-6 3a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm3 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm3 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm-6 3a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm3 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Z"></path>
-                                </svg>
-                                Проверено
-                            </button>
-                        </p>
-                        {% else %}
-                        <p>
-                            <button type="button" class="btn btn-outline-danger">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                     class="bi bi-building-fill-slash" viewBox="0 0 16 16">
-                                    <path d="M13.879 10.414a2.501 2.501 0 0 0-3.465 3.465l3.465-3.465Zm.707.707-3.465 3.465a2.501 2.501 0 0 0 3.465-3.465Zm-4.56-1.096a3.5 3.5 0 1 1 4.949 4.95 3.5 3.5 0 0 1-4.95-4.95Z"></path>
-                                    <path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7.256A4.493 4.493 0 0 0 12.5 8a4.493 4.493 0 0 0-3.59 1.787A.498.498 0 0 0 9 9.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .39-.187A4.476 4.476 0 0 0 8.027 12H6.5a.5.5 0 0 0-.5.5V16H3a1 1 0 0 1-1-1V1Zm2 1.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5Zm3 0v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5Zm3.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1ZM4 5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5ZM7.5 5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm2.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5ZM4.5 8a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Z"></path>
-                                </svg>
-                                Не проверено
-                            </button>
-                        </p>
-                        {% endif %}
+    <table style="width: 100%;">
+        <thead>
+        <tr>
+            <th style="width: 3%;">№</th>
+            <th style="width: 8%;">Проверено</th>
+            <th style="width: 19%;">Сотрудник</th>
+            <th style="width: 60%;">Работы</th>
+            <th style="width: 10%;">Действие</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for work_list in value.0 %}
 
-                        <form method="post" action="{% url 'completed_works:update_work_quantities' %}">
-                            {% csrf_token %}
-                            {% for item in work_list.works %}
-                            <div class="input-group mb-3">
-                                <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ item.standard__name }}</span>
-                                <input type="text" name="quantity_{{ item.id }}"
-                                       value="{{ item.quantity }}"
-                                       class="narrower-input2">
-                            </div>
-                            {% endfor %}
-                            <div class="centered-button">
-                                <button type="submit" class="btn-grad btn-gradient-border btn-glow">Утвердить</button>
-                                <br>
-                            </div>
-                        </form>
-                    </div>
+        <tr data-row-id="{{work_list.id}}">
+            <td>
+                {{ forloop.counter }}
+            </td>
+            <td>
+                {% if work_list.is_checked %}
+                <button type="button" class="btn btn-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                         class="bi bi-building-check"
+                         viewBox="0 0 16 16">
+                        <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm1.679-4.493-1.335 2.226a.75.75 0 0 1-1.174.144l-.774-.773a.5.5 0 0 1 .708-.708l.547.548 1.17-1.951a.5.5 0 1 1 .858.514Z"></path>
+                        <path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6.5a.5.5 0 0 1-1 0V1H3v14h3v-2.5a.5.5 0 0 1 .5-.5H8v4H3a1 1 0 0 1-1-1V1Z"></path>
+                        <path d="M4.5 2a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm3 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm3 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm-6 3a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm3 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm3 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm-6 3a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm3 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Z"></path>
+                    </svg>
+                    Проверено
+                </button>
+                {% else %}
+                <button type="button" class="btn btn-outline-danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                         class="bi bi-building-fill-slash" viewBox="0 0 16 16">
+                        <path d="M13.879 10.414a2.501 2.501 0 0 0-3.465 3.465l3.465-3.465Zm.707.707-3.465 3.465a2.501 2.501 0 0 0 3.465-3.465Zm-4.56-1.096a3.5 3.5 0 1 1 4.949 4.95 3.5 3.5 0 0 1-4.95-4.95Z"></path>
+                        <path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7.256A4.493 4.493 0 0 0 12.5 8a4.493 4.493 0 0 0-3.59 1.787A.498.498 0 0 0 9 9.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .39-.187A4.476 4.476 0 0 0 8.027 12H6.5a.5.5 0 0 0-.5.5V16H3a1 1 0 0 1-1-1V1Zm2 1.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5Zm3 0v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5Zm3.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1ZM4 5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5ZM7.5 5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm2.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5ZM4.5 8a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Z"></path>
+                    </svg>
+                    Не проверено
+                </button>
+                {% endif %}
+            </td>
+            <td>
+                <p style="font-size: 1.5rem;">
+                    {{work_list.user}}
+                    ({{ work_list.user.role }})
+                </p>
+            </td>
+            <form method="post" action="{% url 'completed_works:update_work_quantities' %}"
+                  style="margin:0; width: 100%;">
+                {% csrf_token %}
+                <td>
+                    {% for item in work_list.works %}
+                    <span
+                            style="font-size: 1.3rem;padding-top:1rem;">{{ item.standard__name }}</span>
+                    <input type="text" name="quantity_{{ item.id }}"
+                           value="{{ item.quantity }}"
+                           class="narrower-input4">
+                    {% endfor %}
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger delete-work" data-work-id="{{ work_list.id }}">Удалить
+                    </button>
+                    <button type="submit" class="btn btn-success">Утвердить</button>
+            </form>
+            <td>
 
-                </div>
+
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endfor %}
+<!-- Модальное окно для подтверждения удаления -->
+<div class="modal" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="cancelDelete">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-            {% endfor %}
+            <div class="modal-body">
+                <h5>Вы уверены, что хотите удалить эту заявку?</h5>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="cancelDelete2">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Удалить</button>
+            </div>
         </div>
     </div>
 </div>
-{% endfor %}
+<script src="{% static 'js/jquery-3.7.0.min.js' %}"></script>
+<script>
+    $('#cancelDelete').on('click', function () {
+        $('#deleteModal').modal('hide');
+    });
+    $('#cancelDelete2').on('click', function () {
+        $('#deleteModal').modal('hide');
+    });
+
+</script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         var saveAllButton = document.getElementById('save-all-button');
@@ -120,6 +174,38 @@
                 }
             });
         }
+
+        const deleteButtons = document.querySelectorAll(".delete-work");
+
+        deleteButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            const workId = button.getAttribute("data-work-id");
+            const rowToDelete = document.querySelector(`[data-row-id="${workId}"]`);
+            // Показать модальное окно при клике на кнопку "Удалить"
+                $('#deleteModal').modal('show');
+            document.getElementById("confirmDelete").addEventListener("click", function () {
+            fetch("{% url 'completed_works:delete_work_record' work_record_id=0 %}".replace('0', workId), {
+                method: "DELETE",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+            })
+            .then(function (response) {
+                if (response.ok) {
+                    // Успешно удалено
+                    // Можете скрыть или удалить соответствующий элемент HTML
+                    rowToDelete.remove();
+                } else {
+                    // Обработка ошибки удаления
+                    console.error("Ошибка удаления работы");
+                }
+            });
+            // Закрыть модальное окно после удаления
+                    $('#deleteModal').modal('hide');
+        });
+        });
+    });
     });
 </script>
+
 {% endblock %}

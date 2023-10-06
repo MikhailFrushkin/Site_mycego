@@ -68,11 +68,11 @@
                 <div class="card card-body" style="background-color:#130518;color:#198754!important;">
                     <ul>
                         {% for key, value in missing_appointments_dict.items %}
-                        <li class="m-top"><a href="{% url 'users:user_profile' key.id %}" target="_blank">
-                            {{ key }}
-                        </a></li>
+                        <li class="m-top">{{ key }}</li>
                         {% for i in value %}
-                        <li>{{ i }}</li>
+                        <li><a href="{% url 'users:user_profile' i.id %}" target="_blank">
+                            {{ i }}
+                        </a></li>
                         {% endfor %}
                         {% endfor %}
                     </ul>
@@ -92,11 +92,13 @@
                 <div class="card card-body" style="background-color:#130518;color:#198754!important;">
                     <ul>
                         {% for key, value in missing_work_records_dict.items %}
-                        <li class="m-top"><a href="{% url 'users:user_profile' key.id %}" target="_blank">
-                            {{ key }}
-                        </a></li>
+                        <li class="m-top">{{ key }}</li>
                         {% for i in value %}
-                        <li>{{ i }}</li>
+                        <li>
+                            <a href="{% url 'completed_works:workrecord_detail' i.id %}" target="_blank">
+                            {{ i.user }}
+                            </a>
+                        </li>
                         {% endfor %}
                         {% endfor %}
                     </ul>
@@ -115,11 +117,16 @@
                 <div class="card card-body" style="background-color:#130518;color:#198754!important;">
                     <ul>
                         {% for key, value in very_good_works.items %}
-                        <li class="m-top"><a href="{% url 'users:user_profile' key.id %}" target="_blank">
-                            {{ key }}
-                        </a></li>
+                        <li class="m-top">{{ key }}</li>
                         {% for i in value %}
-                        <li><a href="{% url 'completed_works:workrecord_detail' i.2 %}" target="_blank">{{ i.0 }} - {{i.1}}%</a></li>
+                        <li>
+                            <a href="{% url 'users:user_profile' i.0.user.id %}" target="_blank">
+                            {{ i.0.user }}
+                            </a>
+                            <a href="{% url 'completed_works:workrecord_detail' i.0.id %}" target="_blank">
+                            {{ i.1 }}%
+                            </a>
+                        </li>
                         {% endfor %}
                         {% endfor %}
                     </ul>

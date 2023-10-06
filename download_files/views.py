@@ -4,6 +4,7 @@ from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import FormView
 
+from completed_works.models import WorkRecordQuantity
 from download_files.forms import UploadExcelForm
 from users.models import CustomUser, Role
 
@@ -56,3 +57,9 @@ class DownloadFiles(LoginRequiredMixin, FormView):
             return render(self.request, self.template_name, {'form': form, 'error_message': str(e)})
 
         return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        null_q = WorkRecordQuantity.objects.filter(quantity=0)
+        null_q.delete()
+        return context

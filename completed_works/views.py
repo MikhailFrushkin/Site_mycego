@@ -4,7 +4,7 @@ from pprint import pprint
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum, Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, FormView, TemplateView, DetailView
@@ -51,7 +51,6 @@ def create_work_record(request):
                 for standard in standards:
                     quantity = form.cleaned_data.get(standard.name, None)
                     if quantity:
-
                         WorkRecordQuantity.objects.create(work_record=work_record, standard=standard, quantity=quantity)
                 return redirect('completed_works:completed_works_view')
             else:
@@ -92,7 +91,8 @@ def create_work_record_admin_add(request):
                     for standard in standards:
                         quantity = request.POST.get(standard.name, None)
                         if quantity:
-                            WorkRecordQuantity.objects.create(work_record=work_record, standard=standard, quantity=quantity)
+                            WorkRecordQuantity.objects.create(work_record=work_record, standard=standard,
+                                                              quantity=quantity)
                     return redirect('completed_works:completed_works_view_admin')
                 else:
                     messages.error(request, 'Ни одно количество не указано или все равно нулю.')
@@ -165,13 +165,13 @@ def delete_work_record(request, work_record_id):
     # Получите объект WorkRecord по его идентификатору
     work_record = WorkRecord.objects.get(id=work_record_id)
     logger.debug(work_record)
-    logger.debug(request.POST)
     # Проверьте, что текущий пользователь равен владельцу записи и is_checked=False
-    if request.user == work_record.user and not work_record.is_checked:
-        # Удаляем запись
+    if request.method == 'DELETE' and request.user.is_staff:
         work_record.delete()
-
-    # После удаления, перенаправьте пользователя на нужную страницу
+        return JsonResponse({'message': 'Appointment update successfully.'}, status=200)
+    else:
+        if request.user == work_record.user and not work_record.is_checked:
+            work_record.delete()
     return redirect('completed_works:completed_works_view')
 
 
@@ -255,7 +255,9 @@ class WorkRecordDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         works = WorkRecordQuantity.objects.filter(work_record=self.object, quantity__gt=0)
         context['works'] = works
-        total_hours = Appointment.objects.filter(user=self.object.user, date=self.object.date).aggregate(Sum('duration'))['duration__sum']
+        total_hours = \
+        Appointment.objects.filter(user=self.object.user, date=self.object.date).aggregate(Sum('duration'))[
+            'duration__sum']
         if total_hours:
             total_hours = total_hours.total_seconds() / 3600
         context['total_hours'] = total_hours

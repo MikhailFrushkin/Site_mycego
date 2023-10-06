@@ -59,14 +59,16 @@
         .mark-page2 {
             left: 0.8%;
             top: 2.6%;
+            z-index: 1000;
         }
         .mark-page3 {
             left: 0.8%;
-            top: 2.6%;
+            top: 50.6%;
             animation: move3 8s infinite linear;
+            z-index: 1000;
         }
         .mark-page4 {
-            z-index: 9;
+            zz-index: 1000;
             right: 0%;
             bottom: 0%;
             animation: move5 8s infinite linear;
@@ -216,14 +218,14 @@
     </div>
     </div>
 
-<!--    <div class="mode_switcher">-->
-<!--        <a href="#" onclick="switchTheme()" class="light d-flex align-items-center">-->
-<!--            <img src="{% static 'nufti/assets/images/icon/sun.png' %}" alt="">-->
-<!--        </a>-->
-<!--        <a href="#" onclick="switchTheme()" class="dark d-flex align-items-center is_active">-->
-<!--            <img src="{% static 'nufti/assets/images/icon/moon.png' %}" alt="">-->
-<!--        </a>-->
-<!--    </div>-->
+    <!--    <div class="mode_switcher">-->
+    <!--        <a href="#" onclick="switchTheme()" class="light d-flex align-items-center">-->
+    <!--            <img src="{% static 'nufti/assets/images/icon/sun.png' %}" alt="">-->
+    <!--        </a>-->
+    <!--        <a href="#" onclick="switchTheme()" class="dark d-flex align-items-center is_active">-->
+    <!--            <img src="{% static 'nufti/assets/images/icon/moon.png' %}" alt="">-->
+    <!--        </a>-->
+    <!--    </div>-->
 
 </header>
 {% endcache %}
@@ -261,10 +263,38 @@
 
 </main>
 {% cache 6000 scripts %}
-    <img class="absolute mark-page4" src="{% static 'nufti/assets/images/icon/mark-header-03.png' %}" alt="">
-<!--    <img class="absolute mark-page3" src="{% static 'nufti/assets/images/icon/mark-header-02.png' %}" alt="">-->
-    <img class="absolute mark-page2 animate-rotate" src="{% static 'nufti/assets/images/icon/mark-header-01.png' %}"
-         alt="">
+<img class="absolute mark-page4 draggable" src="{% static 'nufti/assets/images/icon/mark-header-03.png' %}" alt="">
+<img class="absolute mark-page2 animate-rotate draggable" src="{% static 'nufti/assets/images/icon/mark-header-01.png' %}"
+     alt="">
+<script>
+    let currentlyDragged = null;
+
+    document.addEventListener('mousedown', (e) => {
+        const target = e.target;
+        if (target.classList.contains('draggable')) {
+            currentlyDragged = target;
+            currentlyDragged.style.cursor = 'grabbing';
+        }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (currentlyDragged) {
+            const rect = currentlyDragged.getBoundingClientRect();
+            const offsetX = e.clientX - rect.width / 2;
+            const offsetY = e.clientY - rect.height / 2;
+
+            currentlyDragged.style.left = offsetX + 'px';
+            currentlyDragged.style.top = offsetY + 'px';
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (currentlyDragged) {
+            currentlyDragged.style.cursor = 'grab';
+            currentlyDragged = null;
+        }
+    });
+</script>
 <script src="{% static 'assets/js/bootstrap.bundle.min.js' %} "></script>
 <script src="{% static 'nufti/assets/js/jquery.easing.js' %}"></script>
 <script src="{% static 'nufti/assets/js/swiper.js' %}"></script>

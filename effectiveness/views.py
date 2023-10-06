@@ -134,13 +134,14 @@ class StatisticView(LoginRequiredMixin, TemplateView):
                 context['none_work'] += 1
             if days_difference is None or days_difference >= 7:
                 if days_difference is None:
-                   pass
+                    pass
                 else:
                     inactive_employees.append((user, closest_date, days_difference))
 
         context['inactive_employees'] = sorted(
             inactive_employees, key=lambda x: x[2], reverse=True)
-        context['active_employees'] = context['active_employees'] - len(context['inactive_employees']) - context['none_work']
+        context['active_employees'] = context['active_employees'] - len(context['inactive_employees']) - context[
+            'none_work']
 
         users = CustomUser.objects.all()
         past_date = current_date - timezone.timedelta(weeks=1)
@@ -167,20 +168,27 @@ class StatisticView(LoginRequiredMixin, TemplateView):
 
             # Заполняем словари для данного пользователя
             if len(appointments_without_work_records) > 0:
-                missing_appointments_dict[user] = list(
-                    appointments_without_work_records.values_list('date', flat=True))
-            if len(work_records_without_appointments) > 0:
-                missing_work_records_dict[user] = list(
-                    work_records_without_appointments.values_list('date', flat=True))
+                for item in appointments_without_work_records:
+                    if item.date in missing_appointments_dict:
+                        missing_appointments_dict[item.date].append(item.user)
+                    else:
+                        missing_appointments_dict[item.date] = [item.user]
 
-        context['missing_appointments_dict'] = missing_appointments_dict
-        context['missing_work_records_dict'] = missing_work_records_dict
+            if len(work_records_without_appointments) > 0:
+                for item in work_records_without_appointments:
+                    print(item)
+                    if item.date in missing_work_records_dict:
+                        missing_work_records_dict[item.date].append(item)
+                    else:
+                        missing_work_records_dict[item.date] = [item]
+
+        context['missing_appointments_dict'] = dict(sorted(missing_appointments_dict.items(), key=lambda x: x[0]))
+
+        context['missing_work_records_dict'] = dict(sorted(missing_work_records_dict.items(), key=lambda x: x[0]))
 
         very_good_works = {}
-        # Получить все записи работы
         work_records = WorkRecord.objects.filter(date__range=(past_date, current_date))
 
-        # Пройти по каждой группе записей и вычислить суммарное количество работы для каждой даты и сотрудника
         for record in work_records:
             id = record.id
             date = record.date
@@ -195,11 +203,11 @@ class StatisticView(LoginRequiredMixin, TemplateView):
                         hours_work += work.quantity / work.standard.standard
                 kf = round(hours_work / total_hours * 100, 2)
                 if kf > 200:
-                    if user in very_good_works:
-                        very_good_works[user].append((date, kf, id))
+                    if date in very_good_works:
+                        very_good_works[date].append((record, kf))
                     else:
-                        very_good_works[user] = [(date, kf, id)]
-        # pprint(context)
+                        very_good_works[date] = [(record, kf)]
         context['very_good_works'] = very_good_works
+        pprint(context['very_good_works'])
 
         return context

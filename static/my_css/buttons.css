@@ -84,7 +84,11 @@ button.depth:active {
     width: 10%!important;
     margin-bottom: 3px!important;
 }
-
+.narrower-input4 {
+    width: 5%!important;
+    margin-bottom: 0.5rem!important;
+    padding: 0.5rem!important;
+}
 /* Кнопки с выбором даты */
 #box {
   display: flex;
