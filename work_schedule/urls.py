@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import WorkSchedule, EditWork, ajax_view, delete_appointment, update_appointment, GrafUser, \
-    VacationRequestCreateView, VacationRequestAdmin, delete_vacation, confirm_vacation
+    VacationRequestCreateView, VacationRequestAdmin, delete_vacation, confirm_vacation, search_emp
 
 app_name = 'work'
 
@@ -17,4 +17,5 @@ urlpatterns = [
     path('delete_row/', delete_appointment, name='delete_row'),
     path('update_rows/', update_appointment, name='update_rows'),
     path('ajax/', ajax_view, name='ajax_view'),
+    path('ajax/search_emp/', search_emp, name='search_emp'),
 ]

@@ -2,14 +2,10 @@
 {% load i18n %}
 {% load static %}
 {% load cache %}
-
 {% load custom_tags_users %}
 {% load custom_tags_choice_date %}
 
 {% block link %}
-<link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="{% static 'my_js/myjs.js' %}"></script>
 {% endblock %}
 
 {% block title %}
@@ -32,11 +28,22 @@
             bottom: 80%;
             animation: move5 8s infinite linear;
         }
+    .depth, depth-green {
+    width: 10%!important;
+    }
 </style>
 {% choice_date year week monday sunday %}
 
-<div class="container text-center">
+<div class="container text-center" style="margin:0;width: auto!important;" >
     <div class="row justify-content-md-center">
+        <button class="depth"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseExampleEmp"
+                aria-expanded="false"
+                aria-controls="collapseExampleEmp">
+            Поиск по сотруднику
+        </button>
         {% for key, value in work_schedule.items %}
         <button class="depth {% if value.2 %} depth-green {% endif %}"
                 type="button"
@@ -50,6 +57,12 @@
         <br><br>
     </div>
 </div>
+<div class="collapse" id="collapseExampleEmp">
+    <br><br>
+    <input type="text" id="collapseExampleEmpSearch" placeholder="Поиск..." style="width: 20%;!important;">
+    <div id="resultsTable"></div>
+</div>
+
 {%for key, value in work_schedule.items %}
 <div class="collapse" id="collapseExample{{ forloop.counter }}">
     <br><br>
@@ -74,7 +87,7 @@
         <tr>
             <th scope="col">Количество сотрудников</th>
             {% for hour, count in value.1.items %}
-            <th scope="col" style="font-size: 16px;">{{ count }}</th>
+            <th scope="col" style="font-size: 2rem;text-align: center;padding-top:2rem;">{{ count }}</th>
             {% endfor %}
             <th scope="col"></th>
         </tr>
@@ -104,7 +117,7 @@
 
         {% for user_name, hours in value.0.items %}
         <tr>
-            <th scope="row" style="font-size:10px;">{{ forloop.counter }}. {{user_name.2}} {% if user_name.1%}
+            <th scope="row" style="font-size:1rem;">{{ forloop.counter }}. {{user_name.2}} {% if user_name.1%}
                 {%else%}<br>(Не проверено){%endif%}
             </th>
             {% for hour in hours %}
@@ -142,10 +155,99 @@
 
     </table>
 </div>
-
 {% endfor %}
+<script>
+    function createTable(results) {
+    // Получите ссылку на элемент <div>, в который будет вставлена таблица
+    var tableContainer = document.getElementById('resultsTable');
 
+    // Создайте элемент <table> и добавьте его в контейнер
+    var table = document.createElement('table');
+    table.className = 'table-responsive-sm'; // Добавьте класс, если это нужно
 
+    // Создайте заголовок таблицы
+    var thead = document.createElement('thead');
+    var headerRow = document.createElement('tr');
+    var headers = ['Сотрудник', 'Дата', 'Начало работы', 'Конец работы', 'Продолжительность', 'Проверено?'];
+
+    headers.forEach(function(headerText) {
+        var th = document.createElement('th');
+        th.textContent = headerText;
+        headerRow.appendChild(th);
+    });
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // Создайте тело таблицы и заполните его данными
+    var tbody = document.createElement('tbody');
+
+    results.forEach(function(result) {
+        var row = document.createElement('tr');
+        var rowData = [
+            result.username,
+            result.date,
+            result.start_time,
+            result.end_time,
+            parseDuration(result.duration),
+            result.verified ? 'Да' : 'Нет'
+        ];
+
+        rowData.forEach(function(cellData) {
+            var cell = document.createElement('td');
+            cell.textContent = cellData;
+            row.appendChild(cell);
+        });
+
+        tbody.appendChild(row);
+    });
+
+    table.appendChild(tbody);
+
+    // Очистите контейнер и добавьте новую таблицу
+    tableContainer.innerHTML = '';
+    tableContainer.appendChild(table);
+}
+// Функция для преобразования длительности
+function parseDuration(durationString) {
+    var regex = /P(\d+)DT(\d+)H(\d+)M(\d+)S/;
+    var match = durationString.match(regex);
+    if (match) {
+        var hours = parseInt(match[2]);
+        return hours;
+    } else {
+        return 0;
+    }
+}
+
+</script>
+<script>
+    $(document).ready(function() {
+        // Выбираем поле ввода
+        var $searchInput = $('#collapseExampleEmpSearch');
+
+        // Устанавливаем обработчик события 'input' для поля ввода
+        $searchInput.on('input', function() {
+            // Получаем значение из поля ввода
+            var inputValue = $searchInput.val();
+            // Проверяем, содержит ли введенное значение хотя бы 5 символов
+            if (inputValue.length >= 5) {
+                // Выполняем AJAX-запрос
+                $.ajax({
+                    url: '/work/ajax/search_emp/', // Замените на ваш реальный URL Django
+                    method: 'GET', // Или 'GET', в зависимости от вашего API
+                    data: {searchTerm: inputValue, week: {{week}}}, // Передаем введенный текст на сервер
+                    success: function(response) {
+                        createTable(response.results);
+                    },
+                    error: function(error) {
+                        console.error(error);
+                    }
+                });
+            }
+        });
+    });
+</script>
 <script>
     $(document).ready(function () {
      // Добавляем обработчик события input для всех инпутов
@@ -180,8 +282,6 @@
                  scrollTop: rowOffset
              }, 500);
          } else {
-              console.log('stop');
-             // Если ничего не найдено, останавливаем прокрутку
              $('html, body').stop(); // Остановить текущую анимацию прокрутки
          }
      });
@@ -194,8 +294,6 @@
 
 
 </script>
-
-
 <script>
     function addRow(tableId) {
     const table = document.getElementById(tableId);
@@ -286,7 +384,6 @@
         });
 
         rowDataList.push(rowData)
-        console.log(rowDataList); // Отправляем данные в консоль
     });
 
     const xhr = new XMLHttpRequest();
@@ -318,7 +415,6 @@
 <script>
     $(document).ready(function () {
         var users = JSON.parse('{{ users_add|escapejs }}');
-        console.log(users);
         $("select").on("focus", function () {
             var select = $(this);
 

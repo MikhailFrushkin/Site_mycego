@@ -169,6 +169,36 @@ def update_appointment(request):
         return JsonResponse({'error': 'Invalid JSON data.'}, status=400)
 
 
+def search_emp(request):
+    try:
+        search = request.GET.get('searchTerm', '')
+        week = request.GET.get('week', '')
+
+        # Создаем Q-объект для поиска по нику пользователя
+        nickname_query = Q(user__username__icontains=search)
+
+        # Создаем Q-объект для поиска по неделе
+        week_query = Q(date__week=week)
+        # Комбинируем оба Q-объекта через оператор И (AND)
+        query = Appointment.objects.filter(nickname_query & week_query).order_by('user', 'date')
+        logger.debug(query)
+        # Производим какие-либо действия с результатами поиска (например, сериализация в JSON)
+        results = [{
+            'username': appointment.user.username,
+            'date': appointment.date,
+            'start_time': appointment.start_time,
+            'end_time': appointment.end_time,
+            'duration': appointment.duration,
+            'verified': appointment.verified,
+
+        } for appointment in query]
+
+        return JsonResponse({'results': results})
+    except Exception as e:
+        logger.error(e)
+        return JsonResponse({'error': str(e)}, status=400)
+
+
 class WorkSchedule(LoginRequiredMixin, FormView):
     template_name = 'work/work.html'
     login_url = '/users/login/'
@@ -498,7 +528,6 @@ class VacationRequestAdmin(LoginRequiredMixin, TemplateView):
                     "roles": {role: vacation.duration},
                     "vacations": {role: [vacation]}
                 }
-
 
         context['vacation_data'] = result
 
