@@ -61,7 +61,6 @@
     font-size: 18px;
     }
 </style>
-<body class="dark">
 {% if form.errors %}
 <div class="alert alert-danger">
     <ul>
@@ -74,13 +73,11 @@
 </div>
 {% endif %}
 {% cache 6000 calendar %}
-
 <div class="container text-center">
     <div class="row align-items-start">
         <div class="col">
             <h2 class="custom-heading">Выберите дату:</h2>
-            <br>
-            <div class="calendar">
+            <div class="calendar dark">
                 <!-- CALENDAR HEADER START -->
                 <div class="calendar-header">
                     <span class="month-picker" id="month-picker">
@@ -95,11 +92,7 @@
                             <pre> > </pre>
                         </span>
                     </div>
-
-
                 </div>
-
-                <!-- CALENDAR BODY START -->
                 <div class="calendar-body">
                     <div class="calendar-week-day">
                         <div>Пн</div> <!-- Понедельник -->
@@ -133,7 +126,6 @@
                         <div>7</div>
                     </div>
                 </div>
-
                 <div class="month-picker">
                     <span></span>
                     <div class="month-list">
@@ -158,7 +150,8 @@
         <div class="col">
             <h3>
                 <br>
-                <div id="selected-date">Выбрана дата: <span id="selected-date-text"></span></div>
+                <div id="selected-date">Выбрана дата: <span id="selected-date-text"></span>
+                </div>
             </h3>
             <br>
             <br>
@@ -190,64 +183,60 @@
             </form>
         </div>
     </div>
-</div>
-<br>
-<br>
-<br>
 
-
-<div class="table-responsive" style="max-width: 1200px; margin: 0 auto;" id="myTable">
-    <br>
-    <div>
-        <button class="btn-lg" id="my-rows" onclick="filterAppointments('my', '{{ user.username }}')">Мои записи
-        </button>
-        <button class="btn-lg" id="reset-btn" onclick="filterAppointments('all', '{{ user.username }}')">Все записи
-        </button>
-    </div>
-    <br>
-    <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Поиск имен.." style="margin-bottom: 10px;">
-    <table class="table-responsive-sm">
-        <thead>
-        <tr>
-            <th scope="col" style="width: 4%; font-size: 16px;">#</th>
-            <th scope="col" style="width: 20%; font-size: 16px;">Имя</th>
-            <th scope="col" style="width: 15%; font-size: 16px;">Дата</th>
-            <th scope="col" style="width: 7%; font-size: 16px;">С</th>
-            <th scope="col" style="width: 7%; font-size: 16px;">До</th>
-            <th scope="col" style="width: 15%; font-size: 16px;">Время работы</th>
-            <th scope="col" style="width: 10%; font-size: 16px;">Утверждено</th>
-            <th scope="col" style="width: 10%; font-size: 16px;">Действие</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for item in appointments %}
-        <tr id="row-{{ item.id }}">
-            <th scope="row">{{ forloop.counter }}</th>
-            <td>{{ item.user.username }}</td> <!-- Вывести имя пользователя -->
-            <td>{{ item.date }}</td>
-            <td>{{ item.start_time }}</td>
-            <td>{{ item.end_time }}</td>
-            <td>{{ item.duration }}</td>
-            {% if item.verified %}
-            <td>Да</td>
-            {% else %}
-            <td>Нет</td>
-            {% endif %}
-            <td>
-                {% if item.user.id != user.id or item.verified %}
-                <button class="btn btn-secondary" style="width: 100%;" disabled>Удалить</button>
+    <div class="table-responsive" style="max-width: 1200px; margin: 0 auto;" id="myTable">
+        <br>
+        <div>
+            <button class="btn-lg" id="my-rows" onclick="filterAppointments('my', '{{ user.username }}')">Мои записи
+            </button>
+            <button class="btn-lg" id="reset-btn" onclick="filterAppointments('all', '{{ user.username }}')">Все записи
+            </button>
+        </div>
+        <br>
+        <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Поиск имен.." style="margin-bottom: 10px;">
+        <table class="table-responsive-sm">
+            <thead>
+            <tr>
+                <th scope="col" style="width: 4%; font-size: 16px;">#</th>
+                <th scope="col" style="width: 20%; font-size: 16px;">Имя</th>
+                <th scope="col" style="width: 15%; font-size: 16px;">Дата</th>
+                <th scope="col" style="width: 7%; font-size: 16px;">С</th>
+                <th scope="col" style="width: 7%; font-size: 16px;">До</th>
+                <th scope="col" style="width: 15%; font-size: 16px;">Время работы</th>
+                <th scope="col" style="width: 10%; font-size: 16px;">Утверждено</th>
+                <th scope="col" style="width: 10%; font-size: 16px;">Действие</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for item in appointments %}
+            <tr id="row-{{ item.id }}">
+                <th scope="row">{{ forloop.counter }}</th>
+                <td>{{ item.user.username }}</td> <!-- Вывести имя пользователя -->
+                <td>{{ item.date }}</td>
+                <td>{{ item.start_time }}</td>
+                <td>{{ item.end_time }}</td>
+                <td>{{ item.duration }}</td>
+                {% if item.verified %}
+                <td>Да</td>
                 {% else %}
-                <button class="btn btn-danger" style="width: 100%;" onclick="deleteAppointment({{ item.id }})">Удалить
-                </button>
+                <td>Нет</td>
                 {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
-<div class="container text-center">
-    <div class="pagination">
+                <td>
+                    {% if item.user.id != user.id or item.verified %}
+                    <button class="btn btn-secondary" style="width: 100%;" disabled>Удалить</button>
+                    {% else %}
+                    <button class="btn btn-danger" style="width: 100%;" onclick="deleteAppointment({{ item.id }})">
+                        Удалить
+                    </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="container text-center">
+        <div class="pagination">
         <span class="step-links">
             {% if page.has_previous %}
                 <button class="btn-lg" onclick="window.location.href='?page=1'">&laquo; первая</button>
@@ -265,6 +254,7 @@
                 <button class="btn-lg" onclick="window.location.href='?page={{ page.paginator.num_pages }}'">последняя &raquo;</button>
             {% endif %}
         </span>
+        </div>
     </div>
 </div>
 
@@ -364,9 +354,6 @@ function deleteAppointment(appointmentId) {
 
     }
 }
-
-
 </script>
 
-</body>
 {% endblock %}
