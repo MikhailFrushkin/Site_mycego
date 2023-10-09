@@ -4,6 +4,7 @@
 {% load cache %}
 
 {% block link %}
+<script src="{% static 'js/jquery-3.7.0.min.js' %}"></script>
 {% endblock %}
 
 {% block title %}
@@ -14,7 +15,7 @@
 {% block content %}
 <style>
     .carousel-item img {
-       height: 500px; /* Максимальная высота для изображения */
+       height: 50rem; /* Максимальная высота для изображения */
        width: auto!important; /* Автоматический расчет ширины на основе высоты и пропорций */
        display: block; /* Делаем изображение блочным элементом */
        margin: 0 auto; /* Центрируем изображение по горизонтали */
@@ -29,6 +30,19 @@
     .text-article p {
     white-space: pre-line;
 }
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+        border: 1px solid #dddddd;
+        text-align: left;
+        font-size: 1.5rem;
+        padding: 8px;
+        word-wrap: break-word;
+        white-space: normal;
+    }
 </style>
 <div class="container text-center">
     <div class="row justify-content-md-center">
@@ -48,7 +62,7 @@
     <div class="container text-center">
         <div class="row justify-content-md-center">
             <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Поиск имен.."
-                   style="margin-bottom: 10px;margin-top: 10px; width: 30%;">
+                   style="margin-bottom: 1rem;margin-top: 1rem; width: 30%;">
         </div>
         <table class="table-responsive-sm" id="myTable">
             <thead>

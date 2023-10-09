@@ -14,27 +14,27 @@
 
 {% block content %}
 <style>
-    /* Стили для выпадающего списка */
-    select:hover {
-        max-height: 200px; /* Замените на желаемую высоту */
-        overflow-y: auto; /* Добавьте вертикальную прокрутку, если список больше максимальной высоты */
+/* Стили для выпадающего списка */
+select:hover {
+    max-height: 200px; /* Замените на желаемую высоту */
+    overflow-y: auto; /* Добавьте вертикальную прокрутку, если список больше максимальной высоты */
+}
+.bnt-yellow {
+    background-color: #009f20!important;
+}
+.mark-page4 {
+        z-index: 9;
+        right: 0%;
+        bottom: 80%;
+        animation: move5 8s infinite linear;
     }
-    .bnt-yellow {
-        background-color: #009f20!important;
-    }
-    .mark-page4 {
-            z-index: 9;
-            right: 0%;
-            bottom: 80%;
-            animation: move5 8s infinite linear;
-        }
-    .depth, depth-green {
-    width: 10%!important;
-    }
+.depth, depth-green {
+width: 9%!important;
+}
 </style>
 {% choice_date year week monday sunday %}
 
-<div class="container text-center" style="margin:0;width: auto!important;" >
+<div class="container text-center" style="margin:0;width: auto!important;">
     <div class="row justify-content-md-center">
         <button class="depth"
                 type="button"
@@ -43,6 +43,14 @@
                 aria-expanded="false"
                 aria-controls="collapseExampleEmp">
             Поиск по сотруднику
+        </button>
+        <button class="depth"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseExampleEmpNone"
+                aria-expanded="false"
+                aria-controls="collapseExampleEmpNone">
+            Нет в графике
         </button>
         {% for key, value in work_schedule.items %}
         <button class="depth {% if value.2 %} depth-green {% endif %}"
@@ -62,7 +70,19 @@
     <input type="text" id="collapseExampleEmpSearch" placeholder="Поиск..." style="width: 20%;!important;">
     <div id="resultsTable"></div>
 </div>
-
+<div class="collapse" id="collapseExampleEmpNone">
+    <br><br>
+    <h2 style="text-align:center;margin-bottom:4rem;">Нет в графике на текущию неделю</h2>
+    <div>
+        <ol>
+            {% for item in none_write_graf %}
+            <li style="list-style: auto;font-size:2rem;margin-left:10rem;">
+                <a href="{% url 'users:user_profile' item.id %}" target="_blank">{{ item }} ({{item.role}})</a>
+            </li>
+            {% endfor %}
+        </ol>
+    </div>
+</div>
 {%for key, value in work_schedule.items %}
 <div class="collapse" id="collapseExample{{ forloop.counter }}">
     <br><br>

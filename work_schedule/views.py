@@ -181,8 +181,6 @@ def search_emp(request):
         week_query = Q(date__week=week)
         # Комбинируем оба Q-объекта через оператор И (AND)
         query = Appointment.objects.filter(nickname_query & week_query).order_by('user', 'date')
-        logger.debug(query)
-        # Производим какие-либо действия с результатами поиска (например, сериализация в JSON)
         results = [{
             'username': appointment.user.username,
             'date': appointment.date,
@@ -377,7 +375,7 @@ class EditWork(LoginRequiredMixin, TemplateView):
             import datetime
             today = datetime.date.today()
             year = today.year
-            week = today.isocalendar()[1] + 1
+            week = today.isocalendar()[1]
 
         queryset = Appointment.objects.filter(
             date__year=year,
@@ -392,7 +390,17 @@ class EditWork(LoginRequiredMixin, TemplateView):
         queryset = self.get_queryset().select_related('user__role')
 
         unique_dates = queryset.values_list('date', flat=True).distinct()
-
+        unique_users = set(queryset.values_list('user', flat=True))
+        not_role = ['Директор',
+                    'Директор по производству',
+                    'Сервисный инженер',
+                    'Сервисный инженер (стажер)',
+                    'Администратор сайта',
+                    'Руководитель',
+                    ]
+        none_write_graf = CustomUser.objects.filter(status_work=True).exclude(pk__in=unique_users).exclude(
+            role__name__in=not_role).order_by('role', 'username')
+        context['none_write_graf'] = none_write_graf
         work_schedule = {}
         for index, date_appointment in enumerate(unique_dates):
             user_dict = {}
@@ -461,7 +469,6 @@ class VacationRequestCreateView(LoginRequiredMixin, View):
         if form.is_valid():
             vacation_request = form.save(commit=False)
             vacation_request.employee = request.user
-            logger.debug(request.POST)
             overlapping_requests = VacationRequest.objects.filter(
                 employee=vacation_request.employee,
                 start_date__lte=request.POST['end_date'],
