@@ -37,7 +37,13 @@
             {% if j.1 == 0 %}
             <span> н/д </span>
             {% else %}
-            <span class="{% if j.1 >= 0 %} span-good {% else %} span-bad {% endif %}">{{ j.1 }} %</span>
+            <span class="{% if j.1 >= 0 %} span-good {% else %} span-bad {% endif %}">
+                {% if j.1 > 0 %}
+                +{{ j.1 }} %
+                {% else %}
+                {{ j.1 }} %
+                {% endif %}
+            </span>
             {% endif %}
         </p>
         {% endfor%}

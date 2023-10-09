@@ -1,12 +1,8 @@
 from collections import defaultdict
 from datetime import timedelta, datetime
-from pprint import pprint
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Sum, F, Subquery, ExpressionWrapper, FloatField, IntegerField
-from django.db.models import Q
-from django.db.models.functions import Coalesce
-from django.shortcuts import get_object_or_404
+from django.db.models import Sum, F, ExpressionWrapper, FloatField
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import TemplateView
@@ -14,7 +10,6 @@ from loguru import logger
 
 from completed_works.models import WorkRecord, WorkRecordQuantity
 from users.models import CustomUser
-from utils.utils import get_dates
 from work_schedule.models import Appointment
 
 
@@ -23,7 +18,6 @@ def today_current():
     today = datetime.date.today()
     year = today.year
     week = today.isocalendar()[1]
-    print(year, week)
     return year, week
 
 
@@ -87,7 +81,6 @@ class Effectiveness(LoginRequiredMixin, TemplateView):
                 user_works_dict[week] = user_work_dict
             user_works_dict_sorted = dict(sorted(user_works_dict.items(), key=lambda item: item[0], reverse=True))
             full_dict[year] = user_works_dict_sorted
-        # pprint(full_dict)
         context['full_dict'] = full_dict
         return context
 
@@ -97,14 +90,15 @@ class StatisticView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        start_time = datetime.now()
+
         current_date = timezone.now()
+        users = CustomUser.objects.filter(status_work=True)
 
         total_employees = CustomUser.objects.count()
         total_employees_work = CustomUser.objects.filter(status_work=True).count()
         context['total_employees'] = total_employees
         context['total_employees_work'] = total_employees_work
-        context['active_employees'] = total_employees_work
-        context['none_work'] = 0
         appointment_dates = (Appointment.objects.filter(verified=True)
                              .values_list('date', flat=True)
                              .distinct()
@@ -117,8 +111,11 @@ class StatisticView(LoginRequiredMixin, TemplateView):
             week_data[year].add(week)
 
         inactive_employees = []
+        none_work_users = Appointment.objects.filter(date__lt=current_date + timedelta(days=1)).values(
+            'user_id').distinct()
+        unique_user_ids = total_employees - len(set([item['user_id'] for item in none_work_users]))
 
-        for user in CustomUser.objects.filter(status_work=True):
+        for user in users:
             closest_appointment = (Appointment.objects.filter(
                 user=user,
                 date__lt=current_date + timedelta(days=1)
@@ -131,8 +128,6 @@ class StatisticView(LoginRequiredMixin, TemplateView):
                 closest_date = datetime.combine(closest_appointment.date, datetime.min.time())
                 closest_date = timezone.make_aware(closest_date, timezone.get_current_timezone())
                 days_difference = (current_date - closest_date).days
-            else:
-                context['none_work'] += 1
             if days_difference is None or days_difference >= 7:
                 if days_difference is None:
                     pass
@@ -141,10 +136,9 @@ class StatisticView(LoginRequiredMixin, TemplateView):
 
         context['inactive_employees'] = sorted(
             inactive_employees, key=lambda x: x[2], reverse=True)
-        context['active_employees'] = context['active_employees'] - len(context['inactive_employees']) - context[
-            'none_work']
 
-        users = CustomUser.objects.all()
+        context['active_employees'] = total_employees - len(context['inactive_employees']) - unique_user_ids
+
         past_date = current_date - timezone.timedelta(weeks=1)
         current_date = current_date - timezone.timedelta(days=1)
         missing_appointments_dict = {}
@@ -168,16 +162,15 @@ class StatisticView(LoginRequiredMixin, TemplateView):
             )
 
             # Заполняем словари для данного пользователя
-            if len(appointments_without_work_records) > 0:
+            if appointments_without_work_records:
                 for item in appointments_without_work_records:
                     if item.date in missing_appointments_dict:
                         missing_appointments_dict[item.date].append(item.user)
                     else:
                         missing_appointments_dict[item.date] = [item.user]
 
-            if len(work_records_without_appointments) > 0:
+            if work_records_without_appointments:
                 for item in work_records_without_appointments:
-                    print(item)
                     if item.date in missing_work_records_dict:
                         missing_work_records_dict[item.date].append(item)
                     else:
@@ -191,7 +184,6 @@ class StatisticView(LoginRequiredMixin, TemplateView):
         work_records = WorkRecord.objects.filter(date__range=(past_date, current_date))
 
         for record in work_records:
-            id = record.id
             date = record.date
             user = record.user
             total_hours = Appointment.objects.filter(user=user, date=date).aggregate(Sum('duration'))['duration__sum']
@@ -209,7 +201,7 @@ class StatisticView(LoginRequiredMixin, TemplateView):
                     else:
                         very_good_works[date] = [(record, kf)]
         context['very_good_works'] = very_good_works
-        pprint(context['very_good_works'])
+        logger.success(datetime.now() - start_time)
 
         return context
 
@@ -225,6 +217,7 @@ class StatisticWorks(LoginRequiredMixin, TemplateView):
         start_date = current_date - timedelta(days=7)
 
         users = CustomUser.objects.filter(status_work=True)
+        logger.debug(users)
         results = {}
 
         appointments = {}
@@ -241,7 +234,8 @@ class StatisticWorks(LoginRequiredMixin, TemplateView):
             user_records = WorkRecordQuantity.objects.filter(
                 work_record__user=user,
                 work_record__date__gt=start_date
-            ).order_by('work_record__user', 'work_record__date').values('work_record__id', 'work_record__date', 'standard__name').annotate(
+            ).order_by('work_record__user', 'work_record__date').values('work_record__id', 'work_record__date',
+                                                                        'standard__name').annotate(
                 total_quantity=Sum(F('quantity') * 1.0),
                 total_standard=Sum(F('standard__standard') * 1.0)
             ).annotate(
@@ -269,16 +263,12 @@ class StatisticWorks(LoginRequiredMixin, TemplateView):
             prev_date = None
             prev_value = None
             for date, value in user_data.items():
-                logger.debug(date)
-                logger.debug(value)
-
                 if prev_date is not None and abs(value[0] - prev_value[0]) > 40:
                     if user not in filtered_results:
                         filtered_results[user] = {}
                     delta = round((value[0] - prev_value[0]), 2)
                     filtered_results[user][date] = value, delta
                     if prev_date not in filtered_results[user]:
-                        logger.success(prev_date)
                         filtered_results[user][prev_date] = prev_value, 0
                 prev_date = date
                 prev_value = value
@@ -294,4 +284,3 @@ class StatisticWorks(LoginRequiredMixin, TemplateView):
 
         logger.success(datetime.now() - start_time)
         return context
-

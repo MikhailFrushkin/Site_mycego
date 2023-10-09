@@ -17,24 +17,20 @@ class DownloadFiles(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         excel_file = form.cleaned_data['excel_file']
-        print(excel_file)
         try:
             # Используйте Pandas для чтения файла Excel
             df = pd.read_excel(excel_file, engine='openpyxl')
-            print(df.columns)
             for index, row in df.iterrows():
                 username = row['Ник']
                 first_name = row['Имя']
                 last_name = row['Фамилия']
                 role_name = row['Должность']
-                print(row['Телефон'])
                 if isinstance(row['Телефон'], str):
                     phone_number = row['Телефон']
                 else:
                     phone_number = str(row['Телефон']).split('.')[0]
                 password = row['Пароль']
                 status_work = row['Работа']
-                print(phone_number)
                 # Проверяем, существует ли пользователь по username
                 user, created = CustomUser.objects.get_or_create(username=username)
                 # Обновляем поля пользователя
