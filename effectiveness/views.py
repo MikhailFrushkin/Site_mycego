@@ -3,8 +3,9 @@ from datetime import timedelta, datetime
 from pprint import pprint
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Sum, F, Subquery, ExpressionWrapper, FloatField
+from django.db.models import Count, Sum, F, Subquery, ExpressionWrapper, FloatField, IntegerField
 from django.db.models import Q
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -211,3 +212,86 @@ class StatisticView(LoginRequiredMixin, TemplateView):
         pprint(context['very_good_works'])
 
         return context
+
+
+class StatisticWorks(LoginRequiredMixin, TemplateView):
+    template_name = 'effectiveness/statistic_emp.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        start_time = datetime.now()
+
+        current_date = datetime.today().date()
+        start_date = current_date - timedelta(days=7)
+
+        users = CustomUser.objects.filter(status_work=True)
+        results = {}
+
+        appointments = {}
+        for appointment in Appointment.objects.filter(user__in=users, date__range=(start_date, current_date)):
+            if appointment.user_id not in appointments:
+                appointments[appointment.user_id] = {}
+            exec_row = appointments[appointment.user_id].get(appointment.date, None)
+            if exec_row:
+                appointments[appointment.user_id][appointment.date] += appointment.duration.total_seconds() / 3600
+            else:
+                appointments[appointment.user_id][appointment.date] = appointment.duration.total_seconds() / 3600
+
+        for user in users:
+            user_records = WorkRecordQuantity.objects.filter(
+                work_record__user=user,
+                work_record__date__gt=start_date
+            ).order_by('work_record__user', 'work_record__date').values('work_record__id', 'work_record__date', 'standard__name').annotate(
+                total_quantity=Sum(F('quantity') * 1.0),
+                total_standard=Sum(F('standard__standard') * 1.0)
+            ).annotate(
+                result=ExpressionWrapper(
+                    F('total_quantity') / F('total_standard'),
+                    output_field=FloatField()
+                )
+            )
+
+            user_total_quantity = {}
+            for record in user_records:
+                date = record['work_record__date']
+                record_id = record['work_record__id']
+                result = record['result']
+                hours = appointments.get(user.id, {}).get(date, None)
+                if not hours:
+                    continue
+                if date not in user_total_quantity:
+                    user_total_quantity[date] = [0, record_id]
+                user_total_quantity[date][0] += round((result / hours) * 100, 2)
+            if len(user_total_quantity) >= 2:
+                results[user] = user_total_quantity
+        filtered_results = {}
+        for user, user_data in results.items():
+            prev_date = None
+            prev_value = None
+            for date, value in user_data.items():
+                logger.debug(date)
+                logger.debug(value)
+
+                if prev_date is not None and abs(value[0] - prev_value[0]) > 40:
+                    if user not in filtered_results:
+                        filtered_results[user] = {}
+                    delta = round((value[0] - prev_value[0]), 2)
+                    filtered_results[user][date] = value, delta
+                    if prev_date not in filtered_results[user]:
+                        logger.success(prev_date)
+                        filtered_results[user][prev_date] = prev_value, 0
+                prev_date = date
+                prev_value = value
+        sorted_data = {user: dict(sorted(user_data.items())) for user, user_data in filtered_results.items()}
+        rounded_data = {
+            user: {
+                date: ([round(val[0][0], 2), round(val[0][1], 2)], val[1])
+                for date, val in user_data.items()
+            }
+            for user, user_data in sorted_data.items()
+        }
+        context['filtered_results'] = rounded_data
+
+        logger.success(datetime.now() - start_time)
+        return context
+

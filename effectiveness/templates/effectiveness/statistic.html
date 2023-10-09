@@ -1,6 +1,7 @@
 {% extends 'main_base.html' %}
 {% load i18n %}
 {% load static %}
+{% load cache %}
 {% block title %}
 {% trans 'Статистика' %}
 {% endblock %}
@@ -26,11 +27,13 @@
 {% endblock %}
 
 {% block content %}
+{% cache 300 statistic %}
 <div class="container" style="margin: 0; margin-top: 20px;width: 100%;">
     <p>{% trans 'Сколько работников за все время было' %}: {{ total_employees }}</p>
     <p>{% trans 'Сколько работников работает' %}: {{ total_employees_work }}</p>
     <p>{% trans 'Сколько активных работников сейчас' %}: {{ active_employees }}</p>
-    <br>
+    <h2 style="margin-top: 2rem;margin-bottom: 2rem;"><a href="{% url 'effectiveness:statistic_works' %}">Скачки эффективности</a></h2>
+
     <div class="row align-items-start">
         <div class="col">
             <div class="my-selection">
@@ -96,7 +99,7 @@
                         {% for i in value %}
                         <li>
                             <a href="{% url 'completed_works:workrecord_detail' i.id %}" target="_blank">
-                            {{ i.user }}
+                                {{ i.user }}
                             </a>
                         </li>
                         {% endfor %}
@@ -121,10 +124,10 @@
                         {% for i in value %}
                         <li>
                             <a href="{% url 'users:user_profile' i.0.user.id %}" target="_blank">
-                            {{ i.0.user }}
+                                {{ i.0.user }}
                             </a>
                             <a href="{% url 'completed_works:workrecord_detail' i.0.id %}" target="_blank">
-                            {{ i.1 }}%
+                                {{ i.1 }}%
                             </a>
                         </li>
                         {% endfor %}
@@ -135,5 +138,5 @@
         </div>
     </div>
 </div>
-
+{% endcache %}
 {% endblock %}
