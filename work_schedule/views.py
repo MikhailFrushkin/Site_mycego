@@ -450,10 +450,22 @@ class EditWork(LoginRequiredMixin, TemplateView):
             )
 
         context['work_schedule'] = work_schedule
-        context['users'] = CustomUser.objects.filter(status_work=True).distinct().order_by('username')
+        context['users'] = CustomUser.objects.filter(status_work=True).exclude(
+            role__name__in=not_role).distinct().order_by('username')
+
         context['users_add'] = json.dumps([user.username for user in context['users']])
         context['year'], context['week'] = get_year_week(self.request.GET, type='list_work')
+        pprint(context)
         logger.success(datetime.now() - time_start)
+
+        time_start = datetime.now()
+        current_date = timezone.now().date()
+        last_date = current_date - timedelta(days=7)
+        logger.success(current_date)
+        logger.success(last_date)
+        date_condition = Q(date__range=(last_date, current_date))
+        logger.success(datetime.now() - time_start)
+
         return context
 
 
@@ -574,6 +586,7 @@ class FingerPrintView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         year, week = get_year_week(self.request.GET, type='finger')
+        context['year'], context['week'] = year, week
         users = CustomUser.objects.filter(status_work=True)
         current_datetime = timezone.now()
         date_condition = Q(date__lt=current_datetime.date())

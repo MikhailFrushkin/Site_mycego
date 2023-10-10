@@ -13,7 +13,7 @@ urlpatterns = [
     path('vacation_admin/', VacationRequestAdmin.as_view(), name='vacation_admin'),
     path('vacation_admin/delete_vacation/<int:vacation_id>/', delete_vacation, name='delete_vacation'),
     path('vacation_admin/confirm_vacation/<int:vacation_id>/', confirm_vacation, name='confirm_vacation'),
-    path('finger_print/', cache_page(60 * 5)(FingerPrintView.as_view()), name='finger_print'),
+    path('finger_print/', FingerPrintView.as_view(), name='finger_print'),
 
     path('delete_row/', delete_appointment, name='delete_row'),
     path('update_rows/', update_appointment, name='update_rows'),

@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from loguru import logger
 import locale
 
+from completed_works.models import Standards
 from main_site.models import Announcement, Category, GoodLink, Knowledge
 from users.models import CustomUser
 from work_schedule.models import Appointment
@@ -80,6 +81,8 @@ class KnowledgeCategory(LoginRequiredMixin, TemplateView):
         for item in good_links:
             good_links_dict[item.category].append(item)
 
+        standards = Standards.objects.all().order_by('standard')
+        context['standards'] = standards
         context['good_links'] = good_links_dict
         context['category_dict'] = category_dict
 

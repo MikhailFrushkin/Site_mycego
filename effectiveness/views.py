@@ -192,7 +192,7 @@ class StatisticView(LoginRequiredMixin, TemplateView):
                 works = WorkRecordQuantity.objects.filter(work_record=record)
                 hours_work = 0
                 for work in works:
-                    if work.quantity > 0:
+                    if work.quantity > 0 and work.standard:
                         hours_work += work.quantity / work.standard.standard
                 kf = round(hours_work / total_hours * 100, 2)
                 if kf > 200:

@@ -39,6 +39,14 @@
                 aria-controls="collapseExample">
             Полезные ссылки
         </button>
+        <button class="depth"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseExampleNorm"
+                aria-expanded="false"
+                aria-controls="collapseExample">
+            Нормативы
+        </button>
     </div>
 </div>
 
@@ -123,5 +131,25 @@
         </div>
     </div>
 </div>
+<div class="container text-center">
+    <div class="row justify-content-md-center">
+        <div class="collapse" id="collapseExampleNorm">
+            {% for item in standards %}
 
+            <div class="fl-blog fl-item2" style="margin-bottom: 3rem;">
+                <article class="sc-card-article blog-article">
+
+                    <div class="post">
+                        <div class="text-article">
+                            <p>{{item.name}} - {{item.standard}} в час</p>
+                        </div>
+                    </div>
+
+                </article>
+            </div>
+            {% endfor %}
+
+        </div>
+    </div>
+</div>
 {% endblock %}

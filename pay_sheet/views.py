@@ -56,9 +56,10 @@ class PaySheet(LoginRequiredMixin, TemplateView):
 
                 # Получите должность пользователя и добавьте ее в конец строки
                 if field.name == 'user' and isinstance(cell_value, CustomUser):
+                    logger.debug(cell_value.phone_number)
                     worksheet.cell(row=row_num, column=col_num, value=cell_value.username)
-                    worksheet.cell(row=row_num, column=len(headers), value=cell_value.phone_number)
-                    worksheet.cell(row=row_num, column=len(headers), value=cell_value.card_details)
+                    worksheet.cell(row=row_num, column=len(headers) - 1, value=str(cell_value.phone_number))
+                    worksheet.cell(row=row_num, column=len(headers), value=str(cell_value.card_details))
                 elif isinstance(cell_value, datetime.datetime):
                     data_str = str(cell_value)
                     data_datetime = datetime.datetime.fromisoformat(data_str)
@@ -248,9 +249,12 @@ def calculate_work_totals_for_week(user, hours, week_start_date, week_end_date):
             standard_id = work_total['standard']
             total_quantity = work_total['total_quantity']
             if total_quantity > 0:
-                standard = Standards.objects.get(pk=standard_id)
-                work_totals_dict[standard] = (total_quantity, total_quantity / (hours * standard.standard))
-
+                try:
+                    standard = Standards.objects.get(pk=standard_id)
+                    work_totals_dict[standard] = (total_quantity, total_quantity / (hours * standard.standard))
+                except:
+                    work_totals_dict['удаленные виды работ'] = (total_quantity, 0)
+    print(work_totals_dict)
     return work_totals_dict
 
 

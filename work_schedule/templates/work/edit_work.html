@@ -136,7 +136,7 @@ width: 9%!important;
 
         {% for user_name, hours in value.0.items %}
         <tr>
-            <th scope="row" style="font-size:1rem;">{{ forloop.counter }}. {{user_name.2}} {% if user_name.1%}
+            <th scope="row" style="font-size:1rem;{% if not user_name.1 %}color:red;{%endif%}">{{ forloop.counter }}. {{user_name.2}} {% if user_name.1 %}
                 {%else%}<br>(Не проверено){%endif%}
             </th>
             {% for hour in hours %}
