@@ -23,7 +23,7 @@ from django.apps import apps
 from users.models import CustomUser
 from utils.utils import get_year_week
 from work_schedule.forms import AppointmentForm, VacationRequestForm
-from work_schedule.models import Appointment, VacationRequest
+from work_schedule.models import Appointment, VacationRequest, FingerPrint, BadFingerPrint
 
 
 def format_duration(duration):
@@ -173,6 +173,8 @@ def search_emp(request):
     try:
         search = request.GET.get('searchTerm', '')
         week = request.GET.get('week', '')
+        logger.debug(search)
+        logger.debug(week)
 
         # Создаем Q-объект для поиска по нику пользователя
         nickname_query = Q(user__username__icontains=search)
@@ -181,6 +183,7 @@ def search_emp(request):
         week_query = Q(date__week=week)
         # Комбинируем оба Q-объекта через оператор И (AND)
         query = Appointment.objects.filter(nickname_query & week_query).order_by('user', 'date')
+        logger.debug(query)
         results = [{
             'username': appointment.user.username,
             'date': appointment.date,
@@ -449,7 +452,7 @@ class EditWork(LoginRequiredMixin, TemplateView):
         context['work_schedule'] = work_schedule
         context['users'] = CustomUser.objects.filter(status_work=True).distinct().order_by('username')
         context['users_add'] = json.dumps([user.username for user in context['users']])
-        context['year'], context['week'] = get_year_week(self.request.GET)
+        context['year'], context['week'] = get_year_week(self.request.GET, type='list_work')
         logger.success(datetime.now() - time_start)
         return context
 
@@ -561,3 +564,88 @@ def confirm_vacation(request, vacation_id):
         return JsonResponse({'message': 'Заявка успешно подтверждена'})
 
     return redirect('work:vacation_admin')
+
+
+class FingerPrintView(LoginRequiredMixin, TemplateView):
+    template_name = 'work/finger_print.html'
+    login_url = '/users/login/'
+    success_url = reverse_lazy('work:finger_print')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        year, week = get_year_week(self.request.GET, type='finger')
+        users = CustomUser.objects.filter(status_work=True)
+        current_datetime = timezone.now()
+        date_condition = Q(date__lt=current_datetime.date())
+        fingerprint_dates = FingerPrint.objects.filter(date__week=week).values_list('date', flat=True).distinct()
+        logger.debug(fingerprint_dates)
+        # Создаем словарь, в котором ключи - это даты, а значения - это словари с данными по пользователям
+        output_dict = {}
+        for user in users:
+            appointments = Appointment.objects.filter(user=user, date__week=week).filter(date_condition, date__in=fingerprint_dates)
+            fingerprints = FingerPrint.objects.filter(user=user, date__week=week).filter(date_condition, date__in=fingerprint_dates)
+
+            for appointment in appointments:
+                date = appointment.date
+                if date not in output_dict:
+                    output_dict[date] = {}
+                if user not in output_dict[date]:
+                    output_dict[date][user] = {'graf': [], 'scan': []}
+                output_dict[date][user]['graf'].append(appointment.start_time)
+                output_dict[date][user]['graf'].append(appointment.end_time)
+
+            for fingerprint in fingerprints:
+                date = fingerprint.date
+                if date not in output_dict:
+                    output_dict[date] = {}
+                if user not in output_dict[date]:
+                    output_dict[date][user] = {'graf': [], 'scan': []}
+                output_dict[date][user]['scan'].append(fingerprint.time)
+
+        for date, user_data in output_dict.items():
+            for user, data in user_data.items():
+                data['error']: list = []
+                if data['graf']:
+                    data['graf'] = [min(data['graf']), max(data['graf'])]
+                else:
+                    data['error'].append('Нет в графике')
+
+                if data['scan']:
+                    if len(data['scan']) == 1:
+                        data['error'].append('1 отметка за день')
+                    else:
+                        data['scan'] = [min(data['scan']), max(data['scan'])]
+
+                        if data['graf']:
+                            if data['scan'][0] > data['graf'][0]:
+                                time1 = data['graf'][0]
+                                time2 = data['scan'][0]
+                                datetime1 = datetime(2000, 1, 1, time1.hour, time1.minute, time1.second)
+                                datetime2 = datetime(2000, 1, 1, time2.hour, time2.minute, time2.second)
+                                time_difference = datetime2 - datetime1
+                                time_difference_as_time = int(time_difference.total_seconds() // 60)
+                                if time_difference_as_time > 15:
+                                    data['error'].append(f"Опоздал на {time_difference_as_time} минут")
+
+                            if data['scan'][1] < data['graf'][1]:
+                                time1 = data['graf'][1]
+                                time2 = data['scan'][1]
+                                datetime1 = datetime(2000, 1, 1, time1.hour, time1.minute, time1.second)
+                                datetime2 = datetime(2000, 1, 1, time2.hour, time2.minute, time2.second)
+                                time_difference = datetime1 - datetime2
+                                time_difference_as_time = int(time_difference.total_seconds() // 60)
+                                if time_difference_as_time > 15:
+                                    data['error'].append(f"Ушел раньше на {time_difference_as_time} минут")
+                else:
+                    data['error'].append('Нет отметок на сканере')
+                if data['error']:
+                    temp, _ = BadFingerPrint.objects.get_or_create(
+                        user=user,
+                        date=date,
+                        comment=','.join(data['error'])
+                    )
+            output_dict[date] = dict(sorted(user_data.items(), key=lambda item: bool(item[1]['error']), reverse=True))
+        sorted_dict = dict(sorted(output_dict.items(), key=lambda x: x[0]))
+
+        context['output_dict'] = sorted_dict
+        return context

@@ -1,61 +1,143 @@
+from datetime import datetime
+from pprint import pprint
+
 import pandas as pd
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import FormView
+from loguru import logger
 
 from completed_works.models import WorkRecordQuantity
 from download_files.forms import UploadExcelForm
 from users.models import CustomUser, Role
+from work_schedule.models import FingerPrint
+
+
+def get_or_none(model, **kwargs):
+    try:
+        return model.objects.get(**kwargs)
+    except ObjectDoesNotExist:
+        return None
 
 
 class DownloadFiles(LoginRequiredMixin, FormView):
     template_name = 'download/download.html'
     login_url = '/users/login/'
-    success_url = reverse_lazy('download:download')
+    success_url = reverse_lazy('main_site:main_site')
     form_class = UploadExcelForm
 
     def form_valid(self, form):
-        excel_file = form.cleaned_data['excel_file']
-        try:
-            # Используйте Pandas для чтения файла Excel
-            df = pd.read_excel(excel_file, engine='openpyxl')
-            for index, row in df.iterrows():
-                username = row['Ник']
-                first_name = row['Имя']
-                last_name = row['Фамилия']
-                role_name = row['Должность']
-                if isinstance(row['Телефон'], str):
-                    phone_number = row['Телефон']
-                else:
-                    phone_number = str(row['Телефон']).split('.')[0]
-                password = row['Пароль']
-                status_work = row['Работа']
-                # Проверяем, существует ли пользователь по username
-                user, created = CustomUser.objects.get_or_create(username=username)
-                # Обновляем поля пользователя
-                user.first_name = first_name
-                user.last_name = last_name
-                if status_work == 'Да':
-                    user.status_work = True
-                else:
-                    user.status_work = False
-                user.phone_number = phone_number
-                user.set_password(password)
+        excel_files = [
+            form.cleaned_data['excel_file'],
+            form.cleaned_data['excel_file2'],
+        ]
 
-                # Находим или создаем роль
-                role, created = Role.objects.get_or_create(name=role_name)
+        if excel_files[0]:
+            try:
+                bad_users = []
+                file_name = excel_files[0]
+                df = pd.read_excel(file_name, sheet_name='ПАЛЬЧИКИ')
+                df['username'] = df['Фамилия'] + '_' + df['Имя']
+                df['username'] = df['username'].apply(lambda x: x.strip())
+                users_list = zip(df['username'].tolist(), df['никнейм'].tolist())
+                for i in users_list:
+                    try:
+                        user = CustomUser.objects.get(username=i[0])
+                        user.nick = i[1]
+                        user.save()
+                    except Exception as ex:
+                        logger.error(i[0])
+                        logger.error(ex)
+                        bad_users.append(i[0])
+                with open('Не найденные ники в базе.txt', 'w') as f:
+                    f.write('\n'.join(bad_users))
+            except Exception as ex:
+                logger.debug(ex)
+        if excel_files[1]:
+            not_user_in_db = []
+            date_format = "%Y/%m/%d %H:%M:%S"
+            df = pd.DataFrame()
+            try:
+                file_name = excel_files[1]
+                df = pd.read_csv(file_name, delimiter='\t')
+                df['DateTime'] = df['DateTime'].apply(lambda x: datetime.strptime(x, date_format))
+                df['Date'] = df['DateTime'].dt.date
+                df['Time'] = df['DateTime'].dt.time
+            except Exception as ex:
+                logger.debug(ex)
 
-                user.role = role
-                user.save()
+            try:
+                for index, row in df.iterrows():
+                    user = get_or_none(CustomUser, nick=row['Name'])
 
-        except Exception as e:
-            return render(self.request, self.template_name, {'form': form, 'error_message': str(e)})
+                    if user is not None:
+                        temp, _ = FingerPrint.objects.get_or_create(
+                            user=user,
+                            EnNo=row['EnNo'],
+                            date=row['Date'],
+                            time=row['Time'],
+                        )
+                    else:
+                        not_user_in_db.append(str(row['Name']))
+                with open('Нет таких ников в базе сайта.txt', 'w') as f:
+                    f.write('\n'.join(set(not_user_in_db)))
+            except Exception as ex:
+                logger.debug(ex)
 
+        messages.success(self.request, f'Успешно!')
         return super().form_valid(form)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        null_q = WorkRecordQuantity.objects.filter(quantity=0)
-        null_q.delete()
-        return context
+# class DownloadFiles(LoginRequiredMixin, FormView):
+#     template_name = 'download/download.html'
+#     login_url = '/users/login/'
+#     success_url = reverse_lazy('download:download')
+#     form_class = UploadExcelForm
+#
+#     def form_valid(self, form):
+#         excel_file = form.cleaned_data['excel_file']
+#         print(excel_file)
+#         try:
+#             # Используйте Pandas для чтения файла Excel
+#             df = pd.read_excel(excel_file, engine='openpyxl')
+#             for index, row in df.iterrows():
+#                 username = row['Ник']
+#                 first_name = row['Имя']
+#                 last_name = row['Фамилия']
+#                 role_name = row['Должность']
+#                 if isinstance(row['Телефон'], str):
+#                     phone_number = row['Телефон']
+#                 else:
+#                     phone_number = str(row['Телефон']).split('.')[0]
+#                 password = row['Пароль']
+#                 status_work = row['Работа']
+#                 # Проверяем, существует ли пользователь по username
+#                 user, created = CustomUser.objects.get_or_create(username=username)
+#                 # Обновляем поля пользователя
+#                 user.first_name = first_name
+#                 user.last_name = last_name
+#                 if status_work == 'Да':
+#                     user.status_work = True
+#                 else:
+#                     user.status_work = False
+#                 user.phone_number = phone_number
+#                 user.set_password(password)
+#
+#                 # Находим или создаем роль
+#                 role, created = Role.objects.get_or_create(name=role_name)
+#
+#                 user.role = role
+#                 user.save()
+#
+#         except Exception as e:
+#             return render(self.request, self.template_name, {'form': form, 'error_message': str(e)})
+#
+#         return super().form_valid(form)
+#
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         null_q = WorkRecordQuantity.objects.filter(quantity=0)
+#         null_q.delete()
+#         return context

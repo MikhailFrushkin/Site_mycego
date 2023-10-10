@@ -2,7 +2,6 @@
 {% load i18n %}
 {% load static %}
 {% load cache %}
-{% load custom_tags_users %}
 {% load custom_tags_choice_date %}
 
 {% block link %}
@@ -180,6 +179,7 @@ width: 9%!important;
     function createTable(results) {
     // Получите ссылку на элемент <div>, в который будет вставлена таблица
     var tableContainer = document.getElementById('resultsTable');
+    console.log(results);
 
     // Создайте элемент <table> и добавьте его в контейнер
     var table = document.createElement('table');
@@ -250,15 +250,18 @@ function parseDuration(durationString) {
         $searchInput.on('input', function() {
             // Получаем значение из поля ввода
             var inputValue = $searchInput.val();
+            console.log(inputValue);
             // Проверяем, содержит ли введенное значение хотя бы 5 символов
             if (inputValue.length >= 5) {
                 // Выполняем AJAX-запрос
+
                 $.ajax({
                     url: '/work/ajax/search_emp/', // Замените на ваш реальный URL Django
                     method: 'GET', // Или 'GET', в зависимости от вашего API
                     data: {searchTerm: inputValue, week: {{week}}}, // Передаем введенный текст на сервер
                     success: function(response) {
                         createTable(response.results);
+                        console.error(inputValue);
                     },
                     error: function(error) {
                         console.error(error);

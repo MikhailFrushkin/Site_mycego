@@ -19,10 +19,11 @@ class CustomUser(AbstractUser):
     status_work = models.BooleanField(default=True, blank=True)
     photo = models.ImageField(verbose_name='Фото', upload_to='user_photos', blank=True, null=True)
     phone_number = models.CharField(verbose_name='Номер телефона', max_length=15, blank=True)
-    telegram_id = models.CharField(verbose_name='ID Телеграма', max_length=255, blank=True)
+    telegram_id = models.CharField(verbose_name='Телеграмм', max_length=255, blank=True)
     card_details = models.CharField(verbose_name='Реквизиты карты', max_length=255, blank=True)
     birth_date = models.DateField(verbose_name='Дата рождения', null=True, blank=True)
     hobbies = models.CharField(verbose_name='Увлечения', max_length=255, blank=True)
+    nick = models.CharField(verbose_name='Никнейм отпечатков', max_length=100, blank=True, default='')
 
     def __str__(self):
         return self.username

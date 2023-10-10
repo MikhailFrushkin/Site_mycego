@@ -30,6 +30,8 @@ def get_year_week(data, type=None):
         year = today.year
         if type == 'list_work' or type == 'salary':
             week = today.isocalendar()[1]
+        elif type == 'finger':
+            week = today.isocalendar()[1] - 1
         else:
             week = today.isocalendar()[1] + 1
     return year, week

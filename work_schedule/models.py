@@ -40,6 +40,38 @@ class Appointment(models.Model):
         super().save(*args, **kwargs)
 
 
+
+
+class FingerPrint(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name='Сотрудник',
+                             related_name='fingerprints')
+    EnNo = models.IntegerField(verbose_name='ID')
+    date = models.DateField(verbose_name='Дата')
+    time = models.TimeField(verbose_name='Время')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.user.username
+
+    class Meta:
+        verbose_name = "Запись со сканера"
+        verbose_name_plural = "Записи со сканера"
+
+
+class BadFingerPrint(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name='Сотрудник')
+    date = models.DateField(verbose_name='Дата')
+    comment = models.TextField(verbose_name='Косяк')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.user.username
+
+    class Meta:
+        verbose_name = "Косяк"
+        verbose_name_plural = "Косяки"
+
+
 class VacationRequest(models.Model):
     employee = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     start_date = models.DateField()
@@ -60,3 +92,6 @@ class VacationRequest(models.Model):
     class Meta:
         verbose_name = 'Заявка на отпуск'
         verbose_name_plural = 'Заявки на отпуск'
+
+
+

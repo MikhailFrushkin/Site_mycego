@@ -1,7 +1,7 @@
 from django.urls import path
-
+from django.views.decorators.cache import cache_page
 from .views import WorkSchedule, EditWork, ajax_view, delete_appointment, update_appointment, GrafUser, \
-    VacationRequestCreateView, VacationRequestAdmin, delete_vacation, confirm_vacation, search_emp
+    VacationRequestCreateView, VacationRequestAdmin, delete_vacation, confirm_vacation, search_emp, FingerPrintView
 
 app_name = 'work'
 
@@ -13,6 +13,7 @@ urlpatterns = [
     path('vacation_admin/', VacationRequestAdmin.as_view(), name='vacation_admin'),
     path('vacation_admin/delete_vacation/<int:vacation_id>/', delete_vacation, name='delete_vacation'),
     path('vacation_admin/confirm_vacation/<int:vacation_id>/', confirm_vacation, name='confirm_vacation'),
+    path('finger_print/', cache_page(60 * 5)(FingerPrintView.as_view()), name='finger_print'),
 
     path('delete_row/', delete_appointment, name='delete_row'),
     path('update_rows/', update_appointment, name='update_rows'),

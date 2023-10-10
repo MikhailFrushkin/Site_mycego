@@ -14,7 +14,7 @@ class CustomUserAdmin(UserAdmin):
 
     fieldsets = UserAdmin.fieldsets + (
         ('Доп. инофрмация', {'fields': ('role', 'status_work', 'photo', 'phone_number',
-                                        'telegram_id', 'card_details', 'birth_date', 'hobbies')}),
+                                        'telegram_id', 'card_details', 'birth_date', 'hobbies', 'nick')}),
     )
 
     add_fieldsets = (

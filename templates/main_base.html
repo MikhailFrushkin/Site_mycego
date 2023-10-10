@@ -113,6 +113,10 @@
                                         </li>
                                         {% if request.user.is_staff %}
                                         <li class="menu-item">
+                                            <a href="{% url 'work:finger_print' %}">
+                                                Отпечатки
+                                            </a></li>
+                                        <li class="menu-item">
                                             <a href="{% url 'work:vacation_admin' %}">
                                                 Все заявки <br>на отпуск
                                             </a></li>
@@ -198,6 +202,11 @@
                                         <li class="menu-item">
                                             <a href="{% url 'effectiveness:effectiveness_statistic' %}">
                                                 Статистика
+                                            </a>
+                                        </li>
+                                        <li class="menu-item">
+                                            <a href="{% url 'download:download' %}">
+                                                Загрузить файлы
                                             </a>
                                         </li>
                                         {% endif %}

@@ -1,0 +1,97 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+{% load cache %}
+{% load custom_tags_choice_date %}
+
+{% block link %}
+{% endblock %}
+
+{% block title %}
+{% trans 'Отметки на сканере' %}
+{% endblock %}
+
+{% block content %}
+<style>
+    .depth, depth-green {
+    width: 10%!important;
+    .collapse {
+        margin-top:3rem!important;
+    }
+}
+</style>
+{% choice_date year week monday sunday %}
+
+<div class="container text-center" style="margin:0;width: auto!important;">
+    <div class="row justify-content-md-center">
+        <button class="depth"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseExampleEmp"
+                aria-expanded="false"
+                aria-controls="collapseExampleEmp">
+            Поиск по сотруднику
+        </button>
+
+        {% for date, user_data in output_dict.items %}
+        <button class="depth"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseExample{{ forloop.counter }}"
+                aria-expanded="false"
+                aria-controls="collapseExample">
+            {{ date }}
+        </button>
+        {% endfor %}
+        <br><br>
+    </div>
+</div>
+
+<div class="collapse" id="collapseExampleEmp" style="margin-top:3rem!important;">
+    <br><br>
+    <input type="text" id="collapseExampleEmpSearch" placeholder="Поиск..." style="width: 20%;!important;">
+    <div id="resultsTable"></div>
+</div>
+{% for date, user_data in output_dict.items %}
+<div class="collapse" id="collapseExample{{ forloop.counter }}" style="margin-top:3rem!important;">
+    <table id="{{date}}" class="table-responsive-sm">
+        <thead>
+        <tr>
+            <th scope="col" style="width: 5%;">#</th>
+            <th scope="col" style="width: 30%;">Сотрудник</th>
+            <th scope="col" style="width: 10%;">Смена</th>
+            <th scope="col" style="width: 10%;">Отметки</th>
+            <th scope="col" style="width: 35%;">Комментарий</th>
+        </tr>
+        </thead>
+        <tbody class="table-group-divider">
+
+        {% for user, item in user_data.items %}
+        <tr>
+            <th scope="row">{{ forloop.counter }}
+            </th>
+            <th scope="row">{{ user }}
+            </th>
+            <th scope="row">
+                {% if item.graf %}
+                <span>{{item.graf.0}} - {{item.graf.1}}</span>
+                {% endif %}
+            </th>
+            <th scope="row">
+                {% if item.scan %}
+                <span>{{item.scan.0}}, {{item.scan.1}}</span>
+                {% endif %}
+            </th>
+            <th scope="row">
+                {% for i in item.error %}
+                <p  style="color:red;">{{i}}</p>
+                {% endfor %}
+            </th>
+        </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
+</div>
+{% endfor %}
+{% endblock %}
