@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Standards, WorkRecord, WorkRecordQuantity
+from .models import Standards, WorkRecord, WorkRecordQuantity, Delivery
 
 
 class AdminStandards(admin.ModelAdmin):
@@ -31,3 +31,20 @@ class AdminWorkRecordQuantity(admin.ModelAdmin):
 
 
 admin.site.register(WorkRecordQuantity, AdminWorkRecordQuantity)
+
+
+class AdminDelivery(admin.ModelAdmin):
+    list_display = [
+        'id_wb',
+        'name',
+        'createdAt',
+        'closedAt',
+        'products_count',
+        'price',
+        'type',
+    ]
+    search_fields = ('id_wb', 'name')
+    list_per_page = 100
+
+
+admin.site.register(Delivery, AdminDelivery)

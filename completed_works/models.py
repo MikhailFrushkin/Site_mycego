@@ -44,18 +44,21 @@ class WorkRecordQuantity(models.Model):
         verbose_name_plural = "Количества работы"
 
 
-# class WorkDelivery(models.Model):
-#     name = models.CharField(verbose_name='Имя поставки', max_length=100)
-#     created = models.DateTimeField(verbose_name='Создан')
-#     type = models.CharField(verbose_name='Тип', null=True, max_length=100)
-#     machin = models.CharField(verbose_name='Компьютер', null=True, max_length=100)
-#     found_arts = models.IntegerField(verbose_name='Найдено значков', null=True)
-#     num = models.IntegerField(verbose_name='Найдено значков', null=True)
-#     found_arts = models.IntegerField(verbose_name='Найдено значков', null=True)
-#
-#     def __str__(self):
-#         return f"{self.work_record} - {self.standard}"
-#
-#     class Meta:
-#         verbose_name = "Количество работы"
-#         verbose_name_plural = "Количества работы"
+class Delivery(models.Model):
+    id_wb = models.CharField(verbose_name='Идентификатор поставки', max_length=100)
+    name = models.CharField(verbose_name='Наименование поставки', max_length=100)
+    createdAt = models.DateTimeField(verbose_name='Дата создания поставки', null=True)
+    closedAt = models.DateTimeField(verbose_name='Дата закрытия поставки', null=True)
+    scanDt = models.DateTimeField(verbose_name='Дата скана поставки', null=True)
+    done = models.BooleanField(verbose_name='Флаг закрытия поставки', null=True)
+    products_count = models.IntegerField(verbose_name='Количество товаров')
+    products = models.JSONField(verbose_name='Артикулы товаров', blank=True, null=True)
+    price = models.IntegerField(verbose_name='Цена')
+    type = models.CharField(verbose_name='Апи', null=True, max_length=100)
+
+    def __str__(self):
+        return f"{self.id_wb} - {self.name}"
+
+    class Meta:
+        verbose_name = "Поставка"
+        verbose_name_plural = "Поставки"

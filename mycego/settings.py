@@ -223,3 +223,8 @@ DEFAULT_FROM_EMAIL = 'mycego@mail.ru'
 DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'backup/')}
 
+env = Env()
+env.read_env()
+
+api_key1 = env.str('api_key1')
+api_key2 = env.str('api_key2')

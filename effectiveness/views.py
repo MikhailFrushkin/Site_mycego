@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import timedelta, datetime
+from pprint import pprint
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum, F, ExpressionWrapper, FloatField
@@ -229,6 +230,7 @@ class StatisticWorks(LoginRequiredMixin, TemplateView):
                 appointments[appointment.user_id][appointment.date] += appointment.duration.total_seconds() / 3600
             else:
                 appointments[appointment.user_id][appointment.date] = appointment.duration.total_seconds() / 3600
+        user_data_dict = {}
 
         for user in users:
             user_records = WorkRecordQuantity.objects.filter(
@@ -255,9 +257,33 @@ class StatisticWorks(LoginRequiredMixin, TemplateView):
                     continue
                 if date not in user_total_quantity:
                     user_total_quantity[date] = [0, record_id]
-                user_total_quantity[date][0] += round((result / hours) * 100, 2)
-            if len(user_total_quantity) >= 2:
-                results[user] = user_total_quantity
+                if result:
+                    user_total_quantity[date][0] += round((result / hours) * 100, 2)
+            if user_total_quantity:
+                user_data_dict[user] = user_total_quantity
+                if len(user_total_quantity) >= 2:
+                    results[user] = user_total_quantity
+
+        avg_kf_dict = {
+            'bad': [],
+            'medium': [],
+            'good': [],
+        }
+        for user, data in user_data_dict.items():
+            avg_value = round(sum(item[0] for item in data.values()) / len(data), 2)
+            if avg_value < 80:
+                avg_kf_dict['bad'].append((user, avg_value))
+            elif 80 <= avg_value < 100:
+                avg_kf_dict['medium'].append((user, avg_value))
+            elif avg_value >= 100:
+                avg_kf_dict['good'].append((user, avg_value))
+            else:
+                avg_kf_dict['bad'].append((user, 'Ошибка'))
+        for key in avg_kf_dict:
+            avg_kf_dict[key] = sorted(avg_kf_dict[key], key=lambda x: x[1])
+
+        context["avg_kf_dict"] = avg_kf_dict
+
         filtered_results = {}
         for user, user_data in results.items():
             prev_date = None

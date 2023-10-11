@@ -29,10 +29,11 @@
 {% block content %}
 {% cache 300 statistic %}
 <div class="container" style="margin: 0; margin-top: 20px;width: 100%;">
+    <h2>Данные учитываются за 7 последних дней</h2>
     <p>{% trans 'Сколько работников за все время было' %}: {{ total_employees }}</p>
     <p>{% trans 'Сколько работников работает' %}: {{ total_employees_work }}</p>
     <p>{% trans 'Сколько активных работников сейчас' %}: {{ active_employees }}</p>
-    <h2 style="margin-top: 2rem;margin-bottom: 2rem;"><a href="{% url 'effectiveness:statistic_works' %}">Скачки эффективности</a></h2>
+    <h2 style="margin-top: 2rem;margin-bottom: 2rem;"><a href="{% url 'effectiveness:statistic_works' %}">Эффективность сотрудников</a></h2>
 
     <div class="row align-items-start">
         <div class="col">

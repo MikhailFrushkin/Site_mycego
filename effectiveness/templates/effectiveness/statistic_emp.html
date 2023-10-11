@@ -21,35 +21,125 @@
     .span-bad {
         color: red;
     }
+    .my-selection {
+        height: 10rem;
+    }
+    .btn-grad  {
+        height: 6rem;
+        width: 35rem;
+    }
+
+
 </style>
 {% endblock %}
 {% block content %}
-{% cache 300 jump %}
-
-<div class="container" style="">
-    {% for key, value in filtered_results.items %}
-        <h2 style="margin-top:2rem;"><a href="{% url 'users:user_profile' key.id %}">{{ key }} ({{ key.role }})</a></h2>
-        {% for i, j in value.items %}
-        <p>
-            <a href="{% url 'completed_works:workrecord_detail' j.0.1 %}">{{ i }}</a> - К. эфективности:
-            <span class="{% if j.0.0 > 80 %} span-good {% else %} span-bad {% endif %}">{{ j.0.0 }} % </span>
-            Разница с предыдущим днем:
-            {% if j.1 == 0 %}
-            <span> н/д </span>
-            {% else %}
-            <span class="{% if j.1 >= 0 %} span-good {% else %} span-bad {% endif %}">
+<div class="row align-items-start">
+   <div class="col-6">
+        <div class="my-selection">
+            <button class="btn-grad btn-gradient-border btn-glow" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseExampleJump"
+                    aria-expanded="false" aria-controls="collapseExampleInactive">
+                Скачки эффективности
+            </button>
+        </div>
+        <div class="collapse" id="collapseExampleJump">
+            <div class="card card-body" style="background-color:#130518;color:#198754!important;">
+                {% for key, value in filtered_results.items %}
+                <h2 style="margin-top:2rem;"><a href="{% url 'users:user_profile' key.id %}">{{ key }}
+                    ({{ key.role }})</a></h2>
+                {% for i, j in value.items %}
+                <p>
+                    <a href="{% url 'completed_works:workrecord_detail' j.0.1 %}">{{ i }}</a> - Эффективность:
+                    <span class="{% if j.0.0 > 80 %} span-good {% else %} span-bad {% endif %}">{{ j.0.0 }} % </span>
+                    Разница с предыдущим днем:
+                    {% if j.1 == 0 %}
+                    <span> н/д </span>
+                    {% else %}
+                    <span class="{% if j.1 >= 0 %} span-good {% else %} span-bad {% endif %}">
                 {% if j.1 > 0 %}
                 +{{ j.1 }} %
                 {% else %}
                 {{ j.1 }} %
                 {% endif %}
             </span>
-            {% endif %}
-        </p>
-        {% endfor%}
-    {% endfor%}
+                    {% endif %}
+                </p>
+                {% endfor%}
+                {% endfor%}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row align-items-start">
+    <div class="col">
+        <div class="my-selection">
+            <button class="btn-grad btn-gradient-border btn-glow" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseExampleBad"
+                    aria-expanded="false" aria-controls="collapseExampleInactive">
+                Эффективность меньше 80%
+            </button>
+        </div>
+        <div class="collapse" id="collapseExampleBad">
+            <div class="card card-body" style="background-color:#130518;color:#198754!important;">
+                <ul>
+                    {% for item in avg_kf_dict.bad %}
+                    <li class="m-top"><a href="{% url 'users:user_profile' item.0.id %}" target="_blank">
+                        {{ forloop.counter }}. {{ item.0 }} {{ item.1 }} %
+                    </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="my-selection">
+            <button class="btn-grad btn-gradient-border btn-glow" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseExampleMed"
+                    aria-expanded="false" aria-controls="collapseExampleInactive">
+                Эффективность от 80% до 100%
+            </button>
+        </div>
+        <div class="collapse" id="collapseExampleMed">
+            <div class="card card-body" style="background-color:#130518;color:#198754!important;">
+                <ul>
+                    {% for item in avg_kf_dict.medium %}
+                    <li class="m-top"><a href="{% url 'users:user_profile' item.0.id %}" target="_blank">
+                        {{ forloop.counter }}. {{ item.0 }} {{ item.1 }} %
+                    </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="my-selection">
+            <button class="btn-grad btn-gradient-border btn-glow" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseExampleGood"
+                    aria-expanded="false" aria-controls="collapseExampleInactive">
+                Эффективность выше 100%
+            </button>
+        </div>
+        <div class="collapse" id="collapseExampleGood">
+            <div class="card card-body" style="background-color:#130518;color:#198754!important;">
+                <ul>
+                    {% for item in avg_kf_dict.good %}
+                    <li class="m-top"><a href="{% url 'users:user_profile' item.0.id %}" target="_blank">
+                        {{ forloop.counter }}. {{ item.0 }} {{ item.1 }} %
+                    </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
 
 </div>
-{% endcache %}
+
 
 {% endblock %}
