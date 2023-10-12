@@ -33,6 +33,24 @@
         </div>
 
         <div class="input-group mb-3">
+            <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ form.delivery.label }}</span>
+            <select name="{{ form.delivery.name }}" class="form-select">
+                <option value="" selected disabled hidden>Выберите поставку</option>
+                <option value=""> Не указывать</option>
+                {% for delivery in form.delivery.field.queryset %}
+                    <option value="{{ delivery.pk }}" {% if delivery.pk == form.delivery.value %}selected{% endif %}>
+                        {{ delivery }}
+                    </option>
+                {% endfor %}
+            </select>
+            {% if form.delivery.errors %}
+            <div class="error-message">
+                {{ form.delivery.errors }}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="input-group mb-3">
             <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ form.date.label }}</span>
             <input type="{{ form.date.field.widget.input_type }}"
                    name="{{ form.date.name }}"
@@ -48,7 +66,7 @@
         </div>
 
         {% for field in form %}
-        {% if field.name != 'user' and field.name != 'date' and field.name != 'hours' %}
+        {% if field.name != 'user' and field.name != 'date' and field.name != 'hours' and field.name != 'delivery' %}
         <div class="input-group mb-3">
             <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ field.label }}</span>
             <input type="{{ field.field.widget.input_type }}"

@@ -239,7 +239,6 @@ class WorkSchedule(LoginRequiredMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        print(context)
         return context
 
     def form_invalid(self, form):
@@ -450,7 +449,6 @@ class EditWork(LoginRequiredMixin, TemplateView):
             )
 
         context['work_schedule'] = work_schedule
-        pprint(work_schedule)
         context['users'] = CustomUser.objects.filter(status_work=True).exclude(
             role__name__in=not_role).distinct().order_by('username')
 
@@ -545,7 +543,6 @@ class VacationRequestAdmin(LoginRequiredMixin, TemplateView):
 
         context['vacation_data'] = result
 
-        pprint(context)
         return context
 
 

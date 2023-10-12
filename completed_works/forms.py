@@ -1,15 +1,23 @@
 from django import forms
-
+from datetime import datetime, timedelta
+from django.utils import timezone
 from users.models import CustomUser
-from .models import WorkRecord, Standards, WorkRecordQuantity
+from .models import WorkRecord, Standards, WorkRecordQuantity, Delivery
 from django.db.models import Q
 
 
 class WorkRecordForm(forms.ModelForm):
-
+    current_datetime = timezone.now()
+    start_date = current_datetime - timedelta(days=5)
+    delivery = forms.ModelChoiceField(
+        queryset=Delivery.objects.filter(createdAt__gt=start_date).order_by('-createdAt'),
+        label='Поставка',
+        widget=forms.Select(attrs={'class': 'form-select form-select-lg mb-3'}),
+        required=False
+    )
     class Meta:
         model = WorkRecord
-        fields = ['date']
+        fields = ['date', 'delivery']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
         }
@@ -42,9 +50,17 @@ class WorkRecordFormAdmin(forms.ModelForm):
         label='Сотрудник',
         widget=forms.Select(attrs={'class': 'form-select form-select-lg mb-3'})
     )
+    current_datetime = timezone.now()
+    start_date = current_datetime - timedelta(days=5)
+    delivery = forms.ModelChoiceField(
+        queryset=Delivery.objects.filter(createdAt__gt=start_date).order_by('-createdAt'),
+        label='Поставка',
+        widget=forms.Select(attrs={'class': 'form-select form-select-lg mb-3'}),
+        required=False
+    )
     class Meta:
         model = WorkRecord
-        fields = ['user', 'date']
+        fields = ['user', 'date', 'delivery']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
         }

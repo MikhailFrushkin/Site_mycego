@@ -14,7 +14,7 @@ from users.models import CustomUser
 from utils.utils import get_year_week
 from work_schedule.models import Appointment
 from .forms import WorkRecordForm, WorkRecordQuantityForm, WorkRecordFormAdmin
-from .models import WorkRecordQuantity, Standards, WorkRecord
+from .models import WorkRecordQuantity, Standards, WorkRecord, Delivery
 
 
 def create_work_record(request):
@@ -27,6 +27,17 @@ def create_work_record(request):
             work_record.user = request.user
             work_record.is_checked = False
             date = request.POST['date']
+            delivery_id = request.POST.get('delivery', None)
+            if delivery_id:
+                logger.debug(delivery_id)
+                try:
+                    # Преобразование delivery_id в целое число
+                    delivery_id = int(delivery_id)
+                    work_record.delivery = Delivery.objects.get(id=delivery_id)
+                except (ValueError, Delivery.DoesNotExist) as ex:
+                    logger.error(ex)
+                    messages.error(request, 'Выбрана неверная поставка.')
+                    return render(request, 'completed_works/completed_works.html', {'form': form})
 
             existing_record = WorkRecord.objects.filter(user=work_record.user, date=date).first()
             if existing_record:
@@ -51,7 +62,8 @@ def create_work_record(request):
                 for standard in standards:
                     quantity = form.cleaned_data.get(standard.name, None)
                     if quantity:
-                        WorkRecordQuantity.objects.create(work_record=work_record, standard=standard, quantity=quantity)
+                        WorkRecordQuantity.objects.create(work_record=work_record, standard=standard,
+                                                          quantity=quantity)
                 return redirect('completed_works:completed_works_view')
             else:
                 messages.error(request, 'Ни одно количество не указано или все равно нулю.')
@@ -70,6 +82,18 @@ def create_work_record_admin_add(request):
             if request.POST['date'] != '' and request.POST['user'] != '':
                 work_record.user = CustomUser.objects.get(id=request.POST['user'])
                 work_record.date = datetime.datetime.strptime(request.POST['date'], '%Y-%m-%d')
+                delivery_id = request.POST.get('delivery', None)
+                if delivery_id:
+                    logger.debug(delivery_id)
+                    try:
+                        # Преобразование delivery_id в целое число
+                        delivery_id = int(delivery_id)
+                        work_record.delivery = Delivery.objects.get(id=delivery_id)
+                    except (ValueError, Delivery.DoesNotExist) as ex:
+                        logger.error(ex)
+                        messages.error(request, 'Выбрана неверная поставка.')
+                        return render(request, 'completed_works/completed_works.html', {'form': form})
+
                 try:
                     exec_work_records = WorkRecord.objects.get(user=work_record.user, date=work_record.date)
                     messages.error(request, 'Запись на эту дату существует')
