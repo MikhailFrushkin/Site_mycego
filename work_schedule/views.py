@@ -434,7 +434,7 @@ class EditWork(LoginRequiredMixin, TemplateView):
                 for i in range(start_hour - 9, end_hour - 9):
                     work_hours[i] = 1
 
-                user_key = (appointment.user.username, appointment.verified, appointment.user.role)
+                user_key = (appointment.user.username, appointment.verified, appointment.user.role, appointment.user.avg_kf)
                 if user_key in user_dict:
                     existing_work_hours = user_dict[user_key]
                     updated_work_hours = [a | b for a, b in zip(existing_work_hours, work_hours)]
@@ -450,22 +450,14 @@ class EditWork(LoginRequiredMixin, TemplateView):
             )
 
         context['work_schedule'] = work_schedule
+        pprint(work_schedule)
         context['users'] = CustomUser.objects.filter(status_work=True).exclude(
             role__name__in=not_role).distinct().order_by('username')
 
         context['users_add'] = json.dumps([user.username for user in context['users']])
         context['year'], context['week'] = get_year_week(self.request.GET, type='list_work')
-        pprint(context)
-        logger.success(datetime.now() - time_start)
 
-        time_start = datetime.now()
-        current_date = timezone.now().date()
-        last_date = current_date - timedelta(days=7)
-        logger.success(current_date)
-        logger.success(last_date)
-        date_condition = Q(date__range=(last_date, current_date))
         logger.success(datetime.now() - time_start)
-
         return context
 
 

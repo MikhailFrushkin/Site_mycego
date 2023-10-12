@@ -72,7 +72,6 @@
                         <span class="user-name-small">{{ profile.role }}</span>
                     </li>
                     <li class="active">
-
                         <a href="#">Дата рождения:</a>
                         {% if profile.birth_date %}
                         <span class="user-name-small">{{ profile.birth_date }}</span>
@@ -109,6 +108,7 @@
                         <span class="user-name-small">Не указаны</span>
                         {% endif %}
                     </li>
+
                     {% endif %}
                     <li class="active">
                         <a href="#">Увлечения:</a>
@@ -123,6 +123,16 @@
                         <span class="user-name-small"> Уволен </span>
                         {% endif %}
                     </li>
+                    {% if request.user.is_staff or request.user == profile %}
+                    <li class="active">
+                        <a href="#">Средняя эффективность за 7 дней:</a>
+                        {% if profile.avg_kf %}
+                        <span class="user-name-small">{{ profile.avg_kf }} %</span>
+                        {% else %}
+                        <span class="user-name-small">Не работ</span>
+                        {% endif %}
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>

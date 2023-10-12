@@ -35,6 +35,7 @@ admin.site.register(WorkRecordQuantity, AdminWorkRecordQuantity)
 
 class AdminDelivery(admin.ModelAdmin):
     list_display = [
+        'id',
         'id_wb',
         'name',
         'createdAt',
@@ -42,6 +43,7 @@ class AdminDelivery(admin.ModelAdmin):
         'products_count',
         'price',
         'type',
+        'updated_at'
     ]
     search_fields = ('id_wb', 'name')
     list_per_page = 100

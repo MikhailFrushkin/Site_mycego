@@ -10,7 +10,7 @@ class CustomUserAdmin(UserAdmin):
     form = CustomUserChangeForm
     model = CustomUser
 
-    list_display = ('id', 'username', 'role', 'status_work')
+    list_display = ('id', 'username', 'avg_kf', 'role', 'status_work', 'updated_at')
 
     fieldsets = UserAdmin.fieldsets + (
         ('Доп. инофрмация', {'fields': ('role', 'status_work', 'photo', 'phone_number',
@@ -23,6 +23,7 @@ class CustomUserAdmin(UserAdmin):
             'fields': ('username', 'email', 'password1', 'password2', 'role', 'status_work'),
         }),
     )
+    search_fields = ('username', )
 
 
 class AdminRole(admin.ModelAdmin):

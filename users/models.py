@@ -24,6 +24,8 @@ class CustomUser(AbstractUser):
     birth_date = models.DateField(verbose_name='Дата рождения', null=True, blank=True)
     hobbies = models.CharField(verbose_name='Увлечения', max_length=255, blank=True)
     nick = models.CharField(verbose_name='Никнейм отпечатков', max_length=100, blank=True, default='')
+    avg_kf = models.FloatField(verbose_name='Средная эффективность', blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.username

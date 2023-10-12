@@ -106,12 +106,17 @@ def user_profile(request, user_id):
             work_quantities = WorkRecordQuantity.objects.filter(work_record=work_record)
 
             for work_quantity in work_quantities:
-                work_type = work_quantity.standard.name
+                if work_quantity.standard:
+                    work_type = work_quantity.standard.name
+                else:
+                    work_type = 'Удаленный вид работ'
                 quantity = work_quantity.quantity
                 if work_type in work_summary:
                     work_summary[work_type] += quantity
                 else:
                     work_summary[work_type] = quantity
+
+
     sorted_work_summary = dict(sorted(work_summary.items(), key=lambda item: item[1], reverse=True))
 
     summary_data = {

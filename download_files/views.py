@@ -13,6 +13,7 @@ from loguru import logger
 from completed_works.models import WorkRecordQuantity
 from download_files.forms import UploadExcelForm
 from users.models import CustomUser, Role
+from utils.utils import df_in_xlsx
 from work_schedule.models import FingerPrint
 
 
@@ -66,13 +67,13 @@ class DownloadFiles(LoginRequiredMixin, FormView):
                 df['DateTime'] = df['DateTime'].apply(lambda x: datetime.strptime(x, date_format))
                 df['Date'] = df['DateTime'].dt.date
                 df['Time'] = df['DateTime'].dt.time
+                # df_in_xlsx(df, 'После обработки')
             except Exception as ex:
                 logger.debug(ex)
 
-            try:
-                for index, row in df.iterrows():
+            for index, row in df.iterrows():
+                try:
                     user = get_or_none(CustomUser, nick=row['Name'])
-
                     if user is not None:
                         temp, _ = FingerPrint.objects.get_or_create(
                             user=user,
@@ -82,10 +83,12 @@ class DownloadFiles(LoginRequiredMixin, FormView):
                         )
                     else:
                         not_user_in_db.append(str(row['Name']))
-                with open('Нет таких ников в базе сайта.txt', 'w') as f:
-                    f.write('\n'.join(set(not_user_in_db)))
-            except Exception as ex:
-                logger.debug(ex)
+                except Exception as ex:
+                    with open('Ошибки при запси отпечаток.txt', 'a') as f:
+                        f.write(f"{ex} {row['Name']}\n")
+
+            with open('Нет таких ников в базе сайта.txt', 'w') as f:
+                f.write('\n'.join(set(not_user_in_db)))
 
         messages.success(self.request, f'Успешно!')
         return super().form_valid(form)

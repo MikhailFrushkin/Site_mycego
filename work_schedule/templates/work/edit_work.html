@@ -76,7 +76,14 @@ width: 9%!important;
         <ol>
             {% for item in none_write_graf %}
             <li style="list-style: auto;font-size:2rem;margin-left:10rem;">
-                <a href="{% url 'users:user_profile' item.id %}" target="_blank">{{ item }} ({{item.role}})</a>
+                <a href="{% url 'users:user_profile' item.id %}" target="_blank">{{ item }}
+                    ({{item.role}} - средний кф:
+                    {% if item.avg_kf %}
+                    {{item.avg_kf}}%)
+                    {% else %}
+                    нет
+                    {% endif %})
+                </a>
             </li>
             {% endfor %}
         </ol>
@@ -142,16 +149,26 @@ width: 9%!important;
             {% for hour in hours %}
             <td>
                 <select class="form-select
-                        {% if hour %} bg-primary
-                        {% if not user_name.1 %}
-                        bg-danger
+                        {% if hour %}
+                            {% if user_name.3 %}
+                                {% if user_name.3 < 80 %}
+                                    bg-danger
+                                {% elif user_name.3 >= 100 %}
+                                    bg-success
+                                {% else %}
+                                    bg-warning
+                                {% endif %}
+                            {% else %}
+                                bg-info
+                            {% endif %}
+                        {% else %}
+                            bg-dark
                         {% endif %}
-                        {% else %} bg-dark{% endif %}
                         text-white"
                         aria-label="Запись"
                 >
                     {% if hour %}
-                    <option selected>{{user_name.0}}</option>
+                    <option selected>{{user_name.0.avg_kf}}{{user_name.0}}</option>
                     <option style="color: #ffffff;">Нет</option>
                     {% else %}
                     <option selected>Нет</option>
