@@ -15,27 +15,17 @@
 {% endblock %}
 
 {% block content %}
-<div class="gradient-border" id="box" style="width:400px!important;">
+<div style="width:40rem;height:10rem;">
+    <a href="{% url 'completed_works:completed_works_delivery' %}">
+        <button class="btn-grad btn-gradient-border btn-glow" style="margin-bottom:2rem;">
+            Заполнить поставку
+        </button>
+    </a>
+</div>
+
+<div class="gradient-border" id="box" style="width:40rem;">
     <form method="post">
         {% csrf_token %}
-        <div class="input-group mb-3">
-            <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ form.delivery.label }}</span>
-            <select name="{{ form.delivery.name }}" class="form-select">
-                <option value="" selected disabled hidden>Выберите поставку</option>
-                <option value=""> Не указывать</option>
-                {% for delivery in form.delivery.field.queryset %}
-                <option value="{{ delivery.pk }}" {% if delivery.pk == form.delivery.value %}selected{% endif %}>
-                    {{ delivery }}
-                </option>
-                {% endfor %}
-            </select>
-            {% if form.delivery.errors %}
-            <div class="error-message">
-                {{ form.delivery.errors }}
-            </div>
-            {% endif %}
-        </div>
-
         <div class="input-group mb-3">
             <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ form.date.label }}</span>
             <input type="{{ form.date.field.widget.input_type }}"

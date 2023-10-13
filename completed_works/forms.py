@@ -6,18 +6,82 @@ from .models import WorkRecord, Standards, WorkRecordQuantity, Delivery
 from django.db.models import Q
 
 
-class WorkRecordForm(forms.ModelForm):
+class WorkRecordDeliveryForm(forms.ModelForm):
     current_datetime = timezone.now()
     start_date = current_datetime - timedelta(days=5)
     delivery = forms.ModelChoiceField(
-        queryset=Delivery.objects.filter(createdAt__gt=start_date).order_by('-createdAt'),
+        queryset=Delivery.objects.filter(
+            Q(createdAt__gt=start_date) & ~Q(name__icontains='заказ') & ~Q(name__icontains='ЗАКАЗ') & ~Q(
+                name__icontains='Заказ')
+        ).order_by('-createdAt'),
         label='Поставка',
         widget=forms.Select(attrs={'class': 'form-select form-select-lg mb-3'}),
-        required=False
     )
+
     class Meta:
         model = WorkRecord
         fields = ['date', 'delivery']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)  # Получаем пользователя из kwargs
+
+        super(WorkRecordDeliveryForm, self).__init__(*args, **kwargs)
+        standards = Standards.objects.all()
+
+        for standard in standards.order_by('id'):
+            if standard.delivery:
+                self.fields[f'{standard.name}'] = forms.IntegerField(
+                    label=standard.name,
+                    initial=0,
+                    required=False
+                )
+
+
+class WorkRecordFormDeliveryAdmin(forms.ModelForm):
+    user = forms.ModelChoiceField(
+        queryset=CustomUser.objects.filter(status_work=True).order_by('username'),
+        label='Сотрудник',
+        widget=forms.Select(attrs={'class': 'form-select form-select-lg mb-3'})
+    )
+    current_datetime = timezone.now()
+    start_date = current_datetime - timedelta(days=5)
+    delivery = forms.ModelChoiceField(
+        queryset=Delivery.objects.filter(
+            Q(createdAt__gt=start_date) & ~Q(name__icontains='заказ') & ~Q(name__icontains='ЗАКАЗ') & ~Q(
+                name__icontains='Заказ')
+        ).order_by('-createdAt'),
+        label='Поставка',
+        widget=forms.Select(attrs={'class': 'form-select form-select-lg mb-3'}),
+    )
+
+    class Meta:
+        model = WorkRecord
+        fields = ['user', 'date', 'delivery']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(WorkRecordFormDeliveryAdmin, self).__init__(*args, **kwargs)
+
+        standards = Standards.objects.all()
+
+        for standard in standards.order_by('id'):
+            if standard.delivery:
+                self.fields[f'{standard.name}'] = forms.IntegerField(
+                    label=standard.name,
+                    initial=0,
+                    required=False
+                )
+
+
+class WorkRecordForm(forms.ModelForm):
+    class Meta:
+        model = WorkRecord
+        fields = ['date']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
         }
@@ -52,15 +116,10 @@ class WorkRecordFormAdmin(forms.ModelForm):
     )
     current_datetime = timezone.now()
     start_date = current_datetime - timedelta(days=5)
-    delivery = forms.ModelChoiceField(
-        queryset=Delivery.objects.filter(createdAt__gt=start_date).order_by('-createdAt'),
-        label='Поставка',
-        widget=forms.Select(attrs={'class': 'form-select form-select-lg mb-3'}),
-        required=False
-    )
+
     class Meta:
         model = WorkRecord
-        fields = ['user', 'date', 'delivery']
+        fields = ['user', 'date']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
         }

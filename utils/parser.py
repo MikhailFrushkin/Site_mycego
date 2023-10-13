@@ -6,9 +6,11 @@ from pprint import pprint
 
 import pytz
 import requests
+from django.db import transaction
 from loguru import logger
 
 from completed_works.models import Delivery
+from utils.read_pg_base import update_base_postgresql
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mycego.settings')
 from mycego.settings import api_key1, api_key2
@@ -162,7 +164,9 @@ def result_list_data(delivery_list, api_key, data_list=None, seller=None):
     return data_list
 
 
-def create_rows_delivery(data_list):
+@transaction.atomic
+def create_rows_delivery(data_list, data_pg=None):
+    data_pg = update_base_postgresql()
     for data in data_list:
         id_value = data['id']
         name_value = data['name']
@@ -194,6 +198,29 @@ def create_rows_delivery(data_list):
             delivery_instance.type = data['type']
 
         delivery_instance.save()
+    try:
+        for key, value in data_pg.items():
+            try:
+                temp = Delivery.objects.get(name=key)
+            except Exception as ex:
+                with open('Новые заказы.txt', 'a') as f:
+                    f.write(f'{datetime.now()} {key} {value}\n')
+                try:
+                    created_ins = Delivery(
+                        id_wb='no',
+                        name=key,
+                        createdAt=value['createdAt'],
+                        products_count=value['products_count'],
+                        price=0,
+                        type=value['type'],
+                    )
+                    created_ins.save()
+                except Exception as ex:
+                    logger.error(ex)
+
+    except Exception as ex:
+        with open('Ошибка при записи из pg.txt', 'w') as f:
+            f.write(f'{ex}')
 
 
 def update_rows_delivery():

@@ -13,7 +13,8 @@ from loguru import logger
 from users.models import CustomUser
 from utils.utils import get_year_week
 from work_schedule.models import Appointment
-from .forms import WorkRecordForm, WorkRecordQuantityForm, WorkRecordFormAdmin
+from .forms import WorkRecordForm, WorkRecordQuantityForm, WorkRecordFormAdmin, WorkRecordDeliveryForm, \
+    WorkRecordFormDeliveryAdmin
 from .models import WorkRecordQuantity, Standards, WorkRecord, Delivery
 
 
@@ -39,7 +40,7 @@ def create_work_record(request):
                     messages.error(request, 'Выбрана неверная поставка.')
                     return render(request, 'completed_works/completed_works.html', {'form': form})
 
-            existing_record = WorkRecord.objects.filter(user=work_record.user, date=date).first()
+            existing_record = WorkRecord.objects.filter(user=work_record.user, date=date, delivery=None).first()
             if existing_record:
                 messages.error(request, 'Запись уже существует для этой даты.')
                 return redirect('completed_works:completed_works_view')
@@ -70,6 +71,53 @@ def create_work_record(request):
                 return render(request, 'completed_works/completed_works.html', {'form': form})
 
     return render(request, 'completed_works/completed_works.html', {'form': form})
+
+
+def create_work_record_delivery(request):
+    form = WorkRecordDeliveryForm(user=request.user)
+    template_name = 'completed_works/completed_works_delivery.html'
+    if request.method == 'POST':
+        form = WorkRecordDeliveryForm(request.POST, user=request.user)
+        if form.is_valid():
+            work_record = form.save(commit=False)
+
+            work_record.user = request.user
+            work_record.is_checked = False
+            delivery_id = request.POST.get('delivery', None)
+            if delivery_id:
+                logger.debug(delivery_id)
+                try:
+                    # Преобразование delivery_id в целое число
+                    delivery_id = int(delivery_id)
+                    work_record.delivery = Delivery.objects.get(id=delivery_id)
+                except (ValueError, Delivery.DoesNotExist) as ex:
+                    logger.error(ex)
+                    messages.error(request, 'Выбрана неверная поставка.')
+                    return render(request, template_name, {'form': form})
+
+            standards = Standards.objects.filter(delivery=True)
+
+            # Проверка, что все поля quantity не равны нулю
+            has_non_zero_quantity = False
+            for standard in standards:
+                quantity = form.cleaned_data.get(standard.name, None)
+                if quantity is not None and quantity != 0:
+                    has_non_zero_quantity = True
+                    break
+
+            if has_non_zero_quantity:
+                work_record.save()
+                for standard in standards:
+                    quantity = form.cleaned_data.get(standard.name, None)
+                    if quantity:
+                        WorkRecordQuantity.objects.create(work_record=work_record, standard=standard,
+                                                          quantity=quantity)
+                return redirect('completed_works:completed_works_view')
+            else:
+                messages.error(request, 'Ни одно количество не указано или все равно нулю.')
+                return render(request, template_name, {'form': form})
+
+    return render(request, template_name, {'form': form})
 
 
 def create_work_record_admin_add(request):
@@ -138,6 +186,67 @@ def create_work_record_admin_add(request):
     return render(request, 'completed_works/completed_works_admin_add.html', {'form': form})
 
 
+def create_work_record_admin_add_delivery(request):
+    template_name = 'completed_works/completed_works_admin_add_delivery.html'
+    form = WorkRecordFormDeliveryAdmin()
+    if request.method == 'POST' and request.user.is_staff:
+        try:
+            work_record = form.save(commit=False)
+            work_record.is_checked = False
+
+            if request.POST['date'] != '' and request.POST['user'] != '' and request.POST['delivery'] != '':
+                work_record.user = CustomUser.objects.get(id=request.POST['user'])
+                work_record.date = datetime.datetime.strptime(request.POST['date'], '%Y-%m-%d')
+                delivery_id = request.POST.get('delivery', None)
+                if delivery_id:
+                    logger.debug(delivery_id)
+                    try:
+                        # Преобразование delivery_id в целое число
+                        delivery_id = int(delivery_id)
+                        work_record.delivery = Delivery.objects.get(id=delivery_id)
+                    except (ValueError, Delivery.DoesNotExist) as ex:
+                        logger.error(ex)
+                        messages.error(request, 'Выбрана неверная поставка.')
+                        return render(request, template_name, {'form': form})
+
+                standards = Standards.objects.filter(delivery=True)
+
+                # Проверка, что все поля quantity не равны нулю
+                has_non_zero_quantity = False
+                for standard in standards:
+                    quantity = request.POST.get(standard.name, None)
+                    if quantity is not None and quantity != 0 and quantity != '':
+                        has_non_zero_quantity = True
+                        break
+                if has_non_zero_quantity:
+                    work_record.save()
+                    for standard in standards:
+                        quantity = request.POST.get(standard.name, None)
+                        if quantity:
+                            WorkRecordQuantity.objects.create(work_record=work_record, standard=standard,
+                                                              quantity=quantity)
+                    messages.success(request, 'Успешно')
+                    return redirect('completed_works:completed_works_delivery_admin')
+                else:
+                    messages.error(request, 'Ни одно количество не указано или все равно нулю.')
+                    return render(request, template_name, {'form': form})
+
+            else:
+                # Сохраняем ошибку в сообщениях
+                messages.error(request, 'Ошибки в полях')
+
+                # Заполняем форму данными из POST-запроса
+                form.fields['hours'].initial = request.POST['hours']
+                form.fields['date'].initial = request.POST['date']
+                form.fields['user'].initial = request.POST['user']
+                return render(request, template_name, {'form': form})
+
+        except Exception as ex:
+            logger.error(ex)
+
+    return render(request, template_name, {'form': form})
+
+
 class ViewWorks(LoginRequiredMixin, ListView, FormView):
     model = CustomUser
     form_class = WorkRecordQuantityForm
@@ -151,7 +260,7 @@ class ViewWorks(LoginRequiredMixin, ListView, FormView):
 
         user = CustomUser.objects.get(pk=self.request.user.pk)
         # Получите все записи работы пользователя и аннотируйте их суммарное количество работы
-        work_lists = WorkRecord.objects.filter(user=user).order_by('date')
+        work_lists = WorkRecord.objects.filter(user=user).order_by('-date')
 
         for work_list in work_lists:
             work_record_data = {
@@ -160,6 +269,7 @@ class ViewWorks(LoginRequiredMixin, ListView, FormView):
                 'date': work_list.date,
                 'hours': work_list.hours,
                 'is_checked': work_list.is_checked,
+                'delivery': work_list.delivery,
                 'works': work_list.workrecordquantity_set.values('id', 'standard__name', 'quantity')
             }
             work_records_data.append(work_record_data)
@@ -236,7 +346,7 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
             work_records_data = []
             flag = True
 
-            work_lists = queryset.filter(date=date)
+            work_lists = queryset.filter(date=date, delivery=None)
 
             for work_list in work_lists:
                 work_record_data = {
@@ -280,8 +390,8 @@ class WorkRecordDetailView(LoginRequiredMixin, DetailView):
         works = WorkRecordQuantity.objects.filter(work_record=self.object, quantity__gt=0)
         context['works'] = works
         total_hours = \
-        Appointment.objects.filter(user=self.object.user, date=self.object.date).aggregate(Sum('duration'))[
-            'duration__sum']
+            Appointment.objects.filter(user=self.object.user, date=self.object.date).aggregate(Sum('duration'))[
+                'duration__sum']
         if total_hours:
             total_hours = total_hours.total_seconds() / 3600
         context['total_hours'] = total_hours

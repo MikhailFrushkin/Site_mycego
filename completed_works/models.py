@@ -27,7 +27,8 @@ class Delivery(models.Model):
 class Standards(models.Model):
     name = models.CharField(verbose_name='Тип работ', max_length=255)
     standard = models.IntegerField(verbose_name='Норматив', default=0)
-    type_for_printer = models.BooleanField(verbose_name='Относиться к печатникам', default=False, null=True)
+    type_for_printer = models.BooleanField(verbose_name='Относиться к печатникам', default=False)
+    delivery = models.BooleanField(verbose_name='Отображать в листах поставки', default=False)
 
     def __str__(self):
         return self.name

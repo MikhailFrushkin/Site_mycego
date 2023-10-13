@@ -1,14 +1,17 @@
 {% extends 'main_base.html' %}
 {% load i18n %}
 {% load static %}
+{% load cache %}
 {% block title %}
 {% trans 'Лист выполненных работ' %}
 {% endblock %}
 
 {% block link %}
+{% cache 6000 completed_works %}
 <link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'my_js/myjs.js' %}"></script>
+{% endcache %}
 {% endblock %}
 
 {% block content %}
@@ -16,18 +19,18 @@
     <form method="post">
         {% csrf_token %}
         <div class="input-group mb-3">
-            <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ form.user.label }}</span>
-            <select name="{{ form.user.name }}" class="form-select">
-                <option value="" selected disabled hidden>Выберите пользователя</option>
-                {% for user in form.user.field.queryset %}
-                    <option value="{{ user.pk }}" {% if user.pk == form.user.value %}selected{% endif %}>
-                        {{ user }}
-                    </option>
+            <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ form.delivery.label }}</span>
+            <select name="{{ form.delivery.name }}" class="form-select">
+                <option value="" selected disabled hidden>Выберите поставку</option>
+                {% for delivery in form.delivery.field.queryset %}
+                <option value="{{ delivery.pk }}" {% if delivery.pk == form.delivery.value %}selected{% endif %}>
+                    {{ delivery }}
+                </option>
                 {% endfor %}
             </select>
-            {% if form.user.errors %}
+            {% if form.delivery.errors %}
             <div class="error-message">
-                {{ form.user.errors }}
+                {{ form.delivery.errors }}
             </div>
             {% endif %}
         </div>
@@ -71,4 +74,5 @@
         </div>
     </form>
 </div>
+
 {% endblock %}
