@@ -1,7 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.contrib.auth.hashers import check_password
+from django.db.models import Q
 from django.http import JsonResponse
+from django.utils import timezone
+from loguru import logger
 from rest_framework import serializers, viewsets
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import AllowAny
@@ -9,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_401_UNAUTHORIZED
 from rest_framework.views import APIView
 
-from completed_works.models import Standards, WorkRecord, WorkRecordQuantity
+from completed_works.models import Standards, WorkRecord, WorkRecordQuantity, Delivery
 from users.models import CustomUser
 from work_schedule.models import Appointment
 
@@ -93,14 +96,14 @@ class AppointmentDelete(APIView):
             return Response({'message': f'Ошибка удаления'}, status=HTTP_401_UNAUTHORIZED)
 
 
-class WorksList(APIView):
+class StandardsList(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication]
     permission_classes = [AllowAny]
 
     def get(self, request):
         try:
             rows = Standards.objects.all()
-            return JsonResponse({'data': [(i.id, i.name) for i in rows]})
+            return JsonResponse({'data': [(i.id, i.name, i.delivery) for i in rows]})
         except Exception as ex:
             return Response({'data': f'Ошибка удаления'}, status=HTTP_401_UNAUTHORIZED)
 
@@ -112,22 +115,48 @@ class AddWorksList(APIView):
     def post(self, request):
         date = datetime.strptime(request.data.get('date'), "%Y-%m-%d").date()
         user_id = int(request.data.get('user'))
+        delivery_id = request.data.get('delivery', None)
         try:
             user = CustomUser.objects.get(pk=user_id, status_work=True)
         except Exception as ex:
             return JsonResponse({'data': f'Не работает'}, status=403)
         works = request.data.get('works')
-        try:
-            work_list = WorkRecord.objects.get(user=user, date=date)
-            return JsonResponse({'data': f'Лист на эту дату существует'}, status=HTTP_401_UNAUTHORIZED)
-        except Exception as ex:
-            work_record = WorkRecord(user=user, date=date)
-            work_record.save()
-            for key, value in works.items():
-                standard = Standards.objects.get(id=key)
-                temp = WorkRecordQuantity(work_record=work_record, standard=standard, quantity=value)
-                temp.save()
-            return JsonResponse({'data': 'Отправлено!'}, status=200)
+        logger.debug(delivery_id)
+        if not delivery_id:
+            try:
+                logger.debug(user)
+                logger.debug(date)
+                work_list = WorkRecord.objects.filter(user=user, date=date, delivery=None)
+                if not work_list:
+                    logger.success('Создается запись')
+                    work_record = WorkRecord(user=user, date=date)
+                    work_record.save()
+                    for key, value in works.items():
+                        standard = Standards.objects.get(id=key)
+                        temp = WorkRecordQuantity(work_record=work_record, standard=standard, quantity=value)
+                        temp.save()
+                    return JsonResponse({'data': 'Отправлено!'}, status=200)
+                else:
+                    logger.debug(work_list)
+
+                return JsonResponse({'data': f'Лист на эту дату существует'}, status=HTTP_401_UNAUTHORIZED)
+            except Exception as ex:
+                logger.error(ex)
+
+        else:
+            try:
+                logger.debug(user)
+                logger.debug(date)
+                delivery = Delivery.objects.get(id=delivery_id)
+                work_record = WorkRecord(user=user, date=date, delivery=delivery)
+                work_record.save()
+                for key, value in works.items():
+                    standard = Standards.objects.get(id=key)
+                    temp = WorkRecordQuantity(work_record=work_record, standard=standard, quantity=value)
+                    temp.save()
+                return JsonResponse({'data': 'Отправлено!'}, status=200)
+            except Exception as ex:
+                logger.error(ex)
 
 
 class ViewWorks(APIView):
@@ -140,8 +169,8 @@ class ViewWorks(APIView):
         user = CustomUser.objects.get(pk=user_id)
         try:
             today = date.today()
-            start_of_week = today - timedelta(days=today.weekday() + 7)
-            work_list = WorkRecord.objects.filter(user=user, date__gte=start_of_week)
+            start_of_week = today - timedelta(days=7)
+            work_list = WorkRecord.objects.filter(user=user, delivery=None, date__gte=start_of_week)
             return JsonResponse({'data': [(i.id, i.date, i.is_checked) for i in work_list]})
         except Exception as ex:
             return Response({'data': 'Не найденно!'}, status=HTTP_401_UNAUTHORIZED)
@@ -174,3 +203,49 @@ class ViewDetailsWorks(APIView):
             return Response({'data': 'Удалена'}, status=200)
         except Exception as ex:
             return Response({'data': 'Ошибка'}, status=HTTP_401_UNAUTHORIZED)
+
+
+class DeliveryView(APIView):
+    permission_classes = [AllowAny]
+
+    @staticmethod
+    def get(self):
+        try:
+            data = []
+            current_datetime = timezone.now()
+            start_date = current_datetime - timedelta(days=5)
+            queryset = Delivery.objects.filter(
+                Q(createdAt__gt=start_date) & ~Q(name__icontains='заказ') & ~Q(name__icontains='ЗАКАЗ') & ~Q(
+                    name__icontains='Заказ')
+            ).order_by('-createdAt')
+            for item in queryset:
+                data.append((item.id, item.name))
+            print(len(queryset))
+            return JsonResponse({'data': data}, status=200)
+        except Exception as ex:
+            return Response({'data': 'Не найденно!'}, status=HTTP_401_UNAUTHORIZED)
+
+
+class DeliveryListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            data = {}
+            user_id = int(request.data.get('user_id'))
+            user = CustomUser.objects.get(pk=user_id)
+            current_datetime = timezone.now()
+            start_date = current_datetime - timedelta(days=7)
+            work_records = WorkRecord.objects.filter(user=user, date__gte=start_date).exclude(delivery__isnull=True)
+
+            for record in work_records:
+                temp_date = {}
+                work_quantity = WorkRecordQuantity.objects.filter(work_record=record)
+                for item in work_quantity:
+                    if item.quantity > 0:
+                        temp_date[item.standard.name] = item.quantity
+                data[f'{record.date}, {record.delivery}'] = temp_date
+            return JsonResponse({'data': data}, status=200)
+        except Exception as ex:
+            logger.error(ex)
+            return Response({'data': 'Не найденно!'}, status=HTTP_401_UNAUTHORIZED)

@@ -14,6 +14,7 @@
 <p>Дата: {{ object.date }}</p>
 <p>Часов по графику: {{ total_hours }} ч.</p>
 <p>Проверено: {% if object.is_checked %}Да{% else %}Нет{% endif %}</p>
+<p>Поставка: {{object.delivery}}</p>
 <br><br>
 <h3>Виды работ:</h3>
 {% for work in works %}

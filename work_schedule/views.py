@@ -1,15 +1,14 @@
 import json
 import locale
 from datetime import date, timedelta, datetime, time
-from pprint import pprint
 
+from django.apps import apps
 from django.contrib import messages
-from django.core.paginator import Paginator
-from django.db import models
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import F, Case, When, Value, Q
-from django.http import JsonResponse, HttpResponse, Http404
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -19,7 +18,7 @@ from django.views.generic import FormView, ListView, TemplateView
 from loguru import logger
 from openpyxl.utils import get_column_letter
 from openpyxl.workbook import Workbook
-from django.apps import apps
+
 from users.models import CustomUser
 from utils.utils import get_year_week
 from work_schedule.forms import AppointmentForm, VacationRequestForm
@@ -433,7 +432,8 @@ class EditWork(LoginRequiredMixin, TemplateView):
                 for i in range(start_hour - 9, end_hour - 9):
                     work_hours[i] = 1
 
-                user_key = (appointment.user.username, appointment.verified, appointment.user.role, appointment.user.avg_kf)
+                user_key = (
+                appointment.user.username, appointment.verified, appointment.user.role, appointment.user.avg_kf)
                 if user_key in user_dict:
                     existing_work_hours = user_dict[user_key]
                     updated_work_hours = [a | b for a, b in zip(existing_work_hours, work_hours)]
@@ -584,8 +584,10 @@ class FingerPrintView(LoginRequiredMixin, TemplateView):
         # Создаем словарь, в котором ключи - это даты, а значения - это словари с данными по пользователям
         output_dict = {}
         for user in users:
-            appointments = Appointment.objects.filter(user=user, date__week=week).filter(date_condition, date__in=fingerprint_dates)
-            fingerprints = FingerPrint.objects.filter(user=user, date__week=week).filter(date_condition, date__in=fingerprint_dates)
+            appointments = Appointment.objects.filter(user=user, date__week=week).filter(date_condition,
+                                                                                         date__in=fingerprint_dates)
+            fingerprints = FingerPrint.objects.filter(user=user, date__week=week).filter(date_condition,
+                                                                                         date__in=fingerprint_dates)
 
             for appointment in appointments:
                 date = appointment.date

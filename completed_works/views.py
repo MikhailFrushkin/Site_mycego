@@ -370,7 +370,8 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
 
 def save_all_row(request, week):
     if request.user.is_staff:
-        works_records = WorkRecord.objects.filter(date__week=week)
+        works_records = WorkRecord.objects.filter(date__week=week, delivery=None)
+        print(len(works_records))
         for item in works_records:
             item.is_checked = True
             item.save()

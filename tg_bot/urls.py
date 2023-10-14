@@ -12,8 +12,12 @@ urlpatterns = [
     path('login/', views.LoginView.as_view(), name='login'),
     path('appointment/', views.AppointmentView.as_view(), name='appointment-list-by-date'),
     path('appointment_delete/', views.AppointmentDelete.as_view(), name='appointment_delete'),
-    path('get_works/', views.WorksList.as_view(), name='get_works'),
+
+    path('get_works/', views.StandardsList.as_view(), name='get_works'),
     path('add_works/', views.AddWorksList.as_view(), name='add_works'),
     path('view_works/', views.ViewWorks.as_view(), name='view_works'),
     path('view_detail_work/', views.ViewDetailsWorks.as_view(), name='view_detail_work'),
+
+    path('get_delivery/', views.DeliveryView.as_view(), name='get_delivery'),
+    path('get_list_delivery/', views.DeliveryListView.as_view(), name='get_list_delivery'),
 ]

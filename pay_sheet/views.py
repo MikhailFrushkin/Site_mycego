@@ -236,7 +236,8 @@ class PaySheet(LoginRequiredMixin, TemplateView):
 
 def calculate_work_totals_for_week(user, hours, week_start_date, week_end_date):
     # Получите все записи работы за заданный период
-    work_records = WorkRecord.objects.filter(user=user, date__range=(week_start_date, week_end_date), is_checked=True)
+    work_records = WorkRecord.objects.filter(user=user, delivery=None,
+                                             date__range=(week_start_date, week_end_date), is_checked=True)
 
     # Используйте агрегацию, чтобы вычислить сумму работы для каждого вида работы
     work_totals = WorkRecordQuantity.objects.filter(work_record__in=work_records).values('standard').annotate(
@@ -254,7 +255,6 @@ def calculate_work_totals_for_week(user, hours, week_start_date, week_end_date):
                     work_totals_dict[standard] = (total_quantity, total_quantity / (hours * standard.standard))
                 except:
                     work_totals_dict['удаленные виды работ'] = (total_quantity, 0)
-    print(work_totals_dict)
     return work_totals_dict
 
 
@@ -364,12 +364,7 @@ class PaySheetListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         current_user = self.request.user
-        # Фильтруем записи по пользователю, делающему запрос
         queryset = PaySheetModel.objects.filter(user=current_user).order_by('-year', '-week')
-
-        # Вы можете добавить дополнительные фильтры или сортировку, если необходимо
-        # queryset = queryset.filter(дополнительные условия)
-
         return queryset
 
 
