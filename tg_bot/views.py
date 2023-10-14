@@ -1,18 +1,22 @@
+from collections import defaultdict
 from datetime import datetime, timedelta
+from pprint import pprint
 
 from django.contrib.auth.hashers import check_password
 from django.db.models import Q
 from django.http import JsonResponse
 from django.utils import timezone
 from loguru import logger
-from rest_framework import serializers, viewsets
+from rest_framework import serializers
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.status import HTTP_401_UNAUTHORIZED
 from rest_framework.views import APIView
 
 from completed_works.models import Standards, WorkRecord, WorkRecordQuantity, Delivery
+from pay_sheet.models import PaySheetModel
 from users.models import CustomUser
 from work_schedule.models import Appointment
 
@@ -97,15 +101,15 @@ class AppointmentDelete(APIView):
 
 
 class StandardsList(APIView):
-    authentication_classes = [SessionAuthentication, BasicAuthentication]
     permission_classes = [AllowAny]
 
-    def get(self, request):
+    @staticmethod
+    def get(self):
         try:
             rows = Standards.objects.all()
-            return JsonResponse({'data': [(i.id, i.name, i.delivery) for i in rows]})
+            return JsonResponse({'data': [(i.id, i.name, i.delivery, i.standard) for i in rows]})
         except Exception as ex:
-            return Response({'data': f'Ошибка удаления'}, status=HTTP_401_UNAUTHORIZED)
+            return Response({'data': f'Ошибка обновления: {ex}'}, status=HTTP_401_UNAUTHORIZED)
 
 
 class AddWorksList(APIView):
@@ -244,8 +248,42 @@ class DeliveryListView(APIView):
                 for item in work_quantity:
                     if item.quantity > 0:
                         temp_date[item.standard.name] = item.quantity
-                data[f'{record.date}, {record.delivery}'] = temp_date
+                data[f'{record.date};{record.delivery};{record.id};{record.is_checked}'] = temp_date
             return JsonResponse({'data': data}, status=200)
         except Exception as ex:
             logger.error(ex)
             return Response({'data': 'Не найденно!'}, status=HTTP_401_UNAUTHORIZED)
+
+
+class StatisticUserWork(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            start = datetime.now()
+            date = datetime.now().date() - timedelta(days=7)
+            user_id = int(request.data.get('user_id'))
+            profile = get_object_or_404(CustomUser, pk=user_id)
+            work_lists = WorkRecord.objects.filter(user=profile, delivery=None, date__gte=date)
+
+            work_summary = defaultdict(int)
+
+            for work_record in work_lists:
+                work_quantities = WorkRecordQuantity.objects.filter(work_record=work_record)
+
+                for work_quantity in work_quantities:
+                    work_type = work_quantity.standard.name if work_quantity.standard else 'Удаленный вид работ'
+                    work_summary[work_type] += work_quantity.quantity
+
+            sorted_work_summary = dict(sorted(work_summary.items(), key=lambda item: item[1], reverse=True))
+
+            context = {
+                'profile': (profile.role.name , profile.avg_kf),
+                'work_summary': sorted_work_summary,
+            }
+            pprint(context)
+            logger.success(datetime.now() - start)
+            return JsonResponse({'data': context}, status=200)
+        except Exception as ex:
+            logger.error(ex)
+            return Response({'data': f'Ошибка! {ex}'}, status=HTTP_401_UNAUTHORIZED)

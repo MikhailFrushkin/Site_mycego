@@ -53,6 +53,7 @@ class EditProfileView(LoginRequiredMixin, UpdateView):
         # Генерируем URL с передачей user_id
         return reverse_lazy('users:user_profile', kwargs={'user_id': user_id})
 
+
 class Staff(LoginRequiredMixin, ListView):
     model = CustomUser
     template_name = 'user/staff.html'
@@ -98,7 +99,7 @@ class Staff(LoginRequiredMixin, ListView):
 def user_profile(request, user_id):
     profile = get_object_or_404(CustomUser, pk=user_id)
     pay_sheets = PaySheetModel.objects.filter(user=profile)
-    work_lists = WorkRecord.objects.filter(user=profile)
+    work_lists = WorkRecord.objects.filter(user=profile, delivery=None)
 
     work_summary = {}
     if len(work_lists) > 0:
@@ -115,7 +116,6 @@ def user_profile(request, user_id):
                     work_summary[work_type] += quantity
                 else:
                     work_summary[work_type] = quantity
-
 
     sorted_work_summary = dict(sorted(work_summary.items(), key=lambda item: item[1], reverse=True))
 
