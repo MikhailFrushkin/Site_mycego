@@ -125,15 +125,18 @@ class AddWorksList(APIView):
         except Exception as ex:
             return JsonResponse({'data': f'Не работает'}, status=403)
         works = request.data.get('works')
+        comment = request.data.get('comment', None)
+        print(request.data)
         logger.debug(delivery_id)
         if not delivery_id:
             try:
                 logger.debug(user)
                 logger.debug(date)
+                logger.debug(comment)
                 work_list = WorkRecord.objects.filter(user=user, date=date, delivery=None)
                 if not work_list:
                     logger.success('Создается запись')
-                    work_record = WorkRecord(user=user, date=date)
+                    work_record = WorkRecord(user=user, date=date, comment=comment)
                     work_record.save()
                     for key, value in works.items():
                         standard = Standards.objects.get(id=key)
@@ -152,7 +155,7 @@ class AddWorksList(APIView):
                 logger.debug(user)
                 logger.debug(date)
                 delivery = Delivery.objects.get(id=delivery_id)
-                work_record = WorkRecord(user=user, date=date, delivery=delivery)
+                work_record = WorkRecord(user=user, date=date, delivery=delivery, comment=comment)
                 work_record.save()
                 for key, value in works.items():
                     standard = Standards.objects.get(id=key)
