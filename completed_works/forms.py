@@ -81,9 +81,10 @@ class WorkRecordFormDeliveryAdmin(forms.ModelForm):
 class WorkRecordForm(forms.ModelForm):
     class Meta:
         model = WorkRecord
-        fields = ['date']
+        fields = ['date', 'comment']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
+            'comment': forms.Textarea(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -119,7 +120,7 @@ class WorkRecordFormAdmin(forms.ModelForm):
 
     class Meta:
         model = WorkRecord
-        fields = ['user', 'date']
+        fields = ['user', 'date', 'comment']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
         }

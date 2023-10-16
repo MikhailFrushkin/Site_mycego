@@ -18,27 +18,35 @@ from .forms import WorkRecordForm, WorkRecordQuantityForm, WorkRecordFormAdmin, 
 from .models import WorkRecordQuantity, Standards, WorkRecord, Delivery
 
 
+def remove_special_characters(input_string):
+    # Создаем таблицу для перевода управляющих символов в None
+    remove_chars = "\n\t\r"  # Добавьте другие символы по мере необходимости
+    translator = str.maketrans('', '', remove_chars)
+
+    # Применяем таблицу к строке
+    cleaned_string = input_string.translate(translator)
+
+    return cleaned_string
+
+
 def create_work_record(request):
     form = WorkRecordForm(user=request.user)
     if request.method == 'POST':
         form = WorkRecordForm(request.POST, user=request.user)
         if form.is_valid():
             work_record = form.save(commit=False)
-
+            pprint(request.POST)
             work_record.user = request.user
             work_record.is_checked = False
             date = request.POST['date']
-            delivery_id = request.POST.get('delivery', None)
-            if delivery_id:
-                logger.debug(delivery_id)
-                try:
-                    # Преобразование delivery_id в целое число
-                    delivery_id = int(delivery_id)
-                    work_record.delivery = Delivery.objects.get(id=delivery_id)
-                except (ValueError, Delivery.DoesNotExist) as ex:
-                    logger.error(ex)
-                    messages.error(request, 'Выбрана неверная поставка.')
-                    return render(request, 'completed_works/completed_works.html', {'form': form})
+            comment = request.POST['comment']
+            cleaned_text = remove_special_characters(comment).strip()
+
+            over_work = request.POST.get('Другие работы(в минутах)', None)
+            if len(cleaned_text) == 0 and over_work:
+                logger.error(len(cleaned_text))
+                messages.error(request, 'Вы указали "Другие работы" уточните пожалуйста в комментарии об этих работах')
+                return render(request, 'completed_works/completed_works.html', {'form': form})
 
             existing_record = WorkRecord.objects.filter(user=work_record.user, date=date, delivery=None).first()
             if existing_record:
@@ -122,15 +130,31 @@ def create_work_record_delivery(request):
 
 def create_work_record_admin_add(request):
     form = WorkRecordFormAdmin()
+
     if request.method == 'POST' and request.user.is_staff:
+        users = CustomUser.objects.filter(status_work=True).order_by('username')
         try:
+            print(request.POST)
+            form = WorkRecordForm(request.POST)
             work_record = form.save(commit=False)
             work_record.is_checked = False
 
-            if request.POST['date'] != '' and request.POST['user'] != '':
-                work_record.user = CustomUser.objects.get(id=request.POST['user'])
+            if request.POST.get('date', None) and request.POST.get('user', None):
+                user = CustomUser.objects.get(id=request.POST['user'])
+                work_record.user = user
                 work_record.date = datetime.datetime.strptime(request.POST['date'], '%Y-%m-%d')
                 delivery_id = request.POST.get('delivery', None)
+
+                comment = request.POST['comment']
+                cleaned_text = remove_special_characters(comment).strip()
+
+                over_work = request.POST.get('Другие работы(в минутах)', None)
+                if len(cleaned_text) == 0 and over_work:
+                    logger.error(len(cleaned_text))
+                    messages.error(request,
+                                   'Вы указали "Другие работы" уточните пожалуйста в комментарии об этих работах')
+                    return render(request, 'completed_works/completed_works_admin_add.html', {'form': form, 'users': users})
+
                 if delivery_id:
                     logger.debug(delivery_id)
                     try:
@@ -140,12 +164,12 @@ def create_work_record_admin_add(request):
                     except (ValueError, Delivery.DoesNotExist) as ex:
                         logger.error(ex)
                         messages.error(request, 'Выбрана неверная поставка.')
-                        return render(request, 'completed_works/completed_works.html', {'form': form})
+                        return render(request, 'completed_works/completed_works.html', {'form': form, 'users': users})
 
                 try:
                     exec_work_records = WorkRecord.objects.get(user=work_record.user, date=work_record.date)
                     messages.error(request, 'Запись на эту дату существует')
-                    return render(request, 'completed_works/completed_works_admin_add.html', {'form': form})
+                    return render(request, 'completed_works/completed_works_admin_add.html', {'form': form, 'users': users})
                 except Exception as ex:
                     logger.error(ex)
 
@@ -165,20 +189,17 @@ def create_work_record_admin_add(request):
                         if quantity:
                             WorkRecordQuantity.objects.create(work_record=work_record, standard=standard,
                                                               quantity=quantity)
-                    return redirect('completed_works:completed_works_view_admin')
+                    messages.success(request, 'Успешно')
+                    return redirect('completed_works:completed_works_view_admin_add')
                 else:
                     messages.error(request, 'Ни одно количество не указано или все равно нулю.')
-                    return render(request, 'completed_works/completed_works_admin_add.html', {'form': form})
+                    return render(request, 'completed_works/completed_works_admin_add.html', {'form': form, 'users': users})
 
             else:
                 # Сохраняем ошибку в сообщениях
                 messages.error(request, 'Ошибки в полях')
 
-                # Заполняем форму данными из POST-запроса
-                form.fields['hours'].initial = request.POST['hours']
-                form.fields['date'].initial = request.POST['date']
-                form.fields['user'].initial = request.POST['user']
-                return render(request, 'completed_works/completed_works_admin_add.html', {'form': form})
+                return render(request, 'completed_works/completed_works_admin_add.html', {'form': form, 'users': users})
 
         except Exception as ex:
             logger.error(ex)
@@ -355,6 +376,7 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
                     'date': work_list.date,
                     'hours': work_list.hours,
                     'is_checked': work_list.is_checked,
+                    'comment': work_list.comment,
                     'works': work_list.workrecordquantity_set.values('id', 'standard__name', 'quantity')
                 }
                 if not work_list.is_checked:

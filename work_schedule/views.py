@@ -433,7 +433,7 @@ class EditWork(LoginRequiredMixin, TemplateView):
                     work_hours[i] = 1
 
                 user_key = (
-                appointment.user.username, appointment.verified, appointment.user.role, appointment.user.avg_kf)
+                    appointment.user.username, appointment.verified, appointment.user.role, appointment.user.avg_kf)
                 if user_key in user_dict:
                     existing_work_hours = user_dict[user_key]
                     updated_work_hours = [a | b for a, b in zip(existing_work_hours, work_hours)]
@@ -578,17 +578,17 @@ class FingerPrintView(LoginRequiredMixin, TemplateView):
         context['year'], context['week'] = year, week
         users = CustomUser.objects.filter(status_work=True)
         current_datetime = timezone.now()
-        date_condition = Q(date__lt=current_datetime.date())
+        # date_condition = Q(date__lt=current_datetime.date())
         fingerprint_dates = FingerPrint.objects.filter(date__week=week).values_list('date', flat=True).distinct()
         logger.debug(fingerprint_dates)
-        # Создаем словарь, в котором ключи - это даты, а значения - это словари с данными по пользователям
         output_dict = {}
         for user in users:
-            appointments = Appointment.objects.filter(user=user, date__week=week).filter(date_condition,
-                                                                                         date__in=fingerprint_dates)
-            fingerprints = FingerPrint.objects.filter(user=user, date__week=week).filter(date_condition,
-                                                                                         date__in=fingerprint_dates)
-
+            # appointments = Appointment.objects.filter(user=user, date__week=week).filter(date_condition,
+            #                                                                              date__in=fingerprint_dates)
+            # fingerprints = FingerPrint.objects.filter(user=user, date__week=week).filter(date_condition,
+            #                                                                              date__in=fingerprint_dates)
+            appointments = Appointment.objects.filter(user=user, date__week=week).filter(date__in=fingerprint_dates)
+            fingerprints = FingerPrint.objects.filter(user=user, date__week=week).filter(date__in=fingerprint_dates)
             for appointment in appointments:
                 date = appointment.date
                 if date not in output_dict:

@@ -23,6 +23,10 @@
     </a>
 </div>
 
+<div style="width:40rem;height:10rem;">
+    <p>При заполнении "Другие работы" необходимо указать комментарий, что именно они в себя включали</p>
+</div>
+
 <div class="gradient-border" id="box" style="width:40rem;">
     <form method="post">
         {% csrf_token %}
@@ -42,7 +46,7 @@
         </div>
 
         {% for field in form %}
-        {% if field.name != 'user' and field.name != 'date' and field.name != 'hours' and field.name != 'delivery' %}
+        {% if field.name != 'user' and field.name != 'date' and field.name != 'comment' %}
         <div class="input-group mb-3">
             <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ field.label }}</span>
             <input type="{{ field.field.widget.input_type }}"
@@ -59,7 +63,24 @@
         </div>
         {% endif %}
         {% endfor %}
+        <div class="input-group mb-3">
+            <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ form.comment.label }}</span>
+            <textarea
+                    name="{{ form.comment.name }}"
+                    class="form-control"
+                    id="{{ form.comment.id_for_label }}"
+                    rows="10"
+                    placeholder="Текст комментария"
+                    style="font-size: 14px;"
+            >
 
+            </textarea>
+            {% if form.comment.errors %}
+            <div class="error-message">
+                {{ form.comment.errors }}
+            </div>
+            {% endif %}
+        </div>
         <div class="centered-button">
             <button type="submit" class="btn-grad btn-gradient-border btn-glow">Отправить</button>
         </div>

@@ -118,6 +118,9 @@
                            value="{{ item.quantity }}"
                            class="narrower-input4">
                     {% endfor %}
+                    {% if work_list.comment %}
+                    Комментарий: {{work_list.comment}}
+                    {% endif %}
                 </td>
                 <td>
                     <button type="button" class="btn btn-danger delete-work" data-work-id="{{ work_list.id }}">Удалить

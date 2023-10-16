@@ -45,6 +45,7 @@ class WorkRecord(models.Model):
     is_checked = models.BooleanField(verbose_name='Проверено', default=False)
     works = models.ManyToManyField(Standards, verbose_name='Виды работ', blank=True)
     delivery = models.ForeignKey(Delivery, on_delete=models.SET_NULL, verbose_name='Поставка', null=True)
+    comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
 
     def __str__(self):
         return f"{self.user} - {self.date}"
