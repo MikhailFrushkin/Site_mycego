@@ -1,0 +1,53 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+{% load cache %}
+{% block title %}
+{% trans 'Статистика' %}
+{% endblock %}
+
+{% block link %}
+<style>
+    .my-selection {
+    height: 6rem;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="margin: 0; margin-top: 20px;width: 100%;">
+    <div class="row align-items-start">
+        <div class="col">
+            <div class="my-selection">
+                <a href="{% url 'effectiveness:statistic_bad' %}">
+                    <button class="btn-grad btn-gradient-border btn-glow" type="button" style="width: 100%;">
+                        Косяки
+                    </button>
+                </a>
+            </div>
+        </div>
+        <div class="col">
+            <div class="my-selection">
+                <a href="{% url 'effectiveness:statistic_kf_users' %}">
+                    <button class="btn-grad btn-gradient-border btn-glow" type="button" style="width: 100%;">
+
+                        Эффективность по должностям
+                    </button>
+                </a>
+            </div>
+        </div>
+        <div class="col">
+            <div class="my-selection">
+                <a href="{% url 'effectiveness:statistic_works' %}">
+                    <button class="btn-grad btn-gradient-border btn-glow" type="button" style="width: 100%;">
+
+                        Эффективность сотрудников
+                    </button>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

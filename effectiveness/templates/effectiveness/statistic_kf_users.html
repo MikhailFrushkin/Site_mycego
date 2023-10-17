@@ -1,0 +1,81 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+{% load cache %}
+
+{% block title %}
+{% trans 'Статистика эффективности по должностям' %}
+{% endblock %}
+
+{% block link %}
+<style>
+    td {
+      font-size: 16px;
+    }
+  .hidden-table {
+      display: none;
+    }
+    .draggable {
+    display: none;
+    }
+    .green {color:green}
+    .red {color:red}
+</style>
+{% endblock %}
+
+{% block content %}
+{% for worker, years in data.items %}
+<h2>{{ worker }}</h2>
+{% for year, weeks in years.items %}
+<p>{{ year }}</p>
+{% with table_id=worker|slugify|add:year %}
+<table class="table-responsive-sm hidden-table" id="{{ table_id }}">
+    <tr>
+        <td scope="col" style="width: auto;">#</td>
+        {% for week, stats in weeks.items %}
+        {% if forloop.first %}
+        {% for work, quantity in stats.items %}
+        <td scope="col" style="width: auto">{{ work }}</td>
+        {% endfor %}
+        {% endif %}
+        {% endfor %}
+    </tr>
+
+    {% for week, stats in weeks.items %}
+    <tr>
+        <td scope="col" style="width: auto">{{ week }} неделя</td>
+        {% for work, quantity in stats.items %}
+        <td scope="col" style="width: auto">
+            {{ quantity.0 }}
+            {% if quantity.1 %}
+            {% if quantity.1 > 0 %}
+                <span class="green"><br>+{{ quantity.1 }}; +{{ quantity.2|floatformat:2 }}%</span>
+                {% elif quantity.1 < 0 %}
+                <span class="red"><br>{{ quantity.1 }}; {{ quantity.2|floatformat:2 }}%</span>
+            {% endif %}
+            {% endif %}
+        </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+{% endwith %}
+{% endfor %}
+{% endfor %}
+
+<script type="text/javascript">
+    $('table').each(function() {
+      var table = $(this);
+      var Out = '<table border="1" style="margin-top:1em;">\n';
+      table.find('tr:first td').each(function(i) {
+        Out += '<tr>\n';
+        table.find('tr').each(function() {
+          var cell = $(this).find('td').eq(i);
+          Out += '<td>' + cell.html() + '</td>\n';
+        });
+        Out += '</tr>\n';
+      });
+      table.after(Out += '</table>\n');
+    });
+</script>
+{% endblock %}
