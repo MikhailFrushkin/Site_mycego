@@ -26,7 +26,7 @@ class AdminWorkRecordQuantity(admin.ModelAdmin):
     list_display = [field.name for field in WorkRecordQuantity._meta.fields]
     list_editable = ['quantity']
     list_filter = ['work_record', 'standard', 'quantity']
-    search_fields = ['quantity__exact']
+    search_fields = ('work_record', )
     list_per_page = 100
 
 

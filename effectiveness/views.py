@@ -1,7 +1,9 @@
+import json
 from collections import defaultdict
 from datetime import timedelta, datetime
 from pprint import pprint
-
+from django.db.models import Min, Max, Count
+from django.db.models.functions import ExtractWeek, ExtractYear
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum, F, ExpressionWrapper, FloatField
 from django.urls import reverse_lazy
@@ -9,8 +11,8 @@ from django.utils import timezone
 from django.views.generic import TemplateView
 from loguru import logger
 
-from completed_works.models import WorkRecord, WorkRecordQuantity
-from users.models import CustomUser
+from completed_works.models import WorkRecord, WorkRecordQuantity, Standards
+from users.models import CustomUser, Role
 from work_schedule.models import Appointment
 
 
@@ -22,8 +24,8 @@ def today_current():
     return year, week
 
 
-class StatisticView(LoginRequiredMixin, TemplateView):
-    template_name = 'effectiveness/statistic.html'
+class StatisticViewBad(LoginRequiredMixin, TemplateView):
+    template_name = 'effectiveness/statistic_bad.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -86,7 +88,8 @@ class StatisticView(LoginRequiredMixin, TemplateView):
             appointments_without_work_records = Appointment.objects.filter(
                 user=user, date__range=(past_date, current_date)
             ).exclude(
-                date__in=WorkRecord.objects.filter(user=user, date__range=(past_date, current_date), delivery=None).values(
+                date__in=WorkRecord.objects.filter(user=user, date__range=(past_date, current_date),
+                                                   delivery=None).values(
                     'date')
             )
             # Находим даты, у которых есть записи в модели WorkRecord, но нет в модели Appointment для данного пользователя
@@ -245,3 +248,100 @@ class StatisticWorks(LoginRequiredMixin, TemplateView):
 
         logger.success(datetime.now() - start_time)
         return context
+
+
+class StatisticKfUsers(LoginRequiredMixin, TemplateView):
+    template_name = 'effectiveness/statistic_kf_users.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        start_time = datetime.now()
+        current_datetime = timezone.now()
+        current_year = current_datetime.year
+        current_week_number = current_datetime.isocalendar()[1]
+        standards = Standards.objects.all()
+        # Создаем словарь для хранения данных
+        data_dict = {}
+        role_user = ['Фасовщик пакетов на упаковке', 'Маркировщик', 'Печатник', 'Упаковщик', 'Упаковщик 2']
+        # Аннотируем данные с группировкой по году и вычисляем минимальную и максимальную неделю
+        year_week_data = WorkRecord.objects.filter(user__role__name__in=role_user).annotate(
+            year=ExtractYear('date'),
+            week=ExtractWeek('date'),
+            user_role=F('user__role__name')  # Аннотация должности сотрудника
+        ).values('year', 'week', 'user_role').order_by('user_role', 'year', 'week')
+
+        for data in year_week_data:
+            year = data['year']
+            week = data['week']
+            if current_year == year and current_week_number == week:
+                continue
+            user_role = data['user_role']
+            total_work_hours = 0
+
+            # Get or create the nested dictionaries for year, week, and user_role
+            user_role_dict = data_dict.setdefault(user_role, {})
+            year_dict = user_role_dict.setdefault(year, {})
+            week_dict = year_dict.setdefault(week, {})
+
+            # Query WorkRecord for the current year, week, and user_role
+            work_records = WorkRecord.objects.filter(
+                date__year=year,
+                date__week=week,
+                user__role__name=user_role,
+                delivery=None
+            )
+            work_records_q = (WorkRecordQuantity.objects.filter(work_record__in=work_records)
+                              .filter(standard__in=standards)
+                              .values('standard__name', 'standard__standard')
+                              .annotate(total_quantity=Sum('quantity')))
+
+            for item in work_records_q:
+                total_work_hours += round(item['total_quantity'] / item['standard__standard'], 2)
+
+            for i in standards:
+                for j in work_records_q:
+                    if j['standard__name'] == i.name:
+                        week_dict[j['standard__name']] = [j['total_quantity'], 0, 0]
+                if i.name not in week_dict:
+                    week_dict[i.name] = [0, 0, 0]
+
+            appointment_user_role = Appointment.objects.filter(
+                date__year=year,
+                date__week=week,
+                user__role__name=user_role
+            ).values('duration').aggregate(Sum('duration'))['duration__sum']
+
+            week_dict['Кол-во листов работ'] = [work_records.count(), 0, 0]
+            week_dict['Общее время'] = [
+                round(appointment_user_role.total_seconds() // 3600, 2) if appointment_user_role else 0, 0, 0]
+            week_dict['Общий кф'] = [round(total_work_hours * 100 / week_dict['Общее время'][0], 2) if week_dict[
+                'Общее время'][0] else 0, 0, 0]
+
+        changes = calculate_weekly_changes(data_dict)
+        # pprint(changes)
+        context['data'] = changes
+        with open(f"json.json", "w") as f:
+            json.dump(changes, f, indent=4, ensure_ascii=False)
+        logger.success(datetime.now() - start_time)
+        return context
+
+
+def calculate_weekly_changes(data):
+    for worker, years in data.items():
+        for year, weeks in years.items():
+            prev_week = None
+            for week, stats in weeks.items():
+                if prev_week:
+                    for work, quantity in stats.items():
+                        data[worker][year][week][work][1] = round(quantity[0] - prev_week[work][0], 2)
+                        if prev_week[work][0]:
+                            data[worker][year][week][work][2] = round(
+                                (quantity[0] - prev_week[work][0]) * 100 / prev_week[work][0], 2)
+
+                prev_week = stats
+
+    return data
+
+
+class MainStatisticMenu(LoginRequiredMixin, TemplateView):
+    template_name = 'effectiveness/statistic_main.html'
