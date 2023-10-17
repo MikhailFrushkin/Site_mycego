@@ -2,6 +2,8 @@ import json
 from collections import defaultdict
 from datetime import timedelta, datetime
 from pprint import pprint
+
+from django.core.cache import cache
 from django.db.models import Min, Max, Count
 from django.db.models.functions import ExtractWeek, ExtractYear
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -29,6 +31,9 @@ class StatisticViewBad(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        cashed_data = cache.get('context_bad', None)
+        if cashed_data:
+            return cashed_data
         start_time = datetime.now()
 
         current_date = timezone.now()
@@ -140,6 +145,8 @@ class StatisticViewBad(LoginRequiredMixin, TemplateView):
                     else:
                         very_good_works[date] = [(record, kf)]
         context['very_good_works'] = very_good_works
+        context.pop('view', None)
+        cache.set('context_bad', context, 600)
         logger.success(datetime.now() - start_time)
 
         return context
@@ -150,6 +157,9 @@ class StatisticWorks(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        cashed_data = cache.get('context_works', None)
+        if cashed_data:
+            return cashed_data
         start_time = datetime.now()
 
         current_date = datetime.today().date()
@@ -246,6 +256,8 @@ class StatisticWorks(LoginRequiredMixin, TemplateView):
         }
         context['filtered_results'] = rounded_data
 
+        context.pop('view', None)
+        cache.set('context_works', context, 600)
         logger.success(datetime.now() - start_time)
         return context
 
@@ -255,6 +267,9 @@ class StatisticKfUsers(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        cashed_data = cache.get('context_kf', None)
+        if cashed_data:
+            return cashed_data
         start_time = datetime.now()
         current_datetime = timezone.now()
         current_year = current_datetime.year
@@ -320,8 +335,11 @@ class StatisticKfUsers(LoginRequiredMixin, TemplateView):
         changes = calculate_weekly_changes(data_dict)
         # pprint(changes)
         context['data'] = changes
+        context.pop('view', None)
+        cache.set('context_kf', context, 3600)
         with open(f"json.json", "w") as f:
             json.dump(changes, f, indent=4, ensure_ascii=False)
+
         logger.success(datetime.now() - start_time)
         return context
 

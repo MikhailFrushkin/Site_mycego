@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.views.generic import TemplateView, ListView
@@ -19,6 +20,9 @@ class MainPage(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        cashed_data = cache.get('main', None)
+        if cashed_data:
+            return cashed_data
         locale_name = 'ru_RU.UTF-8'
         locale.setlocale(locale.LC_TIME, locale_name)
         current_datetime = timezone.now()
@@ -59,6 +63,9 @@ class MainPage(LoginRequiredMixin, TemplateView):
         page_number = self.request.GET.get('page')
         page = paginator.get_page(page_number)
         context['announcements'] = page
+
+        context.pop('view', None)
+        cache.set('main', context, 600)
         return context
 
 
@@ -68,7 +75,9 @@ class KnowledgeCategory(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
+        cashed_data = cache.get('know', None)
+        if cashed_data:
+            return cashed_data
         knows = Knowledge.objects.all()
         good_links = GoodLink.objects.all()
 
@@ -86,4 +95,6 @@ class KnowledgeCategory(LoginRequiredMixin, TemplateView):
         context['good_links'] = good_links_dict
         context['category_dict'] = category_dict
 
+        context.pop('view', None)
+        cache.set('know', context, 600)
         return context

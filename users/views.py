@@ -5,6 +5,7 @@ from pprint import pprint
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
+from django.core.cache import cache
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
@@ -63,6 +64,10 @@ class Staff(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        cashed_data = cache.get('staff', None)
+        if cashed_data:
+            return cashed_data
+
         # Желаемые роли, которые должны идти впереди
         desired_roles = ['Директор',
                          'Директор по производству',
@@ -93,6 +98,9 @@ class Staff(LoginRequiredMixin, ListView):
                 staff_by_role[role] = list(users_with_role)
 
         context['staff_by_role'] = staff_by_role
+
+        context.pop('view', None)
+        cache.set('staff', context, 600)
         return context
 
 
