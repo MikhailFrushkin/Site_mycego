@@ -38,7 +38,20 @@ def create_work_record(request):
             pprint(request.POST)
             work_record.user = request.user
             work_record.is_checked = False
+
             date = request.POST['date']
+            date_today = datetime.datetime.now().date()
+            date_last_chance = date_today - datetime.timedelta(days=7)
+            year, month, day = map(int, date.split('-', maxsplit=3))
+            print(year, month, day)
+            date_result = datetime.date(year=year, month=month, day=day)
+            print(date_last_chance)
+            print(date_result)
+            if not date_last_chance <= date_result <= date_today:
+                messages.error(request,
+                               'Укажите верную дату работ, не раньше, '
+                               'чем за неделю до сегодняшнего дня и не позже сегодняшнего дня!')
+                return render(request, 'completed_works/completed_works.html', {'form': form})
             comment = request.POST['comment']
             cleaned_text = remove_special_characters(comment).strip()
 
@@ -153,7 +166,8 @@ def create_work_record_admin_add(request):
                     logger.error(len(cleaned_text))
                     messages.error(request,
                                    'Вы указали "Другие работы" уточните пожалуйста в комментарии об этих работах')
-                    return render(request, 'completed_works/completed_works_admin_add.html', {'form': form, 'users': users})
+                    return render(request, 'completed_works/completed_works_admin_add.html',
+                                  {'form': form, 'users': users})
 
                 if delivery_id:
                     logger.debug(delivery_id)
@@ -169,7 +183,8 @@ def create_work_record_admin_add(request):
                 try:
                     exec_work_records = WorkRecord.objects.get(user=work_record.user, date=work_record.date)
                     messages.error(request, 'Запись на эту дату существует')
-                    return render(request, 'completed_works/completed_works_admin_add.html', {'form': form, 'users': users})
+                    return render(request, 'completed_works/completed_works_admin_add.html',
+                                  {'form': form, 'users': users})
                 except Exception as ex:
                     logger.error(ex)
 
@@ -193,7 +208,8 @@ def create_work_record_admin_add(request):
                     return redirect('completed_works:completed_works_view_admin_add')
                 else:
                     messages.error(request, 'Ни одно количество не указано или все равно нулю.')
-                    return render(request, 'completed_works/completed_works_admin_add.html', {'form': form, 'users': users})
+                    return render(request, 'completed_works/completed_works_admin_add.html',
+                                  {'form': form, 'users': users})
 
             else:
                 # Сохраняем ошибку в сообщениях

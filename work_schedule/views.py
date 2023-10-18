@@ -541,7 +541,9 @@ class VacationRequestAdmin(LoginRequiredMixin, TemplateView):
                     "vacations": {role: [vacation]}
                 }
 
-        context['vacation_data'] = result
+        sorted_result = dict(sorted(result.items(), key=lambda item: (item[0][1], item[0][0]), reverse=True))
+
+        context['vacation_data'] = sorted_result
 
         return context
 
