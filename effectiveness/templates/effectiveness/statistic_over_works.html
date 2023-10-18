@@ -1,0 +1,59 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+{% load cache %}
+{% block title %}
+{% trans 'Статистика "Другие работы"' %}
+{% endblock %}
+
+{% block link %}
+<style>
+ p {
+    font-size: 2rem;
+    margin:0;
+    }
+ a {
+    font-size: 2rem;
+    margin:0;
+    }
+.m-left {
+    padding-left:5rem;
+    }
+.red {color:red;font-size: 1.5rem;}
+.m-left2 {
+    font-size: 1.5rem;
+    padding-left:8rem;
+    }
+h2{margin-bottom:2rem;margin-top:2rem;}
+</style>
+{% endblock %}
+
+{% block content %}
+<h2>Записи работ за последние 7 дней в которых время "Другие работы" превышает 20%</h2>
+{% for date, users in data.items %}
+    <h2>{{date}}</h2>
+    {% for user, users_data in users.items %}
+        <a href="{% url 'users:user_profile' user.id %}" target="_blank">{{forloop.counter}}. {{user}} ({{user.role.name}})</a>
+        {% if users_data.errors %}
+        <span class="red">({{users_data.errors}})</span>
+        {% endif %}
+        <p class="m-left">Часы за день: {{users_data.total_hours}}</p>
+        <p class="m-left">Часы "Другие работы": {{users_data.quantity_hours}}</p>
+        <p class="m-left">Процент времени от всех работ:
+            {% if users_data.kf_time %}
+            <span class="red">{{users_data.kf_time}}%</span>
+            {% else %}
+            <span>{{users_data.kf_time}}%</span>
+            {% endif %}
+        </p>
+        <p class="m-left">Все работы за день:</p>
+            {% for work in users_data.work_record.workrecordquantity_set.all %}
+            <p class="m-left2">{{work.standard.name}}: {{work.quantity}}</p>
+            {% endfor %}
+            <p class="m-left2">Комментарий: {{users_data.work_record.comment}}</p>
+
+    {% empty %}
+        <p>Нет данных</p>
+    {% endfor %}
+{% endfor %}
+{% endblock %}

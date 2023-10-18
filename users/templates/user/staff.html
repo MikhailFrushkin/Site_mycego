@@ -81,8 +81,12 @@
                             <h3><a href="{% url 'users:user_profile' emp.id %}">{{ emp }}</a></h3>
                             {% endif %}
 
-                            <div class="price flex">
-                                <div class="title-price fs-16"> {{ emp.role }}</div>
+                            <div class="price flex" style="height:2rem;">
+                                <div class="title-price fs-16">
+                                    {% if emp.avg_kf %}
+                                    Эффективность: {{ emp.avg_kf }}%
+                                    {% endif %}
+                                </div>
                             </div>
                             <div class="button-follow">
                                 <a href="{% url 'users:user_profile' emp.id %}" class="sc-button btn-6 bt"><span>Профиль</span></a>

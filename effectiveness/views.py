@@ -363,3 +363,64 @@ def calculate_weekly_changes(data):
 
 class MainStatisticMenu(LoginRequiredMixin, TemplateView):
     template_name = 'effectiveness/statistic_main.html'
+
+
+class StatisticOverWorks(LoginRequiredMixin, TemplateView):
+    template_name = 'effectiveness/statistic_over_works.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cashed_data = cache.get('context_over_works', None)
+        if cashed_data:
+            return cashed_data
+        start_time = datetime.now()
+        date_last = datetime.now() - timedelta(days=7)  # Calculate the date 7 days ago
+
+        works = WorkRecordQuantity.objects.filter(
+            work_record__date__gte=date_last,
+            standard__name='Другие работы(в минутах)'
+        ).select_related("work_record")
+
+        data = {}
+
+        logger.debug("Works:")
+        for item in works:
+            user_data = {}
+            work_record = item.work_record
+            quantity_hours = round(item.quantity / 60, 2)
+            errors = []
+            total_time = Appointment.objects.filter(user=work_record.user, date=work_record.date).only(
+                'duration').aggregate(Sum('duration'))
+            total_hours = total_time['duration__sum'].total_seconds() / 3600 if total_time['duration__sum'] else 0
+
+            kf_time = round((quantity_hours * 100 / total_hours), 2) if total_hours else errors.append(
+                'Нет в графике на этот день')
+            if kf_time:
+                if kf_time > 20:
+                    logger.error(f'{work_record.date} {quantity_hours} {total_hours} - {kf_time}')
+                    user_data = {
+                        'work_record': work_record,
+                        'total_hours': total_hours,
+                        'quantity_hours': quantity_hours,
+                        'kf_time': kf_time,
+                        'errors': '; '.join(errors) if errors else None
+                    }
+            else:
+                user_data = {
+                    'work_record': work_record,
+                    'total_hours': total_hours,
+                    'quantity_hours': quantity_hours,
+                    'kf_time': 0,
+                    'errors': '; '.join(errors) if errors else None
+                }
+            if user_data:
+                if work_record.date not in data:
+                    data[work_record.date] = {}
+                data[work_record.date][work_record.user] = user_data
+        sorted_data = dict(sorted(data.items(), key=lambda item: item[0], reverse=True))
+        context['data'] = sorted_data
+        context.pop('view', None)
+        cache.set('context_over_works', context, 600)
+        execution_time = datetime.now() - start_time
+        logger.success(f"Execution time: {execution_time}")
+        return context

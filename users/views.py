@@ -85,7 +85,7 @@ class Staff(LoginRequiredMixin, ListView):
         for role_name in desired_roles:
             try:
                 role = Role.objects.get(name=role_name)
-                users_with_role = CustomUser.objects.filter(role=role).order_by('username')
+                users_with_role = CustomUser.objects.filter(role=role).order_by('-avg_kf')
                 staff_by_role[role] = list(users_with_role)
             except:
                 pass
@@ -93,7 +93,7 @@ class Staff(LoginRequiredMixin, ListView):
         # Получаем остальные роли и добавляем их в словарь
         other_roles = Role.objects.exclude(name__in=desired_roles)
         for role in other_roles:
-            users_with_role = CustomUser.objects.filter(role=role, status_work=True).order_by('username')
+            users_with_role = CustomUser.objects.filter(role=role, status_work=True).order_by('-avg_kf')
             if len(users_with_role) > 0:
                 staff_by_role[role] = list(users_with_role)
 
