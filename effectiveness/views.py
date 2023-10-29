@@ -217,16 +217,18 @@ class StatisticWorks(LoginRequiredMixin, TemplateView):
             'medium': [],
             'good': [],
         }
-        for user, data in user_data_dict.items():
-            avg_value = round(sum(item[0] for item in data.values()) / len(data), 2)
-            if avg_value < 80:
-                avg_kf_dict['bad'].append((user, avg_value))
-            elif 80 <= avg_value < 100:
-                avg_kf_dict['medium'].append((user, avg_value))
-            elif avg_value >= 100:
-                avg_kf_dict['good'].append((user, avg_value))
-            else:
-                avg_kf_dict['bad'].append((user, 'Ошибка'))
+
+        for user in users:
+            avg_value = user.avg_kf
+            if avg_value:
+                if avg_value < 80:
+                    avg_kf_dict['bad'].append((user, avg_value))
+                elif 80 <= avg_value < 100:
+                    avg_kf_dict['medium'].append((user, avg_value))
+                elif avg_value >= 100:
+                    avg_kf_dict['good'].append((user, avg_value))
+                else:
+                    avg_kf_dict['bad'].append((user, 'Ошибка'))
         for key in avg_kf_dict:
             avg_kf_dict[key] = sorted(avg_kf_dict[key], key=lambda x: x[1])
 

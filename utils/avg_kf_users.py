@@ -14,10 +14,10 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mycego.settings')
 def calculation_avg_kf():
     start_time = datetime.now()
 
-    current_date = datetime.today().date()
+    current_date = datetime.today().date() - timedelta(days=1)
     start_date = current_date - timedelta(days=7)
 
-    users = CustomUser.objects.all()
+    users = CustomUser.objects.filter(status_work=True)
 
     appointments = {}
     for appointment in Appointment.objects.filter(user__in=users, date__range=(start_date, current_date)):
@@ -34,7 +34,7 @@ def calculation_avg_kf():
         user_records = WorkRecordQuantity.objects.filter(
             work_record__user=user,
             work_record__delivery=None,
-            work_record__date__gte=start_date
+            work_record__date__range=(start_date, current_date)
         ).order_by('work_record__user', 'work_record__date').values('work_record__id', 'work_record__date',
                                                                     'standard__name').annotate(
             total_quantity=Sum(F('quantity') * 1.0),

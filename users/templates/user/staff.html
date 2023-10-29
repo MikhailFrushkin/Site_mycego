@@ -67,9 +67,9 @@
                         <div class="img-box flat-img">
                             <div class="img-author">
                                 {% if emp.photo %}
-                                <img src="{{ emp.photo.url }}" class="rounded float-start" alt="{{ emp.username }}">
+                                <img src="{{ emp.photo.url }}" class="rounded float-start" alt="{{ emp.username }}" loading="lazy">
                                 {% else %}
-                                <img src="{% static 'Нет фото.jpg' %}" class="rounded float-start"
+                                <img src="{% static 'Нет фото.jpg' %}" class="rounded float-start" loading="lazy"
                                      alt="{{ emp.username }}">
                                 {% endif %}
                             </div>

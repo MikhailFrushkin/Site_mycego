@@ -168,12 +168,12 @@ width: 9%!important;
                         aria-label="Запись"
                 >
                     {% if hour %}
-                    <option selected>{{user_name.0.avg_kf}}{{user_name.0}}</option>
+                    <option selected>{{user_name.0}}</option>
                     <option style="color: #ffffff;">Нет</option>
                     {% else %}
                     <option selected>Нет</option>
+                    <option style="color: #ffffff;">{{user_name.0}}</option>
                     {% endif %}
-
                 </select>
             </td>
 
@@ -452,23 +452,23 @@ function parseDuration(durationString) {
     }
 </script>
 {% cache 300 user_list %}
-<script>
-    $(document).ready(function () {
-        var users = JSON.parse('{{ users_add|escapejs }}');
-        $("select").on("focus", function () {
-            var select = $(this);
+<!--<script>-->
+<!--    $(document).ready(function () {-->
+<!--        var users = JSON.parse('{{ users_add|escapejs }}');-->
+<!--        $("select").on("focus", function () {-->
+<!--            var select = $(this);-->
 
-            // Проверяем, были ли уже добавлены варианты
-            if (!select.data("options-added")) {
-                // Добавляем варианты для выбора
-                for (var i = 0; i < users.length; i++) {
-                    select.append('<option style="color: #ffffff;" value="' + users[i] + '">' + users[i] + '</option>');
-                }
-                // Помечаем, что варианты были добавлены
-                select.data("options-added", true);
-            }
-        });
-    });
-</script>
+<!--            // Проверяем, были ли уже добавлены варианты-->
+<!--            if (!select.data("options-added")) {-->
+<!--                // Добавляем варианты для выбора-->
+<!--                for (var i = 0; i < users.length; i++) {-->
+<!--                    select.append('<option style="color: #ffffff;" value="' + users[i] + '">' + users[i] + '</option>');-->
+<!--                }-->
+<!--                // Помечаем, что варианты были добавлены-->
+<!--                select.data("options-added", true);-->
+<!--            }-->
+<!--        });-->
+<!--    });-->
+<!--</script>-->
 {% endcache %}
 {% endblock %}
