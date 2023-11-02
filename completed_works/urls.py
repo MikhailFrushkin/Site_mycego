@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import create_work_record, ViewWorks, ViewWorksAdmin, update_work_quantities, delete_work_record, \
     create_work_record_admin_add, save_all_row, WorkRecordDetailView, create_work_record_delivery, \
-    create_work_record_admin_add_delivery
+    create_work_record_admin_add_delivery, AllDelivery, DeliveryView, DeliveryViewAdmin, cut_stage, printer_stage
 
 app_name = 'completed_works'
 
@@ -20,4 +20,13 @@ urlpatterns = [
     path('workrecord/<int:pk>/', WorkRecordDetailView.as_view(), name='workrecord_detail'),
     path('update_work_quantities/', update_work_quantities, name='update_work_quantities'),
     path('save_all/<int:week>/', save_all_row, name='save_all_row'),
+
+    path('all_delivery/', AllDelivery.as_view(), name='delivery'),
+    path('delivery/<int:delivery_id>/', DeliveryView.as_view(), name='delivery_view'),
+    path('delivery_admin/', DeliveryViewAdmin.as_view(), name='delivery_view_admin'),
+
+    path('cut_stage/<int:delivery_id>/<int:delivery_stage_id>/', cut_stage, name='cut_stage'),
+    path('printer/<int:delivery_id>/<int:delivery_stage_id>/', printer_stage, name='printer'),
+
+
 ]

@@ -1,0 +1,30 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+{% load cache %}
+{% block title %}
+{% trans 'Все поставки' %}
+{% endblock %}
+
+{% block link %}
+<link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'my_js/myjs.js' %}"></script>
+<style>
+    li {
+    font-size: 2rem;
+    margin-bottom:0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<ul>
+{% for item in delivery %}
+    <li>
+        <a href="{% url 'completed_works:delivery_view' item.id %}">{{ forloop.counter }}. {{ item }} (Этап:{{ item.state }})</a>
+    </li>
+{% endfor %}
+</ul>
+
+{% endblock %}

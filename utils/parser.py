@@ -9,7 +9,7 @@ import requests
 from django.db import transaction
 from loguru import logger
 
-from completed_works.models import Delivery
+from completed_works.models import Delivery, DeliveryStage
 from utils.read_pg_base import update_base_postgresql
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mycego.settings')
@@ -167,6 +167,7 @@ def result_list_data(delivery_list, api_key, data_list=None, seller=None):
 @transaction.atomic
 def create_rows_delivery(data_list, data_pg=None):
     data_pg = update_base_postgresql()
+    state = DeliveryStage.objects.get(name='Печать')
     for data in data_list:
         id_value = data['id']
         name_value = data['name']
@@ -183,6 +184,7 @@ def create_rows_delivery(data_list, data_pg=None):
                 'products': data['products'],
                 'price': data['price'],
                 'type': data['type'],
+                'state': state,
             }
         )
 
@@ -213,6 +215,7 @@ def create_rows_delivery(data_list, data_pg=None):
                         products_count=value['products_count'],
                         price=0,
                         type=value['type'],
+                        state=state
                     )
                     created_ins.save()
                 except Exception as ex:

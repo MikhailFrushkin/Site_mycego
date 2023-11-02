@@ -1,5 +1,19 @@
 from django.contrib import admin
-from .models import Standards, WorkRecord, WorkRecordQuantity, Delivery
+from .models import Standards, WorkRecord, WorkRecordQuantity, Delivery, DeliveryStage, DeliveryWorks
+
+
+class AdminDeliveryStage(admin.ModelAdmin):
+    list_display = [field.name for field in DeliveryStage._meta.fields]
+
+
+admin.site.register(DeliveryStage, AdminDeliveryStage)
+
+
+class AdminDeliveryWorks(admin.ModelAdmin):
+    list_display = [field.name for field in DeliveryWorks._meta.fields]
+
+
+admin.site.register(DeliveryWorks, AdminDeliveryWorks)
 
 
 class AdminStandards(admin.ModelAdmin):
@@ -26,7 +40,7 @@ class AdminWorkRecordQuantity(admin.ModelAdmin):
     list_display = [field.name for field in WorkRecordQuantity._meta.fields]
     list_editable = ['quantity']
     list_filter = ['work_record', 'standard', 'quantity']
-    search_fields = ('work_record', )
+    search_fields = ('work_record',)
     list_per_page = 100
 
 

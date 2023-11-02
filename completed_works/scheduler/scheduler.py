@@ -9,8 +9,8 @@ def start():
     scheduler = BackgroundScheduler()
     scheduler.add_jobstore(DjangoJobStore(), 'default')
 
-    scheduler.add_job(update_rows_delivery, 'interval', minutes=300, id='update_rows_delivery', replace_existing=True)
-    scheduler.add_job(calculation_avg_kf, 'interval', minutes=100, id='calculation_avg_kf', replace_existing=True)
+    scheduler.add_job(update_rows_delivery, 'interval', minutes=200, id='update_rows_delivery', replace_existing=True)
+    scheduler.add_job(calculation_avg_kf, 'interval', minutes=1000, id='calculation_avg_kf', replace_existing=True)
 
     print('Парсится')
     scheduler.start()

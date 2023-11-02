@@ -36,16 +36,23 @@ def update_base_postgresql():
     try:
         with psycopg2.connect(**db_params) as connection:
             with connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM files ")
+                cursor.execute(
+                    """SELECT name_file, COUNT(*) AS record_count, MIN(update_timestamp) AS first_update_timestamp,
+                           ARRAY_AGG(art) AS art_list
+                            FROM orders
+                            GROUP BY name_file
+                            """)
                 rows = cursor.fetchall()
-
                 for row in rows:
-                    if (row[1].date() > date_pre) and any(entry in row[2].lower() for entry in possible_entries):
-                        created_at_utc = utc_timezone.localize(row[1])
+                    name_file, record_count, first_update_timestamp, art_list = row
+                    if (first_update_timestamp.date() > date_pre) and any(entry in name_file.lower()
+                                                                          for entry in possible_entries):
+                        created_at_utc = utc_timezone.localize(first_update_timestamp) - timedelta(hours=4)
 
-                        data[row[2]] = {
+                        data[name_file] = {
                             'createdAt': created_at_utc,
-                            'products_count': row[3],
+                            'products_count': record_count,
+                            'products': art_list,
                             'type': 'Программа'
                         }
         print(len(data))
@@ -56,17 +63,22 @@ def update_base_postgresql():
         with psycopg2.connect(**db_params2) as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    """SELECT name_file, COUNT(*) AS record_count, MIN(update_timestamp)
-                    AS first_update_timestamp FROM orders GROUP BY name_file""")
+                    """SELECT name_file, COUNT(*) AS record_count, MIN(update_timestamp) AS first_update_timestamp,
+                           ARRAY_AGG(art) AS art_list
+                            FROM orders
+                            GROUP BY name_file
+                            """)
                 rows = cursor.fetchall()
                 for row in rows:
-                    name_file, record_count, first_update_timestamp = row
-                    if (first_update_timestamp.date() > date_pre) and any(entry in name_file.lower() for entry in possible_entries):
-                        created_at_utc = utc_timezone.localize(first_update_timestamp)
+                    name_file, record_count, first_update_timestamp, art_list = row
+                    if (first_update_timestamp.date() > date_pre) and any(entry in name_file.lower()
+                                                                          for entry in possible_entries):
+                        created_at_utc = utc_timezone.localize(first_update_timestamp) - timedelta(hours=4)
 
                         data[name_file] = {
                             'createdAt': created_at_utc,
                             'products_count': record_count,
+                            'products': art_list,
                             'type': 'Программа'
                         }
         print(len(data))
