@@ -229,27 +229,3 @@ env.read_env()
 
 api_key1 = env.str('api_key1')
 api_key2 = env.str('api_key2')
-
-import os
-from celery import Celery
-
-# Создайте экземпляр приложения Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mycego.settings')
-app = Celery('mycego')
-
-# Настройки для Redis
-app.config_from_object('django.conf:settings', namespace='CELERY')
-
-# Автоматическая загрузка задач из приложений Django
-app.autodiscover_tasks()
-
-# Включите расписание задач
-app.conf.beat_schedule = {
-    'пример-задачи': {
-        'task': 'путь.к.вашей.задаче',  # Замените на путь к вашей задаче
-        'schedule': timedelta(seconds=60),  # Установите частоту выполнения
-    },
-}
-
-# Настройки Redis
-app.conf.broker_url = 'redis://localhost:6379/0'
