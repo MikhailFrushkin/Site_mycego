@@ -1,12 +1,19 @@
 from django.contrib import admin
-from .models import Standards, WorkRecord, WorkRecordQuantity, Delivery, DeliveryStage, DeliveryWorks
+from .models import Standards, WorkRecord, WorkRecordQuantity, Delivery, DeliveryState, DeliveryWorks, DeliveryNums
+
+
+class AdminDeliveryNums(admin.ModelAdmin):
+    list_display = [field.name for field in DeliveryNums._meta.fields]
+
+
+admin.site.register(DeliveryNums, AdminDeliveryNums)
 
 
 class AdminDeliveryStage(admin.ModelAdmin):
-    list_display = [field.name for field in DeliveryStage._meta.fields]
+    list_display = [field.name for field in DeliveryState._meta.fields]
 
 
-admin.site.register(DeliveryStage, AdminDeliveryStage)
+admin.site.register(DeliveryState, AdminDeliveryStage)
 
 
 class AdminDeliveryWorks(admin.ModelAdmin):

@@ -16,7 +16,7 @@ from utils.utils import get_year_week
 from work_schedule.models import Appointment
 from .forms import WorkRecordForm, WorkRecordQuantityForm, WorkRecordFormAdmin, WorkRecordDeliveryForm, \
     WorkRecordFormDeliveryAdmin
-from .models import WorkRecordQuantity, Standards, WorkRecord, Delivery, DeliveryWorks, DeliveryStage
+from .models import WorkRecordQuantity, Standards, WorkRecord, Delivery, DeliveryWorks, DeliveryState, DeliveryNums
 
 
 def remove_special_characters(input_string):
@@ -462,22 +462,25 @@ class DeliveryView(TemplateView):
         context['delivery'] = delivery
 
         # Создайте словарь, где ключи - номера этапов, значения - связанные записи работ
-        delivery_works_by_stage = {}
+        delivery_works_by_state = {}
         number_list = range(1, delivery.products_count + 1)
+        if delivery.type_d == 'badges':
+            type_state = 'Значки'
+            states = DeliveryState.objects.filter(type=type_state).order_by('number')
+        elif delivery.type_d == 'posters':
+            type_state = 'Постеры'
+            states = DeliveryState.objects.filter(type=type_state).order_by('number')
+        else:
+            messages.error(self.request, 'Ошибки в типе поставки')
+            return HttpResponseRedirect(reverse_lazy('main_site:main_site'))
+        for state in states:
+            works = DeliveryWorks.objects.filter(delivery=delivery.id, state=state)
+            delivery_nums = DeliveryNums.objects.filter(delivery=delivery, state=state)
+            delivery_works_by_state[state] = (works, delivery_nums)
 
-        for stage in DeliveryStage.objects.all():
-            works = DeliveryWorks.objects.filter(delivery=delivery.id, stage=stage)
-            get_list = []
-            if works:
-                for item in works:
-                    try:
-                        get_list.extend(range(item.num_start, item.num_end + 1))
-                    except Exception as ex:
-                        pass
-            intersection = sorted(list(set(number_list) - set(get_list)))
-            delivery_works_by_stage[stage.number] = (works, intersection)
-
-        context['delivery_works_by_stage'] = delivery_works_by_stage
+        context['delivery_works_by_state'] = delivery_works_by_state
+        context['count_state'] = DeliveryState.objects.filter(type=type_state).count()
+        # pprint(context)
         return context
 
 
@@ -486,81 +489,111 @@ class DeliveryViewAdmin(ListView):
     template_name = 'completed_works/delivery_admin.html'
 
 
-def cut_stage(request, delivery_id, delivery_stage_id):
+def cut_state(request, delivery_id, delivery_state_id):
     if request.method == 'POST':
+        print(request.POST)
         delivery = Delivery.objects.get(pk=delivery_id)
-        user = request.user
-        number_from = request.POST.get('number_range_form.number_from', None)
-        number_to = request.POST.get('number_range_form.number_to', None)
-        if number_from and number_to:
-            number_from, number_to = int(number_from), int(number_to)
-        if (number_from and number_to and delivery.products_count >= number_from > 0
-                and delivery.products_count >= number_to > 0 and number_to >= number_from):
-            number_list = range(number_from, number_to + 1)
-
-            get_list = []
-            delivery_works = DeliveryWorks.objects.filter(
-                delivery=delivery,
-                stage=DeliveryStage.objects.get(id=delivery_stage_id)
-            )
-            for item in delivery_works:
-                get_list.extend(range(item.num_start, item.num_end + 1))
-
-            intersection = sorted(list(set(number_list) & set(get_list)))
-
-            logger.debug(number_list)
-            logger.debug(get_list)
-            logger.debug(intersection)
-
-            if not intersection:
-                if number_to > delivery.products_count:
-                    messages.error(request, f'Указаные номера больше чем в поставке есть!')
-                else:
-                    delivery_works = DeliveryWorks(
-                        delivery=delivery,
-                        stage=DeliveryStage.objects.get(id=delivery_stage_id),
-                        user=user,
-                        num_start=number_from,
-                        num_end=number_to,
-                    )
-                    delivery_works.save()
-                    messages.success(request, 'Успешно!')
-
-                    get_list = []
-                    delivery_works = DeliveryWorks.objects.filter(
-                        delivery=delivery,
-                        stage=DeliveryStage.objects.get(id=delivery_stage_id)
-                    )
-                    for item in delivery_works:
-                        get_list.extend(range(item.num_start, item.num_end + 1))
-                    if not set(range(1, delivery.products_count + 1)) - set(get_list):
-                        state_after = DeliveryStage.objects.get(id=delivery_stage_id + 1)
-                        delivery.state = state_after
-                        delivery.save()
-
-                    return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
-            else:
-                messages.error(request, f'Указаные номера уже сделаны: {", ".join(map(str, intersection))}')
-
+        if delivery.type_d == 'badges':
+            type_state = 'Значки'
         else:
-            messages.error(request, 'Ошибки в указанных номерах, возможно указано больше чем есть в поставке')
-        return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
+            type_state = 'Постеры'
+        state_after = DeliveryState.objects.get(type=type_state, number=delivery.state.number + 1)
+
+        if delivery.state.num_emp == 1:
+            user = request.user
+            delivery_works = DeliveryWorks(
+                delivery=delivery,
+                state=DeliveryState.objects.get(id=delivery_state_id),
+                user=user,
+                num_start=1,
+                num_end=delivery.products_count,
+            )
+            delivery_works.save()
+            delivery.state = state_after
+            delivery.save()
+            messages.success(request, 'Успешно!')
+            return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
 
 
-def printer_stage(request, delivery_id, delivery_stage_id):
+
+def cut_state2(request, delivery_id, delivery_state_id):
     if request.method == 'POST':
+        print(request.POST)
         delivery = Delivery.objects.get(pk=delivery_id)
-        user = request.user
-        delivery_works = DeliveryWorks(
-            delivery=delivery,
-            stage=DeliveryStage.objects.get(id=delivery_stage_id),
-            user=user
-        )
-        delivery_works.save()
-        state_after = DeliveryStage.objects.get(id=delivery_stage_id + 1)
-        delivery.state = state_after
-        delivery.save()
-        messages.success(request, 'Успешно!')
-        return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
-    else:
-        messages.warning(request, f'Указаные номера уже сделаны: ')
+        if delivery.type_d == 'badges':
+            type_state = 'Значки'
+        else:
+            type_state = 'Постеры'
+        state_after = DeliveryState.objects.get(type=type_state, number=delivery.state.number + 1)
+
+        if delivery.state.num_emp == 1:
+            user = request.user
+            delivery_works = DeliveryWorks(
+                delivery=delivery,
+                state=DeliveryState.objects.get(id=delivery_state_id),
+                user=user,
+                num_start=1,
+                num_end=delivery.products_count,
+            )
+            delivery_works.save()
+            delivery.state = state_after
+            delivery.save()
+            messages.success(request, 'Успешно!')
+            return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
+        else:
+            user = request.user
+            number_from = request.POST.get('number_range_form.number_from', None)
+            number_to = request.POST.get('number_range_form.number_to', None)
+            if number_from and number_to:
+                number_from, number_to = int(number_from), int(number_to)
+            if (number_from and number_to and delivery.products_count >= number_from > 0
+                    and delivery.products_count >= number_to > 0 and number_to >= number_from):
+                number_list = range(number_from, number_to + 1)
+
+                get_list = []
+                delivery_works = DeliveryWorks.objects.filter(
+                    delivery=delivery,
+                    state=DeliveryState.objects.get(id=delivery_state_id)
+                )
+                for item in delivery_works:
+                    get_list.extend(range(item.num_start, item.num_end + 1))
+
+                intersection = sorted(list(set(number_list) & set(get_list)))
+
+                logger.debug(number_list)
+                logger.debug(get_list)
+                logger.debug(intersection)
+
+                if not intersection:
+                    if number_to > delivery.products_count:
+                        messages.error(request, f'Указаные номера больше чем в поставке есть!')
+                    else:
+                        delivery_works = DeliveryWorks(
+                            delivery=delivery,
+                            state=DeliveryState.objects.get(id=delivery_state_id),
+                            user=user,
+                            num_start=number_from,
+                            num_end=number_to,
+                        )
+                        delivery_works.save()
+                        messages.success(request, 'Успешно!')
+
+                        get_list = []
+                        delivery_works = DeliveryWorks.objects.filter(
+                            delivery=delivery,
+                            state=DeliveryState.objects.get(id=delivery_state_id)
+                        )
+                        for item in delivery_works:
+                            get_list.extend(range(item.num_start, item.num_end + 1))
+                        if not set(range(1, delivery.products_count + 1)) - set(get_list):
+                            delivery.state = state_after
+                            delivery.save()
+
+                        return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
+                else:
+                    messages.error(request, f'Указаные номера уже сделаны: {", ".join(map(str, intersection))}')
+
+            else:
+                messages.error(request, 'Ошибки в указанных номерах, возможно указано больше чем есть в поставке')
+            return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
+

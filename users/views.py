@@ -72,11 +72,16 @@ class Staff(LoginRequiredMixin, ListView):
         desired_roles = ['Директор',
                          'Директор по производству',
                          'Администратор сайта',
-                         'Руководитель',
-                         'Руководитель склада',
+                         'Руководитель сервисного отдела',
                          'Сервисный инженер',
                          'Сервисный инженер (стажер)',
-                         'Печатник']
+                         'Руководитель',
+                         'Руководитель склада',
+                         'Тренер',
+                         'Печатник',
+                         'Маркировщик',
+                         'Фасовщик пакетов на упаковке',
+                         ]
 
         # Создаем упорядоченный словарь для хранения данных
         staff_by_role = OrderedDict()
@@ -85,7 +90,7 @@ class Staff(LoginRequiredMixin, ListView):
         for role_name in desired_roles:
             try:
                 role = Role.objects.get(name=role_name)
-                users_with_role = CustomUser.objects.filter(role=role).order_by('-avg_kf')
+                users_with_role = CustomUser.objects.filter(role=role, status_work=True).order_by('-avg_kf')
                 staff_by_role[role] = list(users_with_role)
             except:
                 pass

@@ -9,7 +9,7 @@ import requests
 from django.db import transaction
 from loguru import logger
 
-from completed_works.models import Delivery, DeliveryStage
+from completed_works.models import Delivery, DeliveryState
 from utils.read_pg_base import update_base_postgresql
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mycego.settings')
@@ -158,6 +158,12 @@ def result_list_data(delivery_list, api_key, data_list=None, seller=None):
             item['products'] = info['arts']
             item['price'] = info['sum_price']
             item['type'] = seller
+            for i in item['products']:
+                if 'POSTER-' in i:
+                    item['type_d'] = 'posters'
+                    break
+            else:
+                item['type_d'] = 'badges'
             data_list.append(item)
         except Exception as ex:
             logger.error(ex)
@@ -165,42 +171,38 @@ def result_list_data(delivery_list, api_key, data_list=None, seller=None):
 
 
 @transaction.atomic
-def create_rows_delivery(data_list, data_pg=None):
+def create_rows_delivery(data_list):
     data_pg = update_base_postgresql()
-    state = DeliveryStage.objects.get(name='Печать')
+    state_badge = DeliveryState.objects.get(name='Печать', type='Значки')
+    state_poster = DeliveryState.objects.get(name='Печать', type='Постеры')
     for data in data_list:
-        id_value = data['id']
-        name_value = data['name']
-
-        delivery_instance, created = Delivery.objects.get_or_create(
-            id_wb=id_value,
-            name=name_value,
-            defaults={
-                'createdAt': data['createdAt'],
-                'closedAt': data['closedAt'],
-                'scanDt': data['scanDt'],
-                'done': data['done'],
-                'products_count': data['products_count'],
-                'products': data['products'],
-                'price': data['price'],
-                'type': data['type'],
-                'state': state,
-            }
-        )
-
-        if not created:
-            # Если запись уже существует, обновите поля, если это необходимо
-            delivery_instance.createdAt = data['createdAt']
+        try:
+            delivery_instance = Delivery.objects.get(name=data['name'])
             delivery_instance.closedAt = data['closedAt']
             delivery_instance.scanDt = data['scanDt']
             delivery_instance.done = data['done']
-            delivery_instance.products_count = data['products_count']
-            delivery_instance.products = data['products']
-            delivery_instance.price = data['price']
-            delivery_instance.type = data['type']
+            delivery_instance.save()
+        except:
+            try:
+                created_ins = Delivery(
+                    id_wb=data['id'],
+                    name=data['name'],
+                    createdAt=data['createdAt'],
+                    closedAt=data['closedAt'],
+                    scanDt=data['scanDt'],
+                    done=data['done'],
+                    products_count=data['products_count'],
+                    products=data['products'],
+                    price=data['price'],
+                    type=data['type'],
+                    type_d=data['type_d'],
+                    state=state_poster if data['type_d'] == 'posters' else state_badge,
 
-        delivery_instance.save()
-    try:
+                )
+                created_ins.save()
+            except Exception as ex:
+                logger.error(ex)
+    if data_pg:
         for key, value in data_pg.items():
             try:
                 temp = Delivery.objects.get(name=key)
@@ -213,17 +215,15 @@ def create_rows_delivery(data_list, data_pg=None):
                         name=key,
                         createdAt=value['createdAt'],
                         products_count=value['products_count'],
+                        products=list(map(str.upper, value['products'])),
                         price=0,
                         type=value['type'],
-                        state=state
+                        type_d=value['type_d'],
+                        state=state_poster if value['type_d'] == 'posters' else state_badge,
                     )
                     created_ins.save()
                 except Exception as ex:
                     logger.error(ex)
-
-    except Exception as ex:
-        with open('Ошибка при записи из pg.txt', 'w') as f:
-            f.write(f'{ex}')
 
 
 def update_rows_delivery():

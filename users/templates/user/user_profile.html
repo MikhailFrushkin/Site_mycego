@@ -124,6 +124,7 @@
                         {% endif %}
                     </li>
                     {% if request.user.is_staff or request.user == profile %}
+                    {% if profile.role.name == 'Печатник' or profile.role.name == 'Фасовщик пакетов на упаковке' or profile.role.name == 'Маркировщик' or profile.role.name == 'Упаковщик' or profile.role.name == 'Стажёр' %}
                     <li class="active">
                         <a href="#">Средняя эффективность за 7 дней:</a>
                         {% if profile.avg_kf %}
@@ -133,12 +134,14 @@
                         {% endif %}
                     </li>
                     {% endif %}
+                    {% endif %}
                 </ul>
             </div>
         </div>
     </div>
 </div>
 {% if request.user == profile or request.user.is_staff %}
+{% if profile.role.name == 'Печатник' or profile.role.name == 'Фасовщик пакетов на упаковке' or profile.role.name == 'Маркировщик' or profile.role.name == 'Упаковщик' or profile.role.name == 'Стажёр' %}
 <div class="container text-left" style="margin-top:50px;">
     <div class="row align-items-start">
 
@@ -172,5 +175,6 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endif %}
 {% endblock %}

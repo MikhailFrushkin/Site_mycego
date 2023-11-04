@@ -60,265 +60,60 @@
 <p>Поставка: <span class="green">{{ delivery.name }} (Артикулов: {{ delivery.products_count }})</span></p>
 <p>Этап поставки: <span class="green">{{ delivery.state.name }}</span></p>
 <br><br>
-
-<!-- Секция "Печать" -->
-<h2>
-    Печать
-    {% if delivery.state.id > 1 %}
-    <i class='check'></i>
+{% for state, work in delivery_works_by_state.items %}
+{% if forloop.counter < count_state %}
+    <h1>{{work}}</h1>
+    <h2>
+        {{ state }}
+        {% if delivery.state.number > state.number%}
+        <i class='check'></i>
+        {% endif %}
+    </h2>
+    {% for i in work.0 %}
+        <p class="work"> {{ forloop.counter }}. {{ i.user }} С {{ i.num_start }} по {{ i.num_end }}</p>
+    {% endfor %}
+    {% if work.1 %}
+    {% if state.num_emp > 1 %}
+    <p>Не сделанные номера: {{ work.1 }}</p>
     {% endif %}
-</h2>
-{% for i in delivery_works_by_stage.1.0 %}
-    <p class="work">Напечатал: {{ i.user }}</p>
-{% endfor %}
-{% if delivery.state.id == 1 %}
-<form method="post" action="{% url 'completed_works:printer' delivery.id delivery.state.id %}">
-    {% csrf_token %}
-    <div class="button" style="text-align: left;">
-        {% if request.user.role.name == 'Печатник' or request.user.role.name == 'Руководитель склада' or request.user.role.name == 'Руководитель' %}
-        <button type="submit" class="btn-grad btn-gradient-border btn-glow">Напечатано</button>
-        {% else %}
-        <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Напечатано</button>
-        {%endif%}
-    </div>
-</form>
-{% else %}
-    {% if delivery.state.id < 1 %}
-    <p class="red">Недоступно</p>
+    {% else %}
+    <p class="green">Все сделано!</p>
     {% endif %}
-{% endif %}
-<hr>
-
-<!-- Секция "Вырезка макетов" -->
-
-<h2>
-    Вырезка макетов
-    {% if delivery.state.id > 2 %}
-    <i class='check'></i>
-    {% endif %}
-</h2>
-{% for i in delivery_works_by_stage.2.0 %}
-    <p class="work"> {{ forloop.counter }}. {{ i.user }} С {{ i.num_start }} по {{ i.num_end }}</p>
-{% endfor %}
-{% if delivery_works_by_stage.2.1%}
-<p>Не сделанные номера: {{delivery_works_by_stage.2.1}}</p>
-{% else %}
-<p class="green">Все сделано!</p>
-{% endif %}
-{% if delivery.state.id == 2 %}
-<form method="post" action="{% url 'completed_works:cut_stage' delivery.id delivery.state.id %}">
-    {% csrf_token %}
-    <div class="form-row">
-        <div class="col">
-            <span> Номера с: </span><input type="number" name="number_range_form.number_from" class="narrower-input4">
-            <span> до: </span><input type="number" name="number_range_form.number_to" class="narrower-input4">
-            {% if request.user.role.name == 'Упаковщик' or request.user.role.name == 'Маркировщик' or request.user.role.name == 'Руководитель склада' or request.user.role.name == 'Руководитель' %}
-            <button type="submit" class="btn-grad btn-gradient-border btn-glow">Вырезаны</button>
+    {% if state.number == delivery.state.number %}
+        <form method="post" action="{% url 'completed_works:cut_state' delivery.id delivery.state.id %}">
+            {% csrf_token %}
+            {% if state.num_emp > 1 %}
+            <div class="form-row">
+                <div class="col">
+                    <span> Номера с: </span><input type="number" name="number_range_form.number_from" class="narrower-input4">
+                    <span> до: </span><input type="number" name="number_range_form.number_to" class="narrower-input4">
+                    {% if request.user.role.name == 'Упаковщик' or request.user.role.name == 'Маркировщик' or request.user.role.name == 'Руководитель' %}
+                    <button type="submit" class="btn-grad btn-gradient-border btn-glow">Готово</button>
+                    {% else %}
+                    <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Готово</button>
+                    {% endif %}
+                </div>
+            </div>
             {% else %}
-            <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Вырезаны</button>
+            <div class="form-row">
+                <div class="col">
+                    {% if request.user.role.name == 'Упаковщик' or request.user.role.name == 'Маркировщик' or request.user.role.name == 'Руководитель' %}
+                    <button type="submit" class="btn-grad btn-gradient-border btn-glow">Готово</button>
+                    {% else %}
+                    <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Готово</button>
+                    {% endif %}
+                </div>
+            </div>
             {% endif %}
-        </div>
-    </div>
-</form>
-{% else %}
-    {% if delivery.state.id < 2 %}
-    <p class="red">Недоступно</p>
+        </form>
+    {% else %}
+        {% if state.number >  delivery.state.number %}
+        <p class="red">Недоступно</p>
+        {% endif %}
     {% endif %}
+    <hr>
 {% endif %}
-<hr>
-
-
-<!-- Секция "Изготовление значков" -->
-
-<h2>
-    Изготовление значков
-    {% if delivery.state.id > 3 %}
-    <i class='check'></i>
-    {% endif %}
-</h2>
-{% for i in delivery_works_by_stage.3.0 %}
-    <p class="work"> {{ forloop.counter }}. {{ i.user }} С {{ i.num_start }} по {{ i.num_end }}</p>
 {% endfor %}
-{% if delivery_works_by_stage.3.1 %}
-<p>Не сделанные номера: {{delivery_works_by_stage.3.1}}</p>
-{% else %}
-<p class="green">Все сделано!</p>
-{% endif %}
-{% if delivery.state.id == 3 %}
-<form method="post" action="{% url 'completed_works:cut_stage' delivery.id delivery.state.id %}">
-    {% csrf_token %}
-    <div class="form-row">
-        <div class="col">
-            <span> Номера с: </span><input type="number" name="number_range_form.number_from" class="narrower-input4">
-            <span> до: </span><input type="number" name="number_range_form.number_to" class="narrower-input4">
-            {% if request.user.role.name == 'Упаковщик' or request.user.role.name == 'Маркировщик' or request.user.role.name == 'Руководитель склада' or request.user.role.name == 'Руководитель' %}
-            <button type="submit" class="btn-grad btn-gradient-border btn-glow">Изготовлено</button>
-            {% else %}
-            <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Изготовлено</button>
-            {% endif %}
-        </div>
-    </div>
-</form>
-{% else %}
-    {% if delivery.state.id < 3 %}
-    <p class="red">Недоступно</p>
-    {% endif %}
-{% endif %}
-<hr>
-
-
-<!-- Секция "Фасовка" -->
-
-<h2>
-    Фасовка
-    {% if delivery.state.id > 4 %}
-    <i class='check'></i>
-    {% endif %}
-</h2>
-{% for i in delivery_works_by_stage.4.0 %}
-    <p class="work"> {{ forloop.counter }}. {{ i.user }} С {{ i.num_start }} по {{ i.num_end }}</p>
-{% endfor %}
-{% if delivery_works_by_stage.4.1 %}
-<p>Не сделанные номера: {{delivery_works_by_stage.4.1}}</p>
-{% else %}
-<p class="green">Все сделано!</p>
-{% endif %}
-{% if delivery.state.id == 4 %}
-<form method="post" action="{% url 'completed_works:cut_stage' delivery.id delivery.state.id %}">
-    {% csrf_token %}
-    <div class="form-row">
-        <div class="col">
-            <span> Номера с: </span><input type="number" name="number_range_form.number_from" class="narrower-input4">
-            <span> до: </span><input type="number" name="number_range_form.number_to" class="narrower-input4">
-            {% if request.user.role.name == 'Упаковщик' or request.user.role.name == 'Маркировщик' or request.user.role.name == 'Руководитель склада' or request.user.role.name == 'Руководитель' %}
-            <button type="submit" class="btn-grad btn-gradient-border btn-glow">Готово</button>
-            {% else %}
-            <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Готово</button>
-            {% endif %}
-        </div>
-    </div>
-</form>
-{% else %}
-    {% if delivery.state.id < 4 %}
-    <p class="red">Недоступно</p>
-    {% endif %}
-{% endif %}
-<hr>
-
-<!-- Секция "Упаковка" -->
-
-<h2>
-    Упаковка
-    {% if delivery.state.id > 5 %}
-    <i class='check'></i>
-    {% endif %}
-</h2>
-{% for i in delivery_works_by_stage.5.0 %}
-    <p class="work"> {{ forloop.counter }}. {{ i.user }} С {{ i.num_start }} по {{ i.num_end }}</p>
-{% endfor %}
-{% if delivery_works_by_stage.5.1%}
-<p>Не сделанные номера: {{delivery_works_by_stage.5.1}}</p>
-{% else %}
-<p class="green">Все сделано!</p>
-{% endif %}
-{% if delivery.state.id == 5 %}
-<form method="post" action="{% url 'completed_works:cut_stage' delivery.id delivery.state.id %}">
-    {% csrf_token %}
-    <div class="form-row">
-        <div class="col">
-            <span> Номера с: </span><input type="number" name="number_range_form.number_from" class="narrower-input4">
-            <span> до: </span><input type="number" name="number_range_form.number_to" class="narrower-input4">
-            {% if request.user.role.name == 'Упаковщик' or request.user.role.name == 'Маркировщик' or request.user.role.name == 'Руководитель склада' or request.user.role.name == 'Руководитель' %}
-            <button type="submit" class="btn-grad btn-gradient-border btn-glow">Упаковано</button>
-            {% else %}
-            <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Уавковано</button>
-            {% endif %}
-        </div>
-    </div>
-</form>
-{% else %}
-    {% if delivery.state.id < 5 %}
-    <p class="red">Недоступно</p>
-    {% endif %}
-{% endif %}
-<hr>
-
-<!-- Секция "Пупырка" -->
-
-<h2>
-    Пупырка
-    {% if delivery.state.id > 6 %}
-    <i class='check'></i>
-    {% endif %}
-</h2>
-{% for i in delivery_works_by_stage.6.0 %}
-    <p class="work"> {{ forloop.counter }}. {{ i.user }} С {{ i.num_start }} по {{ i.num_end }}</p>
-{% endfor %}
-{% if delivery_works_by_stage.6.1%}
-<p>Не сделанные номера: {{delivery_works_by_stage.6.1}}</p>
-{% else %}
-<p class="green">Все сделано!</p>
-{% endif %}
-{% if delivery.state.id == 6 %}
-<form method="post" action="{% url 'completed_works:cut_stage' delivery.id delivery.state.id %}">
-    {% csrf_token %}
-    <div class="form-row">
-        <div class="col">
-            <span> Номера с: </span><input type="number" name="number_range_form.number_from" class="narrower-input4">
-            <span> до: </span><input type="number" name="number_range_form.number_to" class="narrower-input4">
-            {% if request.user.role.name == 'Упаковщик' or request.user.role.name == 'Маркировщик' or request.user.role.name == 'Руководитель склада' or request.user.role.name == 'Руководитель' %}
-            <button type="submit" class="btn-grad btn-gradient-border btn-glow">Упаковано</button>
-            {% else %}
-            <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Уавковано</button>
-            {% endif %}
-        </div>
-    </div>
-</form>
-{% else %}
-    {% if delivery.state.id < 6 %}
-    <p class="red">Недоступно</p>
-    {% endif %}
-{% endif %}
-<hr>
-
-
-<!-- Секция "Маркировка" -->
-
-<h2>
-    Маркировка
-    {% if delivery.state.id > 7 %}
-    <i class='check'></i>
-    {% endif %}
-</h2>
-{% for i in delivery_works_by_stage.7.0 %}
-    <p class="work"> {{ forloop.counter }}. {{ i.user }} С {{ i.num_start }} по {{ i.num_end }}</p>
-{% endfor %}
-{% if delivery_works_by_stage.7.1%}
-<p>Не сделанные номера: {{delivery_works_by_stage.7.1}}</p>
-{% else %}
-<p class="green">Все сделано!</p>
-{% endif %}
-{% if delivery.state.id == 7 %}
-<form method="post" action="{% url 'completed_works:cut_stage' delivery.id delivery.state.id %}">
-    {% csrf_token %}
-    <div class="form-row">
-        <div class="col">
-            <span> Номера с: </span><input type="number" name="number_range_form.number_from" class="narrower-input4">
-            <span> до: </span><input type="number" name="number_range_form.number_to" class="narrower-input4">
-            {% if request.user.role.name == 'Упаковщик' or request.user.role.name == 'Маркировщик' or request.user.role.name == 'Руководитель склада' or request.user.role.name == 'Руководитель' %}
-            <button type="submit" class="btn-grad btn-gradient-border btn-glow">Промаркировано</button>
-            {% else %}
-            <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Промаркировано</button>
-            {% endif %}
-        </div>
-    </div>
-</form>
-{% else %}
-    {% if delivery.state.id < 7 %}
-    <p class="red">Недоступно</p>
-    {% endif %}
-{% endif %}
-<hr>
 
 
 <br><br><br><br><br>
