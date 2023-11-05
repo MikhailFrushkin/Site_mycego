@@ -58,10 +58,9 @@ def update_base_postgresql():
                                 'type': 'Программа',
                                 "type_d": 'badges' if index == 0 else 'posters'
                             }
-            pprint(len(data))
+            print(len(data))
         except Exception as ex:
             logger.error(ex)
-    pprint(data)
     return data
 
 

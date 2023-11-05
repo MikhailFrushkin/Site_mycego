@@ -72,7 +72,7 @@ class DeliveryNums(models.Model):
     not_available_numbers = models.JSONField(verbose_name='Не доступные числа', default=list, blank=True, null=True)
     ready_numbers = models.JSONField(verbose_name='Готовые числа', default=list, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
-    status = models.BooleanField(verbose_name='Готова', null=True, blank=True, default=False)
+    status = models.BooleanField(verbose_name='Готово', null=True, blank=True, default=False)
 
     def are_lists_equal(self, list1, list2):
         set1 = set(list1)

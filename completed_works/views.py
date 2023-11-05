@@ -468,7 +468,6 @@ class DeliveryView(TemplateView):
         delivery = Delivery.objects.get(id=context['delivery_id'])
         context['delivery'] = delivery
 
-        # Создайте словарь, где ключи - номера этапов, значения - связанные записи работ
         delivery_works_by_state = {}
         if delivery.type_d == 'badges':
             type_state = 'Значки'
@@ -482,12 +481,10 @@ class DeliveryView(TemplateView):
         for state in states:
             works = DeliveryWorks.objects.filter(delivery=delivery.id, state=state)
             delivery_nums = DeliveryNums.objects.get(delivery=delivery.id, state=state)
-            logger.debug(delivery_nums.available_numbers)
             delivery_works_by_state[state] = (works, delivery_nums)
 
         context['delivery_works_by_state'] = delivery_works_by_state
         context['count_state'] = DeliveryState.objects.filter(type=type_state).count()
-        pprint(context)
         return context
 
 
@@ -505,21 +502,70 @@ def cut_state(request, delivery_id, delivery_state_id):
         else:
             type_state = 'Постеры'
         state_after = DeliveryState.objects.get(type=type_state, number=delivery.state.number + 1)
+        state_current = DeliveryState.objects.get(id=delivery_state_id)
+        nums = DeliveryNums.objects.get(delivery=delivery.id, state=state_current)
+        nums2 = DeliveryNums.objects.get(delivery=delivery.id, state=state_after)
 
-        if delivery.state.num_emp == 1:
+        if state_current.num_emp == 1:
+            [nums.ready_numbers.append(i) for i in nums.available_numbers]
+            nums.save()
+
+            [nums2.available_numbers.append(i) for i in nums.available_numbers]
+            nums2.save()
             user = request.user
             delivery_works = DeliveryWorks(
                 delivery=delivery,
                 state=DeliveryState.objects.get(id=delivery_state_id),
                 user=user,
-                num_start=1,
-                num_end=delivery.products_count,
+                num_start=min(nums.available_numbers),
+                num_end=max(nums.available_numbers),
             )
             delivery_works.save()
             delivery.state = state_after
             delivery.save()
+
+
+
             messages.success(request, 'Успешно!')
-            return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
+        else:
+            user = request.user
+            number_from = request.POST.get('number_range_form.number_from', None)
+            number_to = request.POST.get('number_range_form.number_to', None)
+            if number_from and number_to:
+                number_from, number_to = int(number_from), int(number_to)
+            if (delivery.products_count >= number_from > 0
+                    and delivery.products_count >= number_to > 0
+                    and number_to >= number_from):
+                take_nums = set(range(number_from, number_to + 1))
+                av_nums = set(nums.available_numbers)
+
+                logger.debug(number_from)
+                logger.debug(number_to)
+                logger.debug(take_nums)
+                logger.debug(av_nums)
+                if len(take_nums - av_nums) == 0:
+                    [nums.ready_numbers.append(i) for i in take_nums]
+                    nums.save()
+                    [nums2.available_numbers.append(i) for i in take_nums]
+                    nums2.save()
+
+                    delivery_works = DeliveryWorks(
+                        delivery=delivery,
+                        state=DeliveryState.objects.get(id=delivery_state_id),
+                        user=user,
+                        num_start=number_from,
+                        num_end=number_to,
+                    )
+                    delivery_works.save()
+                    delivery.state = state_after
+                    delivery.save()
+
+                    messages.success(request, 'Успешно!')
+                else:
+                    messages.error(request, 'Ошибка во вводе!')
+            else:
+                messages.error(request, 'Ошибка во вводе!')
+        return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
 
 
 def cut_state2(request, delivery_id, delivery_state_id):
