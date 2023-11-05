@@ -62,7 +62,7 @@
 
 {% block content %}
 <p>Поставка: <span class="green">{{ delivery.name }} (Артикулов: {{ delivery.products_count }})</span></p>
-<p>Этап поставки: <span class="green">{{ delivery.state.name }}</span></p>
+<p>Этап поставки: <span class="green">{{ state }}</span></p>
 <br><br>
 {% for state, work in delivery_works_by_state.items %}
     {% if forloop.counter < count_state %}
@@ -73,7 +73,7 @@
         {% endif %}
     </h2>
     {% for i in work.0 %}
-        <p class="work"> {{ forloop.counter }}. {{ i.user }} С {{ i.num_start }} по {{ i.num_end }}</p>
+        <p class="work"> {{ forloop.counter }}. {{ i.user }} С {{ i.nums }}</p>
     {% endfor %}
 
     {% if work.1.available_numbers %}
@@ -108,7 +108,7 @@
     </p>
     {% endif %}
 
-    <form method="post" action="{% url 'completed_works:cut_state' delivery.id delivery.state.id %}">
+    <form method="post" action="{% url 'completed_works:cut_state' delivery.id work.1.id %}">
         {% csrf_token %}
         {% if state.num_emp > 1 %}
         <div class="form-row">

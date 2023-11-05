@@ -25,7 +25,7 @@ urlpatterns = [
     path('delivery/<int:delivery_id>/', DeliveryView.as_view(), name='delivery_view'),
     path('delivery_admin/', DeliveryViewAdmin.as_view(), name='delivery_view_admin'),
 
-    path('cut_state/<int:delivery_id>/<int:delivery_state_id>/', cut_state, name='cut_state'),
+    path('cut_state/<int:delivery_id>/<int:delivery_nums_id>/', cut_state, name='cut_state'),
 
 
 ]

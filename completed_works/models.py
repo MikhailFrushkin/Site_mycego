@@ -66,7 +66,7 @@ class Delivery(models.Model):
 
 class DeliveryNums(models.Model):
     delivery = models.ForeignKey(Delivery, verbose_name='Поставка', on_delete=models.CASCADE)
-    state = models.ForeignKey(DeliveryState, on_delete=models.PROTECT, verbose_name='Этап поставки', blank=True,
+    state = models.ForeignKey(DeliveryState, on_delete=models.CASCADE, verbose_name='Этап поставки', blank=True,
                               null=True)
     available_numbers = models.JSONField(verbose_name='Доступные числа', default=list, blank=True, null=True)
     not_available_numbers = models.JSONField(verbose_name='Не доступные числа', default=list, blank=True, null=True)
@@ -104,8 +104,7 @@ class DeliveryWorks(models.Model):
     state = models.ForeignKey(DeliveryState, on_delete=models.SET_NULL, null=True, verbose_name='Этап поставки')
     user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, verbose_name='Пользователь')
     quantity = models.IntegerField(verbose_name='Количество', blank=True, null=True)
-    num_start = models.IntegerField(verbose_name='От', blank=True, null=True)
-    num_end = models.IntegerField(verbose_name='До', blank=True, null=True)
+    nums = models.JSONField(verbose_name='Сделаные номера', default=list, blank=True, null=True)
     comments = models.TextField(verbose_name='Комментарии', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
