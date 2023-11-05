@@ -177,7 +177,7 @@ def create_rows_delivery(data_list):
     state_poster = DeliveryState.objects.get(name='Печать', type='Постеры')
     for data in data_list:
         try:
-            delivery_instance = Delivery.objects.get(name=data['name'])
+            delivery_instance = Delivery.objects.get(name=data['name'], createdAt=data['createdAt'])
             delivery_instance.closedAt = data['closedAt']
             delivery_instance.scanDt = data['scanDt']
             delivery_instance.done = data['done']

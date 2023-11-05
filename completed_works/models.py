@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from loguru import logger
 
 from users.models import CustomUser
 
@@ -71,18 +72,26 @@ class DeliveryNums(models.Model):
     not_available_numbers = models.JSONField(verbose_name='Не доступные числа', default=list, blank=True, null=True)
     ready_numbers = models.JSONField(verbose_name='Готовые числа', default=list, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
+    status = models.BooleanField(verbose_name='Готова', null=True, blank=True, default=False)
+
+    def are_lists_equal(self, list1, list2):
+        set1 = set(list1)
+        set2 = set(list2)
+        return set1 == set2
 
     def save(self, *args, **kwargs):
         if self.delivery.products_count:
             all_nums = list(range(1, self.delivery.products_count + 1))
-            if self.state.name == 'Печать':
+            if self.state and self.state.name == 'Печать':
                 self.available_numbers = all_nums
-        else:
-            all_nums = list()
-        self.not_available_numbers = [x for x in all_nums if
-                                      x not in self.available_numbers and x not in self.ready_numbers]
-        self.available_numbers = [x for x in all_nums if
-                                  x not in self.ready_numbers and x not in self.not_available_numbers]
+
+            self.not_available_numbers = [x for x in all_nums if
+                                          x not in self.available_numbers and x not in self.ready_numbers]
+
+            self.available_numbers = [x for x in all_nums if
+                                      x not in self.ready_numbers and x not in self.not_available_numbers]
+
+            self.status = self.are_lists_equal(all_nums, self.ready_numbers)
 
         super(DeliveryNums, self).save(*args, **kwargs)
 

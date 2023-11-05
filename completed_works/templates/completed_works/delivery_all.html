@@ -15,16 +15,35 @@
     font-size: 2rem;
     margin-bottom:0.5rem;
     }
+    h2 {margin-bottom:1rem;}
 </style>
 {% endblock %}
 
 {% block content %}
-<ul>
-{% for item in delivery %}
-    <li>
-        <a href="{% url 'completed_works:delivery_view' item.id %}">{{ forloop.counter }}. {{ item }} (Этап:{{ item.state }})</a>
-    </li>
-{% endfor %}
-</ul>
+
+<div class="row align-items-start">
+    <div class="col">
+        <h2>Поставки со значками</h2>
+        <ul>
+            {% for item in delivery_badges %}
+            <li>
+                <a href="{% url 'completed_works:delivery_view' item.id %}">{{ forloop.counter }}. {{ item }}
+                    (Этап:{{ item.state }})</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="col">
+        <h2>Поставки с постерами</h2>
+        <ul>
+            {% for item in delivery_posters %}
+            <li>
+                <a href="{% url 'completed_works:delivery_view' item.id %}">{{ forloop.counter }}. {{ item }}
+                    (Этап:{{ item.state }})</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
 
 {% endblock %}

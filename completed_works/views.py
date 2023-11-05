@@ -452,6 +452,13 @@ class AllDelivery(ListView):
         ).exclude(closedAt__isnull=False).order_by('createdAt')
         return queryset
 
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        queryset = self.get_queryset()
+        context['delivery_badges'] = queryset.filter(type_d='badges')
+        context['delivery_posters'] = queryset.filter(type_d='posters')
+        return context
+
 
 class DeliveryView(TemplateView):
     template_name = 'completed_works/delivery.html'
@@ -463,7 +470,6 @@ class DeliveryView(TemplateView):
 
         # Создайте словарь, где ключи - номера этапов, значения - связанные записи работ
         delivery_works_by_state = {}
-        number_list = range(1, delivery.products_count + 1)
         if delivery.type_d == 'badges':
             type_state = 'Значки'
             states = DeliveryState.objects.filter(type=type_state).order_by('number')
@@ -475,12 +481,13 @@ class DeliveryView(TemplateView):
             return HttpResponseRedirect(reverse_lazy('main_site:main_site'))
         for state in states:
             works = DeliveryWorks.objects.filter(delivery=delivery.id, state=state)
-            delivery_nums = DeliveryNums.objects.filter(delivery=delivery, state=state)
+            delivery_nums = DeliveryNums.objects.get(delivery=delivery.id, state=state)
+            logger.debug(delivery_nums.available_numbers)
             delivery_works_by_state[state] = (works, delivery_nums)
 
         context['delivery_works_by_state'] = delivery_works_by_state
         context['count_state'] = DeliveryState.objects.filter(type=type_state).count()
-        # pprint(context)
+        pprint(context)
         return context
 
 
@@ -513,7 +520,6 @@ def cut_state(request, delivery_id, delivery_state_id):
             delivery.save()
             messages.success(request, 'Успешно!')
             return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
-
 
 
 def cut_state2(request, delivery_id, delivery_state_id):

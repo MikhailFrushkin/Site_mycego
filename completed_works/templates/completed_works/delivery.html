@@ -35,6 +35,10 @@
     color: green;
     padding-left: 12px;
     }
+    .yellow {
+    color: yellow;
+    padding-left: 12px;
+    }
     .button {margin-bottom:2rem;}
     .work {font-size: 2rem;
     padding-left: 12px;}
@@ -61,58 +65,67 @@
 <p>Этап поставки: <span class="green">{{ delivery.state.name }}</span></p>
 <br><br>
 {% for state, work in delivery_works_by_state.items %}
-{% if forloop.counter < count_state %}
-    <h1>{{work}}</h1>
+    {% if forloop.counter < count_state %}
     <h2>
         {{ state }}
-        {% if delivery.state.number > state.number%}
+        {% if work.1.status %}
         <i class='check'></i>
         {% endif %}
     </h2>
     {% for i in work.0 %}
         <p class="work"> {{ forloop.counter }}. {{ i.user }} С {{ i.num_start }} по {{ i.num_end }}</p>
     {% endfor %}
-    {% if work.1 %}
-    {% if state.num_emp > 1 %}
-    <p>Не сделанные номера: {{ work.1 }}</p>
-    {% endif %}
-    {% else %}
-    <p class="green">Все сделано!</p>
-    {% endif %}
-    {% if state.number == delivery.state.number %}
-        <form method="post" action="{% url 'completed_works:cut_state' delivery.id delivery.state.id %}">
-            {% csrf_token %}
-            {% if state.num_emp > 1 %}
-            <div class="form-row">
-                <div class="col">
-                    <span> Номера с: </span><input type="number" name="number_range_form.number_from" class="narrower-input4">
-                    <span> до: </span><input type="number" name="number_range_form.number_to" class="narrower-input4">
-                    {% if request.user.role.name == 'Упаковщик' or request.user.role.name == 'Маркировщик' or request.user.role.name == 'Руководитель' %}
-                    <button type="submit" class="btn-grad btn-gradient-border btn-glow">Готово</button>
-                    {% else %}
-                    <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Готово</button>
-                    {% endif %}
-                </div>
+
+    <p class="yellow">
+        Доступные номера:
+        {% for i in work.1.available_numbers %}
+        {{ i }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </p>
+    <p class="red">
+        Пока недоступны:
+        {% for i in work.1.not_available_numbers %}
+        {{ i }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </p>
+
+    <p class="green">
+        Сделаны:
+        {% for i in work.1.ready_numbers %}
+        {{ i }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </p>
+
+
+    <form method="post" action="{% url 'completed_works:cut_state' delivery.id delivery.state.id %}">
+        {% csrf_token %}
+        {% if state.num_emp > 1 %}
+        <div class="form-row">
+            <div class="col">
+                <span> Номера с: </span><input type="number" name="number_range_form.number_from" class="narrower-input4">
+                <span> до: </span><input type="number" name="number_range_form.number_to" class="narrower-input4">
+                {% if request.user.role.name == 'Упаковщик' or request.user.role.name == 'Маркировщик' or request.user.role.name == 'Руководитель' %}
+                <button type="submit" class="btn-grad btn-gradient-border btn-glow">Готово</button>
+                {% else %}
+                <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Готово</button>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="form-row">
-                <div class="col">
-                    {% if request.user.role.name == 'Упаковщик' or request.user.role.name == 'Маркировщик' or request.user.role.name == 'Руководитель' %}
-                    <button type="submit" class="btn-grad btn-gradient-border btn-glow">Готово</button>
-                    {% else %}
-                    <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Готово</button>
-                    {% endif %}
-                </div>
+        </div>
+        {% else %}
+        <div class="form-row">
+            <div class="col">
+                {% if request.user.role.name == 'Упаковщик' or request.user.role.name == 'Маркировщик' or request.user.role.name == 'Руководитель' %}
+                <button type="submit" class="btn-grad btn-gradient-border btn-glow">Готово</button>
+                {% else %}
+                <button type="submit" class="btn-grad btn-gradient-border btn-glow" disabled>Готово</button>
+                {% endif %}
             </div>
-            {% endif %}
-        </form>
-    {% else %}
-        {% if state.number >  delivery.state.number %}
-        <p class="red">Недоступно</p>
+        </div>
         {% endif %}
-    {% endif %}
-    <hr>
+    </form>
 {% endif %}
+<hr>
+
 {% endfor %}
 
 

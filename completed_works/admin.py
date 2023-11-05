@@ -4,6 +4,9 @@ from .models import Standards, WorkRecord, WorkRecordQuantity, Delivery, Deliver
 
 class AdminDeliveryNums(admin.ModelAdmin):
     list_display = [field.name for field in DeliveryNums._meta.fields]
+    list_filter = ('status',)
+    search_fields = ('delivery__name',)
+    list_per_page = 100
 
 
 admin.site.register(DeliveryNums, AdminDeliveryNums)
