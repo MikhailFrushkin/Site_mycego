@@ -86,10 +86,9 @@ def parser_wb_delivery(api_key: str, seller: str = None) -> tuple[list[dict], st
     }
     current_time = datetime.now(pytz.utc)
     # Определяем временной интервал в неделю (7 дней)
-    week_interval = timedelta(days=7)
+    week_interval = timedelta(days=5)
 
     while True:
-        time.sleep(3)
         response = requests.get(api_url, headers=headers, params=data)
 
         if response.status_code == 200:
@@ -205,10 +204,11 @@ def create_rows_delivery(data_list):
     if data_pg:
         for key, value in data_pg.items():
             try:
-                temp = Delivery.objects.get(name=key)
-            except Exception as ex:
-                with open('Новые заказы.txt', 'a') as f:
-                    f.write(f'{datetime.now()} {key} {value}\n')
+                temp = Delivery.objects.get(name=key, type_d=value['type_d'])
+                temp.products_nums_on_list = value['products_nums_on_list']
+                temp.lists = value['lists']
+                temp.save()
+            except Delivery.DoesNotExist:
                 try:
                     created_ins = Delivery(
                         id_wb='no',
@@ -216,14 +216,15 @@ def create_rows_delivery(data_list):
                         createdAt=value['createdAt'],
                         products_count=value['products_count'],
                         products=list(map(str.upper, value['products'])),
-                        price=0,
+                        products_nums_on_list=value['products_nums_on_list'],
+                        lists=value['lists'],
                         type=value['type'],
                         type_d=value['type_d'],
                         state=state_poster if value['type_d'] == 'posters' else state_badge,
                     )
                     created_ins.save()
                 except Exception as ex:
-                    logger.error(ex)
+                    logger.error(f"An error occurred while processing '{key}': {ex}")
 
 
 def update_rows_delivery():
@@ -240,12 +241,12 @@ def update_rows_delivery():
         delivery_list, seller = parser_wb_delivery(api_key=api_key2, seller='Андрей')
         data_list = result_list_data(delivery_list, data_list=data_list, api_key=api_key2, seller=seller)
     except Exception as ex:
-        with open('Ошибка.xtx', 'w') as f:
+        with open('Ошибка парсинга WB.xtx', 'w') as f:
             f.write(f'{ex}')
     try:
         create_rows_delivery(data_list)
     except Exception as ex:
-        with open('Ошибка2.xtx', 'w') as f:
+        with open('Ошибка из PG.xtx', 'w') as f:
             f.write(f'{ex}')
     logger.success(datetime.now() - start_time)
 

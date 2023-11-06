@@ -1,4 +1,5 @@
 import datetime
+import re
 from pprint import pprint
 
 from django.contrib import messages
@@ -519,32 +520,56 @@ def cut_state(request, delivery_id, delivery_nums_id):
             messages.success(request, 'Успешно!')
         else:
             user = request.user
-            number_from = request.POST.get('number_range_form.number_from', None)
-            number_to = request.POST.get('number_range_form.number_to', None)
-            if number_from and number_to:
-                number_from, number_to = int(number_from), int(number_to)
-            if (delivery.products_count >= number_from > 0
-                    and delivery.products_count >= number_to > 0
-                    and number_to >= number_from):
-                take_nums = set(range(number_from, number_to + 1))
-                av_nums = set(nums.available_numbers)
-                result = take_nums - av_nums
-                if len(result) == 0:
-                    [nums.ready_numbers.append(i) for i in take_nums]
-                    nums.save()
-                    [nums2.available_numbers.append(i) for i in take_nums]
-                    nums2.save()
+            numbers: str = request.POST.get('numbers', None)
+            message = (f'Ошибка во вводе номеров!{numbers}'
+                       '\nУказать номера необходимо через пробел,'
+                       ' запятую или же через "-"(интервал с и по какой номер).')
 
-                    delivery_works = DeliveryWorks(
-                        delivery=delivery,
-                        state=nums.state,
-                        user=user,
-                        nums=take_nums
-                    )
-                    delivery_works.save()
-                    messages.success(request, 'Успешно!')
+            if not numbers:
+                messages.error(request, f'Не указан номер(а)!')
+                return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
+            numbers = re.sub(r'[^0-9\s, -]+', '', numbers)
+
+            if '-' in numbers:
+                number_from, number_to = int(numbers.split('-')[0]), int(numbers.split('-')[1])
+                if (delivery.products_count >= number_from > 0
+                        and delivery.products_count >= number_to > 0
+                        and number_to >= number_from):
+                    take_nums = list(range(number_from, number_to + 1))
                 else:
-                    messages.error(request, f'Ошибка во вводе! {result}')
+                    messages.error(request, message)
+                    return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
+
+            elif ',' in numbers:
+                take_nums = sorted(list(set(int(i.strip()) for i in numbers.split(',') if i)))
+                if not take_nums:
+                    messages.error(request, message)
+                    return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
             else:
-                messages.error(request, 'Ошибка во вводе!')
+                take_nums = sorted(list(set(int(i.strip()) for i in numbers.split() if i)))
+                if not take_nums:
+                    messages.error(request, message)
+                    return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
+
+            av_nums = set(nums.available_numbers)
+            result = set(take_nums) - av_nums
+            logger.debug(result)
+            if len(result) == 0:
+                [nums.ready_numbers.append(i) for i in take_nums]
+                nums.save()
+                [nums2.available_numbers.append(i) for i in take_nums]
+                nums2.save()
+
+                delivery_works = DeliveryWorks(
+                    delivery=delivery,
+                    state=nums.state,
+                    user=user,
+                    nums=take_nums
+                )
+                delivery_works.save()
+                messages.success(request, 'Успешно!')
+            else:
+                result_str = ", ".join(map(str, result))
+                messages.error(request, f'Эти номера не доступны: {result_str}')
+
         return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))

@@ -27,7 +27,7 @@ class DeliveryState(models.Model):
     ]
     name = models.CharField(verbose_name='Название этапа', max_length=100)
     number = models.IntegerField(verbose_name='Номер этапа')
-    num_emp = models.IntegerField(verbose_name='Кол-во людей', default=1)
+    num_emp = models.IntegerField(verbose_name='Кол-во человек', default=1)
     standard = models.ForeignKey(Standards, on_delete=models.SET_NULL, verbose_name='Вид работ', blank=True, null=True)
     type = models.CharField(
         verbose_name='Тип',
@@ -47,8 +47,10 @@ class Delivery(models.Model):
     closedAt = models.DateTimeField(verbose_name='Дата закрытия поставки', null=True, blank=True)
     scanDt = models.DateTimeField(verbose_name='Дата скана поставки', null=True, blank=True)
     done = models.BooleanField(verbose_name='Флаг закрытия поставки', null=True, blank=True)
-    products_count = models.IntegerField(verbose_name='Количество товаров', blank=True)
+    products_count = models.IntegerField(verbose_name='Количество товаров', null=True, blank=True)
+    lists = models.IntegerField(verbose_name='Количество листов', null=True, blank=True)
     products = models.JSONField(verbose_name='Артикулы товаров', blank=True, null=True)
+    products_nums_on_list = models.JSONField(verbose_name='Номера на листах', blank=True, null=True)
     price = models.IntegerField(verbose_name='Цена', blank=True, null=True)
     type = models.CharField(verbose_name='Апи', null=True, max_length=100)
     type_d = models.CharField(verbose_name='Тип товаров', null=True, max_length=100)
