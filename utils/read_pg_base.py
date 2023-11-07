@@ -40,10 +40,13 @@ def update_base_postgresql():
                 with connection.cursor() as cursor:
                     cursor.execute(
                         """SELECT name_file, COUNT(*) AS record_count, MIN(update_timestamp) AS first_update_timestamp,
-                                JSONB_OBJECT_AGG(num_on_list, art) AS art_dict, MIN(lists)
+                                JSONB_OBJECT_AGG(num_on_list, 
+                                JSONB_BUILD_OBJECT('quantity', num, 'art', art, 'comp', machin)) AS art_dict, 
+                                MIN(lists)
                                 FROM orders
                                 GROUP BY name_file
                                 """)
+
                     rows = cursor.fetchall()
                     for row in rows:
                         name_file, record_count, first_update_timestamp, art_dict, lists = row
@@ -56,7 +59,7 @@ def update_base_postgresql():
                                 'createdAt': created_at_utc,
                                 'products_count': record_count,
                                 'products': [],
-                                'products_nums_on_list': art_dict,
+                                'products_nums_on_list': art_dict if '0' not in art_dict else {},
                                 'lists': lists,
                                 'type': 'Программа',
                                 "type_d": 'badges' if index == 0 else 'posters'

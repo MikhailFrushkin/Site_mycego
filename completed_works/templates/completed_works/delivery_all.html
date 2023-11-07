@@ -26,9 +26,10 @@
     <div class="col">
         <h2>Поставки со значками</h2>
         <ul>
-            {% for item in delivery_badges %}
+            {% for item, state in delivery_badges.items %}
             <li>
-                <a href="{% url 'completed_works:delivery_view' item.id %}"><span class="green">{{ forloop.counter }}.</span> {{ item }}</a>
+                <a href="{% url 'completed_works:delivery_view' item.id %}">
+                    <span class="green">{{ forloop.counter }}.</span> {{ item }} - {{state}}</a>
             </li>
             {% endfor %}
         </ul>
@@ -36,9 +37,10 @@
     <div class="col">
         <h2>Поставки с постерами</h2>
         <ul>
-            {% for item in delivery_posters %}
+            {% for item, state in delivery_posters.items %}
             <li>
-                <a href="{% url 'completed_works:delivery_view' item.id %}"><span class="green">{{ forloop.counter }}.</span> {{ item }}</a>
+                <a href="{% url 'completed_works:delivery_view' item.id %}">
+                    <span class="green">{{ forloop.counter }}.</span> {{ item }} - {{state}}</a>
             </li>
             {% endfor %}
         </ul>

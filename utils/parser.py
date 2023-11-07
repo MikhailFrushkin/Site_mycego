@@ -207,6 +207,7 @@ def create_rows_delivery(data_list):
                 temp = Delivery.objects.get(name=key, type_d=value['type_d'])
                 temp.products_nums_on_list = value['products_nums_on_list']
                 temp.lists = value['lists']
+                temp.products_count = len(value['products_nums_on_list'])
                 temp.save()
             except Delivery.DoesNotExist:
                 try:
@@ -215,7 +216,6 @@ def create_rows_delivery(data_list):
                         name=key,
                         createdAt=value['createdAt'],
                         products_count=value['products_count'],
-                        products=list(map(str.upper, value['products'])),
                         products_nums_on_list=value['products_nums_on_list'],
                         lists=value['lists'],
                         type=value['type'],

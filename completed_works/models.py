@@ -50,13 +50,27 @@ class Delivery(models.Model):
     products_count = models.IntegerField(verbose_name='Количество товаров', null=True, blank=True)
     lists = models.IntegerField(verbose_name='Количество листов', null=True, blank=True)
     products = models.JSONField(verbose_name='Артикулы товаров', blank=True, null=True)
-    products_nums_on_list = models.JSONField(verbose_name='Номера на листах', blank=True, null=True)
+    products_nums_on_list = models.JSONField(verbose_name='Номера на листах', blank=True, null=True, default=dict)
     price = models.IntegerField(verbose_name='Цена', blank=True, null=True)
     type = models.CharField(verbose_name='Апи', null=True, max_length=100)
     type_d = models.CharField(verbose_name='Тип товаров', null=True, max_length=100)
     updated_at = models.DateTimeField(auto_now=True)
     state = models.ForeignKey(DeliveryState, on_delete=models.PROTECT, verbose_name='Этап поставки', blank=True,
                               null=True)
+
+    def save(self, *args, **kwargs):
+        super(Delivery, self).save(*args, **kwargs)
+        if self.products_nums_on_list:
+            if DeliveryNums.objects.filter(delivery=self).count() == 0:
+                if self.type_d == "badges":
+                    delivery_states = DeliveryState.objects.filter(type="Значки").order_by('number')
+                else:
+                    delivery_states = DeliveryState.objects.filter(type="Постеры").order_by('number')
+                for state in delivery_states:
+                    try:
+                        DeliveryNums.objects.create(delivery=self, state=state)
+                    except Exception as ex:
+                        logger.error(ex)
 
     def __str__(self):
         return f"{self.name}"
@@ -83,7 +97,7 @@ class DeliveryNums(models.Model):
 
     def save(self, *args, **kwargs):
         if self.delivery.products_count:
-            all_nums = list(range(1, self.delivery.products_count + 1))
+            all_nums = list(range(1, len(self.delivery.products_nums_on_list) + 1))
             if self.state and self.state.name == 'Печать':
                 self.available_numbers = all_nums
 
@@ -144,14 +158,17 @@ class WorkRecordQuantity(models.Model):
         verbose_name = "Количество работы"
         verbose_name_plural = "Количества работы"
 
-
-@receiver(post_save, sender=Delivery)
-def create_delivery_nums(sender, instance, created, **kwargs):
-    if created:
-        if instance.type_d == "badges":
-            delivery_states = DeliveryState.objects.filter(type="Значки").order_by('number')
-        else:
-            delivery_states = DeliveryState.objects.filter(type="Постеры").order_by('number')
-
-        for state in delivery_states:
-            DeliveryNums.objects.create(delivery=instance, state=state)
+# @receiver(post_save, sender=Delivery)
+# def create_delivery_nums(sender, instance, created, **kwargs):
+#     if created:
+#         if len(instance.products_nums_on_list) == 0:
+#             logger.error(instance)
+#             return
+#         logger.success(instance)
+#         if instance.type_d == "badges":
+#             delivery_states = DeliveryState.objects.filter(type="Значки").order_by('number')
+#         else:
+#             delivery_states = DeliveryState.objects.filter(type="Постеры").order_by('number')
+#
+#         for state in delivery_states:
+#             DeliveryNums.objects.create(delivery=instance, state=state)

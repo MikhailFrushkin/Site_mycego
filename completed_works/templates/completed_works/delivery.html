@@ -145,46 +145,51 @@
 <br><br><br><br><br>
 <h2>Информация о поставке</h2>
 <p>Поставка: {{ delivery.name }}</p>
-<ul>
-    <li>Идентификатор поставки:
-        {% if delivery.id_wb != 'no' %}
-        {{ delivery.id_wb }}
-        {% else %}
-        -
-        {% endif %}
-    </li>
-    <li>Дата создания поставки:
-        {% if delivery.createdAt %}
-        {{ delivery.createdAt }}
-        {% else %}
-        -
-        {% endif %}
-    </li>
-    <li>Дата закрытия поставки:
-        {% if delivery.closedAt %}
-        {{ delivery.closedAt }}
-        {% else %}
-        -
-        {% endif %}
-    </li>
-    <li>Дата скана поставки:
-        {% if delivery.scanDt %}
-        {{ delivery.scanDt }}
-        {% else %}
-        -
-        {% endif %}
-    </li>
-    <li>Количество товаров: {{ delivery.products_count }}</li>
-    <li>Апи: {{ delivery.type }}</li>
-    <li>Обновлено: {{ delivery.updated_at }}</li>
-    <li>Товары:</li>
-    {% for product in delivery.products %}
-    <li>{{ forloop.counter }}.{{ product }}</li>
-    {% endfor %}
-</ul>
+<p>Идентификатор поставки:
+    {% if delivery.id_wb != 'no' %}
+    {{ delivery.id_wb }}
+    {% else %}
+    -
+    {% endif %}
+</p>
+<p>Дата создания поставки:
+    {% if delivery.createdAt %}
+    {{ delivery.createdAt }}
+    {% else %}
+    -
+    {% endif %}
+</p>
+<p>Дата закрытия поставки:
+    {% if delivery.closedAt %}
+    {{ delivery.closedAt }}
+    {% else %}
+    -
+    {% endif %}
+</p>
+<p>Дата скана поставки:
+    {% if delivery.scanDt %}
+    {{ delivery.scanDt }}
+    {% else %}
+    -
+    {% endif %}
+</p>
+<p>Количество товаров: {{ delivery.products_count }}</p>
+<p>Обновлено: {{ delivery.updated_at }}</p>
+
+<!--<div class="col">-->
+<!--    <h2>Список товаров с WB:</h2>-->
+<!--    <ul>-->
+<!--        {% for product in delivery.products %}-->
+<!--        <li>{{ forloop.counter }}.{{ product }}</li>-->
+<!--        {% endfor %}-->
+<!--    </ul>-->
+<!--</div>-->
+<!--<div class="col">-->
+
+<h2>Номера из программы 	&#128512;</h2>
 <ul>
 {% for key, value in delivery.products_nums_on_list.items %}
-    <li>{{key}}:{{value}}</li>
+    <li>{{key}}:{{value.art}}</li>
 {% endfor %}
-{% endblock %}
 </ul>
+{% endblock %}

@@ -2,6 +2,23 @@ from django.contrib import admin
 from .models import Standards, WorkRecord, WorkRecordQuantity, Delivery, DeliveryState, DeliveryWorks, DeliveryNums
 
 
+class AdminDelivery(admin.ModelAdmin):
+    list_display = [
+        'id',
+        'id_wb',
+        'name',
+        'createdAt',
+        'closedAt',
+        'products_count',
+        'products_nums_on_list',
+    ]
+    search_fields = ('id_wb', 'name')
+    list_per_page = 100
+
+
+admin.site.register(Delivery, AdminDelivery)
+
+
 class AdminDeliveryNums(admin.ModelAdmin):
     list_display = [field.name for field in DeliveryNums._meta.fields]
     list_filter = ('status',)
@@ -55,22 +72,3 @@ class AdminWorkRecordQuantity(admin.ModelAdmin):
 
 
 admin.site.register(WorkRecordQuantity, AdminWorkRecordQuantity)
-
-
-class AdminDelivery(admin.ModelAdmin):
-    list_display = [
-        'id',
-        'id_wb',
-        'name',
-        'createdAt',
-        'closedAt',
-        'products_count',
-        'price',
-        'type',
-        'updated_at'
-    ]
-    search_fields = ('id_wb', 'name')
-    list_per_page = 100
-
-
-admin.site.register(Delivery, AdminDelivery)

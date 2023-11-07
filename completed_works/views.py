@@ -447,17 +447,29 @@ class AllDelivery(ListView):
     def get_queryset(self):
         current_datetime = timezone.now()
         start_date = current_datetime - datetime.timedelta(days=5)
-        queryset = Delivery.objects.filter(
-            Q(createdAt__gt=start_date) & ~Q(name__icontains='заказ') & ~Q(name__icontains='ЗАКАЗ') & ~Q(
-                name__icontains='Заказ')
-        ).exclude(closedAt__isnull=False).order_by('createdAt')
+        queryset = (Delivery.objects.filter(
+            Q(createdAt__gt=start_date))
+                    .exclude(Q(products_nums_on_list={}) | Q(products_nums_on_list=None) | Q(products_nums_on_list=''))
+                    .exclude(closedAt__isnull=False).order_by('createdAt'))
         return queryset
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         queryset = self.get_queryset()
-        context['delivery_badges'] = queryset.filter(type_d='badges')
-        context['delivery_posters'] = queryset.filter(type_d='posters')
+        delivery_badges = {}
+        temp_q = queryset.filter(type_d='badges')
+        for i in temp_q:
+            state = DeliveryNums.objects.filter(delivery=i, status=False).order_by('state__number').first().state.name
+            delivery_badges[i] = state
+        context['delivery_badges'] = delivery_badges
+
+        delivery_posters = {}
+        temp_q = queryset.filter(type_d='posters')
+        for i in temp_q:
+            state = DeliveryNums.objects.filter(delivery=i, status=False).order_by('state__number').first().state.name
+            delivery_posters[i] = state
+        context['delivery_posters'] = delivery_posters
+
         return context
 
 
@@ -485,6 +497,7 @@ class DeliveryView(TemplateView):
             delivery_works_by_state[state] = (works, delivery_nums)
         name = DeliveryNums.objects.filter(delivery=delivery, status=False).order_by('state__number').first().state.name
         context['state'] = name
+        logger.debug(name)
         context['delivery_works_by_state'] = delivery_works_by_state
         context['count_state'] = DeliveryState.objects.filter(type=type_state).count()
         return context
