@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import time
 from datetime import datetime, timedelta
 from pprint import pprint
@@ -175,8 +176,10 @@ def create_rows_delivery(data_list):
     state_badge = DeliveryState.objects.get(name='Печать', type='Значки')
     state_poster = DeliveryState.objects.get(name='Печать', type='Постеры')
     for data in data_list:
+        pattern = r'[\\/:"*?<>|]'
+        name = re.sub(pattern, '', data['name'])
         try:
-            delivery_instance = Delivery.objects.get(name=data['name'], createdAt=data['createdAt'])
+            delivery_instance = Delivery.objects.get(name=name, createdAt=data['createdAt'])
             delivery_instance.closedAt = data['closedAt']
             delivery_instance.scanDt = data['scanDt']
             delivery_instance.done = data['done']
@@ -185,7 +188,7 @@ def create_rows_delivery(data_list):
             try:
                 created_ins = Delivery(
                     id_wb=data['id'],
-                    name=data['name'],
+                    name=name,
                     createdAt=data['createdAt'],
                     closedAt=data['closedAt'],
                     scanDt=data['scanDt'],
@@ -203,8 +206,10 @@ def create_rows_delivery(data_list):
                 logger.error(ex)
     if data_pg:
         for key, value in data_pg.items():
+            pattern = r'[\\/:"*?<>|]'
+            name = re.sub(pattern, '', key)
             try:
-                temp = Delivery.objects.get(name=key, type_d=value['type_d'])
+                temp = Delivery.objects.get(name=name, type_d=value['type_d'])
                 temp.products_nums_on_list = value['products_nums_on_list']
                 temp.lists = value['lists']
                 temp.products_count = len(value['products_nums_on_list'])
@@ -213,7 +218,7 @@ def create_rows_delivery(data_list):
                 try:
                     created_ins = Delivery(
                         id_wb='no',
-                        name=key,
+                        name=name,
                         createdAt=value['createdAt'],
                         products_count=value['products_count'],
                         products_nums_on_list=value['products_nums_on_list'],

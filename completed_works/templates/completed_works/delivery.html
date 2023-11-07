@@ -63,7 +63,8 @@
 {% endblock %}
 
 {% block content %}
-<p>Поставка: <span class="green">{{ delivery.name }} (Артикулов: {{ delivery.products_count }})</span></p>
+<p>Поставка: <span class="green">{{ delivery.name }} (Артикулов: {{ delivery.products_count }},
+    Листов: {{ delivery.lists }})</span></p>
 <p>Этап поставки: <span class="green">{{ state }}</span></p>
 <br><br>
 {% for state, work in delivery_works_by_state.items %}
@@ -189,7 +190,7 @@
 <h2>Номера из программы 	&#128512;</h2>
 <ul>
 {% for key, value in delivery.products_nums_on_list.items %}
-    <li>{{key}}:{{value.art}}</li>
+    <li>{{key}}: {{value.art}} ({{value.quantity}} шт.)</li>
 {% endfor %}
 </ul>
 {% endblock %}
