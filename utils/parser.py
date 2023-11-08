@@ -178,13 +178,15 @@ def create_rows_delivery(data_list):
     for data in data_list:
         pattern = r'[\\/:"*?<>|]'
         name = re.sub(pattern, '', data['name'])
-        try:
-            delivery_instance = Delivery.objects.get(name=name, createdAt=data['createdAt'])
+        delivery_instance = Delivery.objects.filter(name=name, createdAt=data['createdAt']).order_by(
+            'createdAt').first()
+
+        if delivery_instance:
             delivery_instance.closedAt = data['closedAt']
             delivery_instance.scanDt = data['scanDt']
             delivery_instance.done = data['done']
             delivery_instance.save()
-        except:
+        else:
             try:
                 created_ins = Delivery(
                     id_wb=data['id'],
@@ -208,13 +210,14 @@ def create_rows_delivery(data_list):
         for key, value in data_pg.items():
             pattern = r'[\\/:"*?<>|]'
             name = re.sub(pattern, '', key)
-            try:
-                temp = Delivery.objects.get(name=name, type_d=value['type_d'])
-                temp.products_nums_on_list = value['products_nums_on_list']
-                temp.lists = value['lists']
-                temp.products_count = len(value['products_nums_on_list'])
-                temp.save()
-            except Delivery.DoesNotExist:
+            delivery_instance = Delivery.objects.filter(name=name, type_d=value['type_d']).order_by('createdAt').first()
+
+            if delivery_instance:
+                delivery_instance.products_nums_on_list = value['products_nums_on_list']
+                delivery_instance.lists = value['lists']
+                delivery_instance.products_count = len(value['products_nums_on_list'])
+                delivery_instance.save()
+            else:
                 try:
                     created_ins = Delivery(
                         id_wb='no',
@@ -246,12 +249,12 @@ def update_rows_delivery():
         delivery_list, seller = parser_wb_delivery(api_key=api_key2, seller='Андрей')
         data_list = result_list_data(delivery_list, data_list=data_list, api_key=api_key2, seller=seller)
     except Exception as ex:
-        with open('Ошибка парсинга WB.xtx', 'w') as f:
+        with open('Ошибка парсинга WB.txt', 'w') as f:
             f.write(f'{ex}')
     try:
         create_rows_delivery(data_list)
     except Exception as ex:
-        with open('Ошибка из PG.xtx', 'w') as f:
+        with open('Ошибка записи в базу.txt', 'w') as f:
             f.write(f'{ex}')
     logger.success(datetime.now() - start_time)
 

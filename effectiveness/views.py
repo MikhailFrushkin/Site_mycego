@@ -55,8 +55,6 @@ class StatisticViewBad(LoginRequiredMixin, TemplateView):
             week_data[year].add(week)
 
         inactive_employees = []
-        none_work_users = Appointment.objects.all().values('user_id')
-        unique_user_ids = total_employees - len(set([item['user_id'] for item in none_work_users]))
 
         for user in users:
             closest_appointment = (Appointment.objects.filter(
@@ -80,7 +78,7 @@ class StatisticViewBad(LoginRequiredMixin, TemplateView):
         context['inactive_employees'] = sorted(
             inactive_employees, key=lambda x: x[2], reverse=True)
 
-        context['active_employees'] = total_employees - len(context['inactive_employees']) - unique_user_ids
+        context['active_employees'] = total_employees_work - len(context['inactive_employees'])
 
         past_date = current_date - timezone.timedelta(weeks=1)
         current_date = current_date - timezone.timedelta(days=1)

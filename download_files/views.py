@@ -53,6 +53,8 @@ class DownloadFiles(LoginRequiredMixin, FormView):
                         logger.error(i[0])
                         logger.error(ex)
                         bad_users.append(i[0])
+                if bad_users:
+                    messages.error(self.request, f'Не найденные имена на сайте {bad_users}')
                 with open('Не найденные ники в базе.txt', 'w') as f:
                     f.write('\n'.join(bad_users))
             except Exception as ex:
@@ -86,11 +88,12 @@ class DownloadFiles(LoginRequiredMixin, FormView):
                 except Exception as ex:
                     with open('Ошибки при запси отпечаток.txt', 'a') as f:
                         f.write(f"{ex} {row['Name']}\n")
-
+            mes = ', '.join(set(not_user_in_db))
+            if mes:
+                messages.error(self.request, f'Не найденные имена на сайте {mes}')
             with open('Нет таких ников в базе сайта.txt', 'w') as f:
-                f.write('\n'.join(set(not_user_in_db)))
+                f.write(mes)
 
-        messages.success(self.request, f'Успешно!')
         return super().form_valid(form)
 
 # class DownloadFiles(LoginRequiredMixin, FormView):

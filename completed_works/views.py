@@ -369,7 +369,8 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
 
         queryset = WorkRecord.objects.filter(
             date__year=year,
-            date__week=week
+            date__week=week,
+            delivery=None
         )
         logger.debug(queryset)
         self._queryset = queryset  # Сохраняем результат в атрибуте _queryset
@@ -385,7 +386,7 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
             work_records_data = []
             flag = True
 
-            work_lists = queryset.filter(date=date, delivery=None)
+            work_lists = queryset.filter(date=date)
 
             for work_list in work_lists:
                 work_record_data = {
@@ -396,6 +397,67 @@ class ViewWorksAdmin(LoginRequiredMixin, ListView, FormView):
                     'is_checked': work_list.is_checked,
                     'comment': work_list.comment,
                     'works': work_list.workrecordquantity_set.values('id', 'standard__name', 'quantity')
+                }
+                if not work_list.is_checked:
+                    flag = False
+                work_records_data.append(work_record_data)
+
+            work_records_data = sorted(work_records_data, key=lambda x: x['is_checked'])
+            work_lists_dict[date] = (work_records_data, flag)
+        context['work_lists_dict'] = work_lists_dict
+        context['year'], context['week'] = get_year_week(self.request.GET, 'list_work')
+        return context
+
+
+class ViewWorksDeliveryAdmin(LoginRequiredMixin, ListView, FormView):
+    model = WorkRecord
+    form_class = WorkRecordQuantityForm
+    template_name = 'completed_works/view_works_admin_delivery.html'
+    login_url = '/users/login/'
+    success_url = reverse_lazy('completed_works:delivery_view_admin')
+
+    def get_queryset(self):
+        if hasattr(self, '_queryset'):
+            return self._queryset
+
+        year = self.request.GET.get('year')
+        week = self.request.GET.get('week')
+        if not year or not week:
+            import datetime
+            today = datetime.date.today()
+            year = today.year
+            week = today.isocalendar()[1]
+
+        queryset = WorkRecord.objects.filter(
+            date__year=year,
+            date__week=week
+        ).exclude(delivery=None)
+        logger.debug(queryset)
+        self._queryset = queryset
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        queryset = self.get_queryset()
+
+        work_lists_dict = {}
+        unique_dates = queryset.values_list('date', flat=True).distinct().order_by('date')
+        for date in unique_dates:
+            work_records_data = []
+            flag = True
+
+            work_lists = queryset.filter(date=date)
+
+            for work_list in work_lists:
+                work_record_data = {
+                    'id': work_list.id,
+                    'user': work_list.user,
+                    'date': work_list.date,
+                    'hours': work_list.hours,
+                    'is_checked': work_list.is_checked,
+                    'comment': work_list.comment,
+                    'works': work_list.workrecordquantity_set.values('id', 'standard__name', 'quantity'),
+                    'delivery': work_list.delivery
                 }
                 if not work_list.is_checked:
                     flag = False
@@ -457,14 +519,14 @@ class AllDelivery(ListView):
         context = super().get_context_data(**kwargs)
         queryset = self.get_queryset()
         delivery_badges = {}
-        temp_q = queryset.filter(type_d='badges')
+        temp_q = queryset.filter(type_d='badges').order_by('state')
         for i in temp_q:
             state = DeliveryNums.objects.filter(delivery=i, status=False).order_by('state__number').first().state.name
             delivery_badges[i] = state
         context['delivery_badges'] = delivery_badges
 
         delivery_posters = {}
-        temp_q = queryset.filter(type_d='posters')
+        temp_q = queryset.filter(type_d='posters').order_by('state')
         for i in temp_q:
             state = DeliveryNums.objects.filter(delivery=i, status=False).order_by('state__number').first().state.name
             delivery_posters[i] = state
@@ -495,26 +557,30 @@ class DeliveryView(TemplateView):
             works = DeliveryWorks.objects.filter(delivery=delivery.id, state=state)
             delivery_nums = DeliveryNums.objects.get(delivery=delivery.id, state=state)
             delivery_works_by_state[state] = (works, delivery_nums)
-        name = DeliveryNums.objects.filter(delivery=delivery, status=False).order_by('state__number').first().state.name
-        context['state'] = name
-        logger.debug(name)
+
+        delivery.state = (DeliveryNums.objects.filter(delivery=delivery, status=False)
+                          .order_by('state__number').first().state)
+        delivery.save()
+
         context['delivery_works_by_state'] = delivery_works_by_state
         context['count_state'] = DeliveryState.objects.filter(type=type_state).count()
         return context
 
 
-class DeliveryViewAdmin(ListView):
-    model = Delivery
-    template_name = 'completed_works/delivery_admin.html'
-
 
 def cut_state(request, delivery_id, delivery_nums_id):
     if request.method == 'POST':
+        user = request.user
+
         delivery = Delivery.objects.get(pk=delivery_id)
+        arts_dict = delivery.products_nums_on_list
         nums = DeliveryNums.objects.get(id=delivery_nums_id)
-        after_state = nums.state.number + 1
+        state = nums.state
+        current_state = state.number
+        after_state = current_state + 1
         nums2 = DeliveryNums.objects.get(delivery=delivery.id, state__number=after_state)
-        if nums.state.num_emp == 1:
+
+        if state.num_emp == 1:
             nums_av = nums.available_numbers
             [nums.ready_numbers.append(i) for i in nums_av]
             nums.save()
@@ -522,12 +588,38 @@ def cut_state(request, delivery_id, delivery_nums_id):
             [nums2.available_numbers.append(i) for i in nums_av]
             nums2.save()
 
-            user = request.user
+            work_record = WorkRecord.objects.create(user=user, date=datetime.date.today(), delivery=delivery)
+            work_record.save()
+            standard = state.standard
+            quantity = 0
+            if state.type_quantity == 'В листах':
+                if delivery.type_d == 'posters':
+                    quantity = sum(arts_dict[str(i)].get('quantity') for i in nums_av)
+            elif state.type_quantity == 'В кол-во арт.':
+                quantity = len(nums_av)
+            elif state.type_quantity == 'В шт.':
+                quantity = sum(arts_dict[str(i)].get('quantity') for i in nums_av)
+
+            if current_state == 1:
+                if delivery.machin == 'Большой принтер':
+                    if delivery.type_d == 'badges':
+                        standard = Standards.objects.get(name='Печать постеров КОНИКА( в листах)')
+                    elif delivery.type_d == 'posters':
+                        standard = Standards.objects.get(name='Печать постеров КОНИКА( в листах)')
+
+                quantity = delivery.lists
+
+            work = WorkRecordQuantity.objects.create(work_record=work_record,
+                                                     standard=standard,
+                                                     quantity=quantity)
+            work.save()
+
             delivery_works = DeliveryWorks(
                 delivery=delivery,
-                state=nums.state,
+                state=state,
                 user=user,
-                nums=nums_av
+                nums=nums_av,
+                quantity=quantity
             )
             delivery_works.save()
             messages.success(request, 'Успешно!')
@@ -566,20 +658,37 @@ def cut_state(request, delivery_id, delivery_nums_id):
 
             av_nums = set(nums.available_numbers)
             result = set(take_nums) - av_nums
-            logger.debug(result)
             if len(result) == 0:
                 [nums.ready_numbers.append(i) for i in take_nums]
                 nums.save()
                 [nums2.available_numbers.append(i) for i in take_nums]
                 nums2.save()
 
+                work_record = WorkRecord.objects.create(user=user, date=datetime.date.today(), delivery=delivery)
+                work_record.save()
+
+                standard = state.standard
+                quantity = 0
+                if state.type_quantity == 'В листах':
+                    quantity = sum(arts_dict[str(i)].get('quantity') for i in take_nums)
+                elif state.type_quantity == 'В кол-во арт.':
+                    quantity = len(take_nums)
+                elif state.type_quantity == 'В шт.':
+                    quantity = sum(arts_dict[str(i)].get('quantity') for i in take_nums)
+                work = WorkRecordQuantity.objects.create(work_record=work_record,
+                                                         standard=standard,
+                                                         quantity=quantity)
+                work.save()
+
                 delivery_works = DeliveryWorks(
                     delivery=delivery,
                     state=nums.state,
                     user=user,
-                    nums=take_nums
+                    nums=take_nums,
+                    quantity=quantity
                 )
                 delivery_works.save()
+
                 messages.success(request, 'Успешно!')
             else:
                 result_str = ", ".join(map(str, result))

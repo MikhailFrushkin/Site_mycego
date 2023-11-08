@@ -63,9 +63,11 @@
 {% endblock %}
 
 {% block content %}
+<a href="{% url 'completed_works:delivery' %}"><h2>&#128281;Назад</h2></a>
+<br><br>
 <p>Поставка: <span class="green">{{ delivery.name }} (Артикулов: {{ delivery.products_count }},
     Листов: {{ delivery.lists }})</span></p>
-<p>Этап поставки: <span class="green">{{ state }}</span></p>
+<p>Этап поставки: <span class="green">{{ delivery.state }}</span></p>
 <br><br>
 {% for state, work in delivery_works_by_state.items %}
     {% if forloop.counter < count_state %}
@@ -76,7 +78,7 @@
         {% endif %}
     </h2>
     {% for i in work.0 %}
-        <p class="work"> {{ forloop.counter }}. {{ i.user }}: {{ i.nums }}</p>
+        <p class="work"> {{ forloop.counter }}. {{ i.user }}(Кол-во: {{ i.quantity }}) Номера: {{ i.nums }}</p>
     {% endfor %}
 
     {% if work.1.available_numbers %}

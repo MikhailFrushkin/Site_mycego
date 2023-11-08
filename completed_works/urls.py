@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import create_work_record, ViewWorks, ViewWorksAdmin, update_work_quantities, delete_work_record, \
     create_work_record_admin_add, save_all_row, WorkRecordDetailView, create_work_record_delivery, \
-    create_work_record_admin_add_delivery, AllDelivery, DeliveryView, DeliveryViewAdmin, cut_state
+    create_work_record_admin_add_delivery, AllDelivery, DeliveryView, ViewWorksDeliveryAdmin, cut_state
 
 app_name = 'completed_works'
 
@@ -23,7 +23,7 @@ urlpatterns = [
 
     path('all_delivery/', AllDelivery.as_view(), name='delivery'),
     path('delivery/<int:delivery_id>/', DeliveryView.as_view(), name='delivery_view'),
-    path('delivery_admin/', DeliveryViewAdmin.as_view(), name='delivery_view_admin'),
+    path('delivery_admin/', ViewWorksDeliveryAdmin.as_view(), name='delivery_view_admin'),
 
     path('cut_state/<int:delivery_id>/<int:delivery_nums_id>/', cut_state, name='cut_state'),
 

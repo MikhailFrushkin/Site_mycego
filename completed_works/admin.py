@@ -10,7 +10,8 @@ class AdminDelivery(admin.ModelAdmin):
         'createdAt',
         'closedAt',
         'products_count',
-        'products_nums_on_list',
+        'state',
+        'machin'
     ]
     search_fields = ('id_wb', 'name')
     list_per_page = 100
@@ -31,6 +32,8 @@ admin.site.register(DeliveryNums, AdminDeliveryNums)
 
 class AdminDeliveryStage(admin.ModelAdmin):
     list_display = [field.name for field in DeliveryState._meta.fields]
+    ordering = ('type', 'number')
+    list_editable = ('type_quantity', )
 
 
 admin.site.register(DeliveryState, AdminDeliveryStage)

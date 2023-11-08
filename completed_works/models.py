@@ -25,15 +25,26 @@ class DeliveryState(models.Model):
         ('Значки', 'Значки'),
         ('Постеры', 'Постеры'),
     ]
+    TYPE_CHOICES2 = [
+        ('В листах', 'В листах'),
+        ('В кол-во арт.', 'В кол-во арт.'),
+        ('В шт.', 'В шт.'),
+    ]
     name = models.CharField(verbose_name='Название этапа', max_length=100)
     number = models.IntegerField(verbose_name='Номер этапа')
     num_emp = models.IntegerField(verbose_name='Кол-во человек', default=1)
     standard = models.ForeignKey(Standards, on_delete=models.SET_NULL, verbose_name='Вид работ', blank=True, null=True)
     type = models.CharField(
         verbose_name='Тип',
-        max_length=10,
+        max_length=20,
         choices=TYPE_CHOICES,
         default='Значки'
+    )
+    type_quantity = models.CharField(
+        verbose_name='В чем измеряется',
+        max_length=20,
+        choices=TYPE_CHOICES2,
+        default='В шт.'
     )
 
     def __str__(self):
@@ -57,10 +68,16 @@ class Delivery(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     state = models.ForeignKey(DeliveryState, on_delete=models.PROTECT, verbose_name='Этап поставки', blank=True,
                               null=True)
+    machin = models.CharField(verbose_name='Компьютер', null=True, max_length=100)
 
     def save(self, *args, **kwargs):
         super(Delivery, self).save(*args, **kwargs)
         if self.products_nums_on_list:
+            try:
+                self.machin = self.products_nums_on_list.get('1').get('comp')
+                super(Delivery, self).save(*args, **kwargs)
+            except Exception as ex:
+                logger.error(ex)
             if DeliveryNums.objects.filter(delivery=self).count() == 0:
                 if self.type_d == "badges":
                     delivery_states = DeliveryState.objects.filter(type="Значки").order_by('number')

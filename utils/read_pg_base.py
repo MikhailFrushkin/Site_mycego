@@ -67,7 +67,7 @@ def update_base_postgresql():
             print(len(data))
         except Exception as ex:
             logger.error(ex)
-    pprint(data)
+    # pprint(data)
     return data
 
 
