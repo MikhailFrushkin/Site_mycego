@@ -17,6 +17,12 @@ from environs import Env
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
 
+env = Env()
+env.read_env()
+key = env.str('SECRET_KEY')
+api_key1 = env.str('api_key1')
+api_key2 = env.str('api_key2')
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,7 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--0^q6z#-$6du1&a_q-^q!+6xi-2c+3$bin=8q1apv#1(t#9c*4'
+SECRET_KEY = key
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -130,7 +136,6 @@ REST_FRAMEWORK = {
     ]
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -213,11 +218,14 @@ AUTH_USER_MODEL = 'users.CustomUser'
 PASSWORD_RESET_TIMEOUT = 3600  # Срок действия сброса пароля в секундах (1 час)
 PASSWORD_RESET_TIMEOUT_DAYS = 1  # Срок действия сброса пароля в днях (1 день)
 
+email_user = env.str('EMAIL_HOST_USER')
+email_host = env.str('EMAIL_HOST_PASSWORD')
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.mail.ru'
 EMAIL_PORT = 2525
-EMAIL_HOST_USER = "mycego@mail.ru"
-EMAIL_HOST_PASSWORD = "kfTcbN4AHTxkHhVxLica"
+EMAIL_HOST_USER = email_user
+EMAIL_HOST_PASSWORD = email_host
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 DEFAULT_FROM_EMAIL = 'mycego@mail.ru'
@@ -225,8 +233,3 @@ DEFAULT_FROM_EMAIL = 'mycego@mail.ru'
 DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'backup/')}
 
-env = Env()
-env.read_env()
-
-api_key1 = env.str('api_key1')
-api_key2 = env.str('api_key2')
