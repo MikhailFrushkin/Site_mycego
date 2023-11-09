@@ -27,6 +27,7 @@ def today_current():
 
 
 class StatisticViewBad(LoginRequiredMixin, TemplateView):
+    login_url = 'users:login'
     template_name = 'effectiveness/statistic_bad.html'
 
     def get_context_data(self, **kwargs):
@@ -151,6 +152,7 @@ class StatisticViewBad(LoginRequiredMixin, TemplateView):
 
 
 class StatisticWorks(LoginRequiredMixin, TemplateView):
+    login_url = 'users:login'
     template_name = 'effectiveness/statistic_emp.html'
 
     def get_context_data(self, **kwargs):
@@ -263,6 +265,7 @@ class StatisticWorks(LoginRequiredMixin, TemplateView):
 
 
 class StatisticKfUsers(LoginRequiredMixin, TemplateView):
+    login_url = 'users:login'
     template_name = 'effectiveness/statistic_kf_users.html'
 
     def get_context_data(self, **kwargs):
@@ -362,10 +365,12 @@ def calculate_weekly_changes(data):
 
 
 class MainStatisticMenu(LoginRequiredMixin, TemplateView):
+    login_url = 'users:login'
     template_name = 'effectiveness/statistic_main.html'
 
 
 class StatisticOverWorks(LoginRequiredMixin, TemplateView):
+    login_url = 'users:login'
     template_name = 'effectiveness/statistic_over_works.html'
 
     def get_context_data(self, **kwargs):

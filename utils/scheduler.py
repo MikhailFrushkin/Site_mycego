@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 from apscheduler.schedulers.background import BackgroundScheduler
 from django_apscheduler.jobstores import DjangoJobStore
@@ -17,13 +18,13 @@ def start_scheduler():
     scheduler.add_jobstore(DjangoJobStore(), 'default')
 
     print('Создается backup')
-    job = scheduler.add_job(db_backup, 'cron', hour=4, minute=0,
+    scheduler.add_job(db_backup, 'cron', hour=4, minute=0,
                       jobstore='default', id='day_backup', replace_existing=True)
     print('Парсится')
-    scheduler.add_job(update_rows_delivery, 'interval', minutes=5, id='update_rows_delivery', replace_existing=True)
+    scheduler.add_job(update_rows_delivery, 'interval', minutes=7, id='update_rows_delivery', replace_existing=True)
 
     print('Высчитывается кф')
-    scheduler.add_job(calculation_avg_kf, 'interval', minutes=600, id='calculation_avg_kf', replace_existing=True)
+    scheduler.add_job(calculation_avg_kf, 'interval', minutes=60, id='calculation_avg_kf', replace_existing=True)
 
     scheduler.start()
 
