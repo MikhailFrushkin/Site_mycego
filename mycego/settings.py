@@ -115,16 +115,6 @@ DATABASES = {
         'PORT': '',  # Порт базы данных (по умолчанию пусто)
     }
 }
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'site',
-#         'USER': 'mikhail',
-#         'PASSWORD': '123456',
-#         'HOST': '94.228.122.52', # Если PostgreSQL находится на локальной машине
-#         'PORT': 5432,           # По умолчанию, PostgreSQL использует порт 5432
-#     }
-# }
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
