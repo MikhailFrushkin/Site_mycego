@@ -28,7 +28,7 @@ class CustomUserAdmin(UserAdmin):
 
 class AdminRole(admin.ModelAdmin):
     list_display = [field.name for field in Role._meta.fields]
-    list_editable = ['name', 'salary']
+    list_editable = ['name', 'salary', 'type_salary', 'type_salary2', 'calc_kf']
 
 
 admin.site.register(CustomUser, CustomUserAdmin)

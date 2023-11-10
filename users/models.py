@@ -3,8 +3,30 @@ from django.db import models
 
 
 class Role(models.Model):
+    TYPE_SALARY = [
+        ('Нет', 'Нет'),
+        ('Раз в неделю', 'Раз в неделю'),
+        ('Раз в месяц', 'Раз в месяц'),
+    ]
+    TYPE_SALARY2 = [
+        ('Почасовая', 'Почасовая'),
+        ('Оклад', 'Оклад'),
+    ]
     name = models.CharField(verbose_name='Должность', max_length=255)
     salary = models.IntegerField(verbose_name='Ставка', default=0)
+    type_salary = models.CharField(
+        verbose_name='Выплаты',
+        max_length=20,
+        choices=TYPE_SALARY,
+        default='Раз в неделю'
+    )
+    type_salary2 = models.CharField(
+        verbose_name='Расчет зп',
+        max_length=20,
+        choices=TYPE_SALARY2,
+        default='Почасовая'
+    )
+    calc_kf = models.BooleanField(verbose_name='Расчет коэффецента эффективности', default=True)
 
     def __str__(self):
         return self.name
