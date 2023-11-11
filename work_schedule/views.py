@@ -19,7 +19,7 @@ from loguru import logger
 from openpyxl.utils import get_column_letter
 from openpyxl.workbook import Workbook
 
-from users.models import CustomUser
+from users.models import CustomUser, Role
 from utils.utils import get_year_week
 from work_schedule.forms import AppointmentForm, VacationRequestForm
 from work_schedule.models import Appointment, VacationRequest, FingerPrint, BadFingerPrint
@@ -97,6 +97,9 @@ def update_appointment(request):
         data_str = list(request.POST.keys())[0]
         data_dict = json.loads(data_str)
 
+        type_m = data_dict.get('type', None)
+        logger.debug(type_m)
+
         date_str = data_dict.get('date')
         month_names = {
             'января': 1, 'февраля': 2, 'марта': 3, 'апреля': 4,
@@ -109,7 +112,6 @@ def update_appointment(request):
                 formatted_date_str = date_str.replace(month_name, str(month_number))
                 date_obj = datetime.strptime(formatted_date_str, "%d %m %Y г.")
                 break
-        # Сначала удаляем старые записи
 
         rowData = data_dict.get('rowData', [])
         appointment_list = []
@@ -145,6 +147,7 @@ def update_appointment(request):
                         start_time = time(start_time, 0)
                         end_time = time(end_time, 0)
                         user = CustomUser.objects.get(username=key)
+
                         try:
                             comment = Appointment.objects.get(user=user, date=date_obj).comment
                         except:
@@ -158,8 +161,10 @@ def update_appointment(request):
                             comment=comment
                         )
                         appointment_list.append(appointment)
-
-        Appointment.objects.filter(date=date_obj).delete()
+        if type_m:
+            Appointment.objects.filter(date=date_obj, user__role__type_salary='Раз в неделю').delete()
+        else:
+            Appointment.objects.filter(date=date_obj, user__role__type_salary='Раз в месяц').delete()
         for item in appointment_list:
             item.save()
         return JsonResponse({'message': 'Appointment update successfully.'})
@@ -170,18 +175,25 @@ def update_appointment(request):
 
 def search_emp(request):
     try:
+        logger.debug(request.GET)
         search = request.GET.get('searchTerm', '')
         week = request.GET.get('week', '')
+        type_m = request.GET.get('type', '')
         logger.debug(search)
         logger.debug(week)
+        logger.debug(type_m)
 
         # Создаем Q-объект для поиска по нику пользователя
         nickname_query = Q(user__username__icontains=search)
 
         # Создаем Q-объект для поиска по неделе
         week_query = Q(date__week=week)
+        if type_m:
+            role_query = Q(user__role__type_salary='Раз в месяц')
+        else:
+            role_query = Q(user__role__type_salary='Раз в неделю')
         # Комбинируем оба Q-объекта через оператор И (AND)
-        query = Appointment.objects.filter(nickname_query & week_query).order_by('user', 'date')
+        query = Appointment.objects.filter(nickname_query & week_query & role_query).order_by('user', 'date')
         logger.debug(query)
         results = [{
             'username': appointment.user.username,
@@ -377,11 +389,18 @@ class EditWork(LoginRequiredMixin, TemplateView):
             today = datetime.date.today()
             year = today.year
             week = today.isocalendar()[1]
-
-        queryset = Appointment.objects.filter(
-            date__year=year,
-            date__week=week
-        )
+        if self.template_name == 'work/edit_work.html':
+            queryset = Appointment.objects.filter(
+                date__year=year,
+                date__week=week,
+                user__role__type_salary=Role.TYPE_SALARY[1][0]
+            )
+        elif self.template_name == 'work/edit_work_month.html':
+            queryset = Appointment.objects.filter(
+                date__year=year,
+                date__week=week,
+                user__role__type_salary=Role.TYPE_SALARY[2][0]
+            )
         self._queryset = queryset  # Сохраняем результат в атрибуте _queryset
         return queryset
 
@@ -393,15 +412,18 @@ class EditWork(LoginRequiredMixin, TemplateView):
         unique_dates = queryset.values_list('date', flat=True).distinct()
         unique_users = set(queryset.values_list('user', flat=True))
         not_role = ['Директор',
-                    'Директор по производству',
-                    'Сервисный инженер',
-                    'Сервисный инженер (стажер)',
-                    'Администратор сайта',
-                    'Руководитель',
+                    'Директор по производству'
                     ]
-        none_write_graf = CustomUser.objects.filter(status_work=True).exclude(pk__in=unique_users).exclude(
-            role__name__in=not_role).order_by('role', 'username')
+        if self.template_name == 'work/edit_work.html':
+            none_write_graf = (CustomUser.objects.filter(status_work=True, role__type_salary='Раз в неделю')
+                               .exclude(pk__in=unique_users)
+                               .exclude(role__name__in=not_role).order_by('role', 'username'))
+        else:
+            none_write_graf = (CustomUser.objects.filter(status_work=True, role__type_salary='Раз в месяц')
+                               .exclude(pk__in=unique_users)
+                               .exclude(role__name__in=not_role).order_by('role', 'username'))
         context['none_write_graf'] = none_write_graf
+
         work_schedule = {}
         for index, date_appointment in enumerate(unique_dates):
             user_dict = {}
@@ -449,14 +471,22 @@ class EditWork(LoginRequiredMixin, TemplateView):
             )
 
         context['work_schedule'] = work_schedule
-        context['users'] = CustomUser.objects.filter(status_work=True).exclude(
-            role__name__in=not_role).distinct().order_by('username')
+
+        if self.template_name == 'work/edit_work.html':
+            context['users'] = (CustomUser.objects.filter(status_work=True, role__type_salary='Раз в неделю')
+                                .exclude(role__name__in=not_role).distinct().order_by('username'))
+        else:
+            context['users'] = (CustomUser.objects.filter(status_work=True, role__type_salary='Раз в месяц')
+                                .exclude(role__name__in=not_role).distinct().order_by('username'))
 
         context['users_add'] = json.dumps([user.username for user in context['users']])
         context['year'], context['week'] = get_year_week(self.request.GET, type='list_work')
-
         logger.success(datetime.now() - time_start)
         return context
+
+
+class EditWorkMonth(EditWork):
+    template_name = 'work/edit_work_month.html'
 
 
 class VacationRequestCreateView(LoginRequiredMixin, View):

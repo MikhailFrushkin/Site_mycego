@@ -29,13 +29,15 @@ class Appointment(models.Model):
             if self.start_time < appointment.end_time and self.end_time > appointment.start_time:
                 # Если есть пересечение, уменьшите время конца предыдущей записи
                 appointment.end_time = self.start_time
-                appointment.save()
+                # appointment.save()
 
         # Вычислите продолжительность и сохраните запись
         start_datetime = timezone.make_aware(
             timezone.datetime(2000, 1, 1, self.start_time.hour, self.start_time.minute))
         end_datetime = timezone.make_aware(timezone.datetime(2000, 1, 1, self.end_time.hour, self.end_time.minute))
         self.duration = end_datetime - start_datetime
+        if self.duration == 0:
+            return
 
         super().save(*args, **kwargs)
 

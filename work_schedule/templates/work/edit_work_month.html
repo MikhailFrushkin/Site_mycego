@@ -1,0 +1,475 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+{% load cache %}
+{% load custom_tags_choice_date %}
+
+{% block link %}
+{% endblock %}
+
+{% block title %}
+{% trans 'График' %}
+{% endblock %}
+
+{% block content %}
+<style>
+/* Стили для выпадающего списка */
+select:hover {
+    max-height: 200px; /* Замените на желаемую высоту */
+    overflow-y: auto; /* Добавьте вертикальную прокрутку, если список больше максимальной высоты */
+}
+.bnt-yellow {
+    background-color: #009f20!important;
+}
+.mark-page4 {
+        z-index: 9;
+        right: 0%;
+        bottom: 80%;
+        animation: move5 8s infinite linear;
+    }
+.depth, depth-green {
+width: 9%!important;
+}
+</style>
+{% choice_date year week monday sunday %}
+
+<div class="container text-center" style="margin:0;width: auto!important;">
+    <div class="row justify-content-md-center">
+        <button class="depth"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseExampleEmp"
+                aria-expanded="false"
+                aria-controls="collapseExampleEmp">
+            Поиск по сотруднику
+        </button>
+        <button class="depth"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseExampleEmpNone"
+                aria-expanded="false"
+                aria-controls="collapseExampleEmpNone">
+            Нет в графике
+        </button>
+        {% for key, value in work_schedule.items %}
+        <button class="depth {% if value.2 %} depth-green {% endif %}"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseExample{{ forloop.counter }}"
+                aria-expanded="false"
+                aria-controls="collapseExample">
+            {{ key.0 }}
+        </button>
+        {% endfor %}
+        <br><br>
+    </div>
+</div>
+<div class="collapse" id="collapseExampleEmp">
+    <br><br>
+    <input type="text" id="collapseExampleEmpSearch" placeholder="Поиск..." style="width: 20%;!important;">
+    <div id="resultsTable"></div>
+</div>
+<div class="collapse" id="collapseExampleEmpNone">
+    <br><br>
+    <h2 style="text-align:center;margin-bottom:4rem;">Нет в графике на текущию неделю</h2>
+    <div>
+        <ol>
+            {% for item in none_write_graf %}
+            <li style="list-style: auto;font-size:2rem;margin-left:10rem;">
+                <a href="{% url 'users:user_profile' item.id %}" target="_blank">{{ item }}
+                    ({{item.role}} - средний кф:
+                    {% if item.avg_kf %}
+                    {{item.avg_kf}}%)
+                    {% else %}
+                    нет
+                    {% endif %})
+                </a>
+            </li>
+            {% endfor %}
+        </ol>
+    </div>
+</div>
+{%for key, value in work_schedule.items %}
+<div class="collapse" id="collapseExample{{ forloop.counter }}">
+    <br><br>
+    <input type="text" id="searchInput{{ forloop.counter }}" placeholder="Поиск..." style="width: 20%;!important;">
+    <br><br>
+    {% for role, peoples in value.3.items %}
+    <h3>
+        {{ role }}: {{ peoples.0 }} - {{ peoples.1 }} ч.
+    </h3>
+    {% endfor %}
+    <h3>Всего: {{value.4}} ч.</h3>
+    <br>
+    <button class="btn btn-success w-auto btn-save" onclick="saveTableData('{{key.1}}', '{{key.0}}')">
+        Сохранить
+    </button>
+    <button class="btn btn-success" onclick="addRow('{{ key.1 }}')">Добавить строку</button>
+    <br>
+    <br>
+
+    <table class="table-responsive-sm">
+        <thead>
+        <tr>
+            <th scope="col">Количество сотрудников</th>
+            {% for hour, count in value.1.items %}
+            <th scope="col" style="font-size: 2rem;text-align: center;padding-top:2rem;">{{ count }}</th>
+            {% endfor %}
+            <th scope="col"></th>
+        </tr>
+        </thead>
+    </table>
+
+    <table id="{{key.1}}" class="table-responsive-sm">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">9:00</th>
+            <th scope="col">10:00</th>
+            <th scope="col">11:00</th>
+            <th scope="col">12:00</th>
+            <th scope="col">13:00</th>
+            <th scope="col">14:00</th>
+            <th scope="col">15:00</th>
+            <th scope="col">16:00</th>
+            <th scope="col">17:00</th>
+            <th scope="col">18:00</th>
+            <th scope="col">19:00</th>
+            <th scope="col">20:00</th>
+            <th scope="col"></th>
+        </tr>
+        </thead>
+        <tbody class="table-group-divider">
+
+        {% for user_name, hours in value.0.items %}
+        <tr>
+            <th scope="row" style="font-size:1rem;{% if not user_name.1 %}color:red;{%endif%}">{{ forloop.counter }}. {{user_name.2}} {% if user_name.1 %}
+                {%else%}<br>(Не проверено){%endif%}
+            </th>
+            {% for hour in hours %}
+            <td>
+                <select class="form-select
+                        {% if hour %}
+                            {% if user_name.3 %}
+                                {% if user_name.3 < 80 %}
+                                    bg-danger
+                                {% elif user_name.3 >= 100 %}
+                                    bg-success
+                                {% else %}
+                                    bg-warning
+                                {% endif %}
+                            {% else %}
+                                bg-info
+                            {% endif %}
+                        {% else %}
+                            bg-dark
+                        {% endif %}
+                        text-white"
+                        aria-label="Запись"
+                >
+                    {% if hour %}
+                    <option selected>{{user_name.0}}</option>
+                    <option style="color: #ffffff;">Нет</option>
+                    {% else %}
+                    <option selected>Нет</option>
+                    <option style="color: #ffffff;">{{user_name.0}}</option>
+                    {% endif %}
+                </select>
+            </td>
+
+            {% endfor %}
+            <td>
+                <button class="btn btn-danger w-100 btn-clear"
+                        data-table-id="{{ key.1 }}"
+                        onclick="clearRow(this)">
+                    Очистить
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
+</div>
+{% endfor %}
+<script>
+    function createTable(results) {
+    // Получите ссылку на элемент <div>, в который будет вставлена таблица
+    var tableContainer = document.getElementById('resultsTable');
+    console.log(results);
+
+    // Создайте элемент <table> и добавьте его в контейнер
+    var table = document.createElement('table');
+    table.className = 'table-responsive-sm'; // Добавьте класс, если это нужно
+
+    // Создайте заголовок таблицы
+    var thead = document.createElement('thead');
+    var headerRow = document.createElement('tr');
+    var headers = ['Сотрудник', 'Дата', 'Начало работы', 'Конец работы', 'Продолжительность', 'Проверено?'];
+
+    headers.forEach(function(headerText) {
+        var th = document.createElement('th');
+        th.textContent = headerText;
+        headerRow.appendChild(th);
+    });
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // Создайте тело таблицы и заполните его данными
+    var tbody = document.createElement('tbody');
+
+    results.forEach(function(result) {
+        var row = document.createElement('tr');
+        var rowData = [
+            result.username,
+            result.date,
+            result.start_time,
+            result.end_time,
+            parseDuration(result.duration),
+            result.verified ? 'Да' : 'Нет'
+        ];
+
+        rowData.forEach(function(cellData) {
+            var cell = document.createElement('td');
+            cell.textContent = cellData;
+            row.appendChild(cell);
+        });
+
+        tbody.appendChild(row);
+    });
+
+    table.appendChild(tbody);
+
+    // Очистите контейнер и добавьте новую таблицу
+    tableContainer.innerHTML = '';
+    tableContainer.appendChild(table);
+}
+// Функция для преобразования длительности
+function parseDuration(durationString) {
+    var regex = /P(\d+)DT(\d+)H(\d+)M(\d+)S/;
+    var match = durationString.match(regex);
+    if (match) {
+        var hours = parseInt(match[2]);
+        return hours;
+    } else {
+        return 0;
+    }
+}
+
+</script>
+<script>
+    $(document).ready(function() {
+        // Выбираем поле ввода
+        var $searchInput = $('#collapseExampleEmpSearch');
+
+        // Устанавливаем обработчик события 'input' для поля ввода
+        $searchInput.on('input', function() {
+            // Получаем значение из поля ввода
+            var inputValue = $searchInput.val();
+            console.log(inputValue);
+            // Проверяем, содержит ли введенное значение хотя бы 5 символов
+            if (inputValue.length >= 5) {
+                // Выполняем AJAX-запрос
+
+                $.ajax({
+                    url: '/work/ajax/search_emp/', // Замените на ваш реальный URL Django
+                    method: 'GET', // Или 'GET', в зависимости от вашего API
+                    data: {searchTerm: inputValue, week: {{week}}, type: 'month'}, // Передаем введенный текст на сервер
+                    success: function(response) {
+                        createTable(response.results);
+                        console.error(inputValue);
+                    },
+                    error: function(error) {
+                        console.error(error);
+                    }
+                });
+            }
+        });
+    });
+</script>
+<script>
+    $(document).ready(function () {
+     // Добавляем обработчик события input для всех инпутов
+     $('input[id^="searchInput"]').on('input', function () {
+         var counter = $(this).attr('id').match(/\d+/)[0]; // Получаем counter из id инпута
+         var searchText = $(this).val().toLowerCase();
+
+         // Проверяем, что введенный текст не является пустой строкой
+         if (searchText.trim() === '') {
+             $('table tr').removeClass('bnt-yellow'); // Убираем подсветку, если строка пуста
+             return;
+         }
+
+         var foundRow = null;
+
+         // Проходимся по всем строкам таблицы с указанным counter
+         $('#collapseExample' + counter + ' table tbody tr').each(function () {
+             var rowText = $(this).text().toLowerCase();
+             var row = $(this);
+
+             if (rowText.indexOf(searchText) !== -1) {
+                 row.addClass('bnt-yellow');
+                 foundRow = row;
+             } else {
+                 row.removeClass('bnt-yellow');
+             }
+         });
+
+         if (foundRow) {
+             var rowOffset = foundRow.offset().top;
+             $('html, body').animate({
+                 scrollTop: rowOffset
+             }, 500);
+         } else {
+             $('html, body').stop(); // Остановить текущую анимацию прокрутки
+         }
+     });
+
+     // Добавляем обработчик события blur для всех инпутов
+     $('input[id^="searchInput"]').on('blur', function () {
+         $('table tr').removeClass('bnt-yellow');
+     });
+ });
+
+
+</script>
+<script>
+    function addRow(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) {
+        console.error('Таблица не найдена');
+        return;
+    }
+
+    const newRow = document.createElement('tr');
+    const selectHTML = `
+        <select class="form-select bg-dark w-auto text-white" aria-label="Запись">
+            <option selected>Нет</option>
+            {% for emp in users %}
+            <option value="{{ forloop.counter }}" style="color: #ffffff;">{{ emp.username }}</option>
+            {% endfor %}
+        </select>
+    `;
+
+    // Увеличьте порядковый номер строки в первом столбце
+    const rowIndex = table.rows.length;
+    const numberCell = document.createElement('th');
+    numberCell.textContent = rowIndex;
+
+    newRow.appendChild(numberCell);
+
+    // Добавьте ячейки в новую строку (кроме первой и последней)
+    for (let i = 0; i < table.rows[0].cells.length - 2; i++) {
+        const cell = document.createElement('td');
+        cell.innerHTML = selectHTML;
+        newRow.appendChild(cell);
+    }
+
+    // Добавьте кнопку "Очистить" в последний столбец
+    const clearButtonCell = document.createElement('td');
+    const clearButton = document.createElement('button');
+    clearButton.className = 'btn btn-danger';
+    clearButton.textContent = 'Очистить';
+    clearButton.addEventListener('click', function () {
+        clearRow(this);
+    });
+    clearButtonCell.appendChild(clearButton);
+    newRow.appendChild(clearButtonCell);
+
+    table.querySelector('tbody').appendChild(newRow);
+    }
+
+    function clearRow(button) {
+    const row = button.closest('tr');
+    const cells = row.querySelectorAll('td');
+
+    cells.forEach(function (cell, index) {
+        if (index < cells.length - 1) { // Исключаем последний столбец
+            const selectHTML = `
+                <select class="form-select bg-dark w-auto text-white" aria-label="Запись">
+                    <option selected>Нет</option>
+                    {% for emp in users %}
+                    <option value="{{ forloop.counter }}" style="color: #ffffff;">{{ emp.username }}</option>
+                    {% endfor %}
+                </select>
+            `;
+            cell.innerHTML = selectHTML;
+        }
+    });
+    }
+</script>
+<script>
+    function saveTableData(tableId, date) {
+    const table = document.getElementById(tableId);
+    const rowDataList = [];
+    if (!table) {
+        console.error('Таблица не найдена');
+        return;
+    }
+
+    const rows = table.querySelectorAll('tbody tr');
+
+    rows.forEach(function (row) {
+        const rowData = [];
+        const cells = row.querySelectorAll('td');
+
+        cells.forEach(function (cell) {
+            if (cell.querySelector('select')) {
+                const selectedOption = cell.querySelector('option:checked');
+                rowData.push(selectedOption.textContent);
+            } else {
+                rowData.push(cell.textContent.trim());
+            }
+        });
+
+        rowDataList.push(rowData)
+    });
+
+    const xhr = new XMLHttpRequest();
+    var csrftoken = getCookie('csrftoken');
+    xhr.open('POST', '/work/update_rows/', true); // Замените на реальный URL сервера
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-CSRFToken', csrftoken);
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                console.log('Данные успешно отправлены на сервер');
+                location.reload();
+                // Здесь можно обрабатывать ответ сервера, если необходимо
+            } else {
+                console.error('Произошла ошибка при отправке данных на сервер');
+            }
+        }
+    };
+
+    const dataToSend = {
+        date: date,
+        rowData: rowDataList,
+        type: 'month'
+        };
+    xhr.send(JSON.stringify(dataToSend));
+    }
+</script>
+{% cache 300 user_list %}
+<!--<script>-->
+<!--    $(document).ready(function () {-->
+<!--        var users = JSON.parse('{{ users_add|escapejs }}');-->
+<!--        $("select").on("focus", function () {-->
+<!--            var select = $(this);-->
+
+<!--            // Проверяем, были ли уже добавлены варианты-->
+<!--            if (!select.data("options-added")) {-->
+<!--                // Добавляем варианты для выбора-->
+<!--                for (var i = 0; i < users.length; i++) {-->
+<!--                    select.append('<option style="color: #ffffff;" value="' + users[i] + '">' + users[i] + '</option>');-->
+<!--                }-->
+<!--                // Помечаем, что варианты были добавлены-->
+<!--                select.data("options-added", true);-->
+<!--            }-->
+<!--        });-->
+<!--    });-->
+<!--</script>-->
+{% endcache %}
+{% endblock %}
