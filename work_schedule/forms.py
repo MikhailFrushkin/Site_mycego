@@ -43,63 +43,6 @@ class AppointmentForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'custom-select'})
     )
 
-    def clean(self):
-        cleaned_data = super().clean()
-        start_time = cleaned_data.get('start_time')
-        end_time = cleaned_data.get('end_time')
-        date = cleaned_data.get('date')
-        user_id = cleaned_data.get('user_id')
-
-        # Создаем список ошибок
-        errors = []
-        print('Проверяемая дата: ', cleaned_data)
-        if date is None:
-            errors.append(ValidationError("Не выбрана дата."))
-        else:
-            # Получаем текущую дату
-            current_date = date.today()
-            current_day_of_week = current_date.strftime('%A')
-            # Определяем текущую неделю в году
-            current_week = current_date.isocalendar()[1]
-            # Добавляем 2 недели к текущей неделе
-            if current_day_of_week == 'Sunday':
-                target_week = current_week + 1
-            else:
-                target_week = current_week
-
-            print('current_day_of_week', current_day_of_week)
-            print('target_week', target_week)
-
-            # Определяем дату начала target_week (понедельник этой недели)
-            start_date = current_date + dt.timedelta(weeks=target_week - current_week, days=-current_date.weekday())
-            print('start_date', start_date)
-            # Создаем список дней для target_week
-            days_in_target_week = [start_date + dt.timedelta(days=i) for i in range(14)]
-            print('days_in_target_week', days_in_target_week)
-
-            end_day = start_date + dt.timedelta(days=14)
-            print('end_day', end_day)
-
-            # Проверяем, если дата входит в список дней target_week
-            if date not in days_in_target_week:
-                errors.append(ValidationError(f"Вы можете записаться на даты, начиная с {start_date} до  {end_day}."))
-
-        if start_time >= end_time:
-            errors.append(ValidationError("Время начала должно быть меньше времени окончания."))
-
-        existing_appointment = Appointment.objects.filter(
-            Q(user_id=user_id),
-            Q(date=date)
-        )
-        if existing_appointment.exists():
-            errors.append(ValidationError("У вас уже есть запись на эту дату."))
-
-        if errors:
-            # Если есть ошибки, добавляем их в атрибуты формы
-            for error in errors:
-                self.add_error(None, error)
-
-        return cleaned_data
 
 
 class VacationRequestForm(forms.ModelForm):

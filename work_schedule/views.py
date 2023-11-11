@@ -1,3 +1,4 @@
+import calendar
 import json
 import locale
 from datetime import date, timedelta, datetime, time
@@ -23,6 +24,7 @@ from users.models import CustomUser, Role
 from utils.utils import get_year_week
 from work_schedule.forms import AppointmentForm, VacationRequestForm
 from work_schedule.models import Appointment, VacationRequest, FingerPrint, BadFingerPrint
+from django.core.exceptions import ValidationError
 
 
 def format_duration(duration):
@@ -162,9 +164,11 @@ def update_appointment(request):
                         )
                         appointment_list.append(appointment)
         if type_m:
-            Appointment.objects.filter(date=date_obj, user__role__type_salary='Раз в неделю').delete()
-        else:
+            logger.debug(Appointment.objects.filter(date=date_obj, user__role__type_salary='Раз в месяц'))
             Appointment.objects.filter(date=date_obj, user__role__type_salary='Раз в месяц').delete()
+        else:
+            logger.debug(Appointment.objects.filter(date=date_obj, user__role__type_salary='Раз в неделю'))
+            Appointment.objects.filter(date=date_obj, user__role__type_salary='Раз в неделю').delete()
         for item in appointment_list:
             item.save()
         return JsonResponse({'message': 'Appointment update successfully.'})
@@ -211,6 +215,36 @@ def search_emp(request):
         return JsonResponse({'error': str(e)}, status=400)
 
 
+def get_days_for_current_and_next_month():
+    current_date = date.today()
+
+    # Получаем первый день текущего месяца
+    first_day_of_current_month = date(current_date.year, current_date.month, 1)
+
+    # Получаем первый день следующего месяца
+    if current_date.month == 12:
+        first_day_of_next_month = date(current_date.year + 1, 1, 1)
+    else:
+        first_day_of_next_month = date(current_date.year, current_date.month + 1, 1)
+
+    # Получаем последний день текущего месяца
+    last_day_of_current_month = date(current_date.year, current_date.month,
+                                     calendar.monthrange(current_date.year, current_date.month)[1])
+
+    # Получаем последний день следующего месяца
+    last_day_of_next_month = date(first_day_of_next_month.year, first_day_of_next_month.month,
+                                  calendar.monthrange(first_day_of_next_month.year, first_day_of_next_month.month)[1])
+
+    # Создаем список дней для текущего и следующего месяца
+    days_for_current_and_next_month = []
+    current_day = first_day_of_current_month
+    while current_day <= last_day_of_next_month:
+        days_for_current_and_next_month.append(current_day)
+        current_day += timedelta(days=1)
+
+    return days_for_current_and_next_month
+
+
 class WorkSchedule(LoginRequiredMixin, FormView):
     template_name = 'work/work.html'
     login_url = '/users/login/'
@@ -235,6 +269,7 @@ class WorkSchedule(LoginRequiredMixin, FormView):
                 'form': self.get_form(),
                 'appointments': page.object_list,
                 'page': page,
+                'user_role': self.request.user.role.type_salary
             }
         )
 
@@ -244,7 +279,60 @@ class WorkSchedule(LoginRequiredMixin, FormView):
         return kwargs
 
     def form_valid(self, form):
-        form.instance.user_id = self.request.user.id
+        current_user = self.request.user
+        # Присваиваем пользователя к форме перед сохранением
+        form.instance.user_id = current_user.id
+
+        # Получаем данные из формы, чтобы передать их в функцию clean
+        cleaned_data = form.cleaned_data
+
+        # Ваша текущая логика из метода clean
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+        date = cleaned_data.get('date')
+        user_id = cleaned_data.get('user_id')
+
+        errors = []
+        print('Проверяемая дата: ', cleaned_data)
+
+        if date is None:
+            errors.append(ValidationError("Не выбрана дата."))
+        else:
+            current_date = date.today()
+            current_day_of_week = current_date.strftime('%A')
+            current_week = current_date.isocalendar()[1]
+            if current_day_of_week == 'Sunday':
+                target_week = current_week + 1
+            else:
+                target_week = current_week
+
+            start_date = current_date + timedelta(weeks=target_week - current_week, days=-current_date.weekday())
+            days_in_target_week = [start_date + timedelta(days=i) for i in range(14)]
+            end_day = start_date + timedelta(days=14)
+
+            if self.request.user.role.type_salary == 'Раз в месяц':
+                days_in_target_week = get_days_for_current_and_next_month()
+                start_date = days_in_target_week[0]
+                end_day = days_in_target_week[-1]
+
+            if date not in days_in_target_week:
+                errors.append(ValidationError(f"Вы можете записаться на даты, начиная с {start_date} до  {end_day}."))
+
+        if start_time >= end_time:
+            errors.append(ValidationError("Время начала должно быть меньше времени окончания."))
+
+        existing_appointment = Appointment.objects.filter(
+            Q(user_id=user_id),
+            Q(date=date)
+        )
+        if existing_appointment.exists():
+            errors.append(ValidationError("У вас уже есть запись на эту дату."))
+
+        if errors:
+            for error in errors:
+                form.add_error(None, error)
+            return render(self.request, self.template_name, {'form': form})
+
         form.save()
         return super().form_valid(form)
 

@@ -1,5 +1,14 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Функция для проверки високосного года
+    var containerElement = document.querySelector('.calendar');
+
+    if (containerElement) {
+        var userId = containerElement.getAttribute('data-user-id');
+        console.log(userId);
+    } else {
+        console.error('Элемент с классом .container не найден.');
+    }
+
 function isLeapYear(year) {
         return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
     }
@@ -99,44 +108,57 @@ function generateCalendar(month, year) {
         ++currYear.value;
         generateCalendar(currMonth.value, currYear.value);
     };
-
 function addEventListeners() {
     let selectedDateText = document.getElementById('selected-date-text');
     let selectedDateInput = document.getElementById('selected-date-input');
     let calendar = document.querySelector('.calendar');
 
-    const userId = localStorage.getItem('user.id');
     console.log(userId);
 
     calendar.addEventListener('click', (event) => {
         let target = event.target;
-
+        console.log(target);
         if (target.tagName === 'DIV') {
             let selectedDate = new Date(currYear.value, currMonth.value, parseInt(target.textContent));
             let currentDate = new Date();
-            let currentWeek = getISOWeek(currentDate); // Получаем текущую неделю
-            let targetWeek;
-            console.log(currentDate)
-            if (currentDate.getDay() === 0) {
-                targetWeek = currentWeek + 1; // Добавляем 2 недели для воскресенья
+            console.log(userId);
+
+            if (userId === "Раз в месяц") {
+                // Если userId равен "Раз в месяц", выделяем зеленым текущий месяц и следующий
+                let currentMonth = currentDate.getMonth();
+                let selectedMonth = selectedDate.getMonth();
+                let selectedYear = selectedDate.getFullYear();
+
+                if (
+                    (selectedYear === currentDate.getFullYear() && selectedMonth === currentMonth) ||
+                    (selectedYear === currentDate.getFullYear() && selectedMonth === currentMonth + 1)
+                ) {
+                    selectedDateText.style.color = 'green';
+                } else {
+                    selectedDateText.style.color = 'red';
+                }
             } else {
-                targetWeek = currentWeek; //
-            }
-            console.log(targetWeek)
+                // Если userId не "Раз в месяц", выполняем проверку недели как и раньше
+                let currentWeek = getISOWeek(currentDate); // Получаем текущую неделю
+                let targetWeek;
 
+                if (currentDate.getDay() === 0) {
+                    targetWeek = currentWeek + 1; // Добавляем 2 недели для воскресенья
+                } else {
+                    targetWeek = currentWeek; //
+                }
 
-            let startOfWeek = getStartOfWeek(currentDate, targetWeek); // Получаем начало целевой недели
-            let endOfWeek = new Date(startOfWeek);
+                let startOfWeek = getStartOfWeek(currentDate, targetWeek); // Получаем начало целевой недели
+                let endOfWeek = new Date(startOfWeek);
 
-            endOfWeek.setDate(startOfWeek.getDate() + 14); // Добавляем 13 дней к началу недели
-            console.log(startOfWeek)
-            console.log(endOfWeek)
+                endOfWeek.setDate(startOfWeek.getDate() + 14); // Добавляем 13 дней к началу недели
 
-            // Проверяем, входит ли выбранная дата в диапазон целевой недели
-            if (selectedDate >= startOfWeek && selectedDate <= endOfWeek) {
-                selectedDateText.style.color = 'green';
-            } else {
-                selectedDateText.style.color = 'red';
+                // Проверяем, входит ли выбранная дата в диапазон целевой недели
+                if (selectedDate >= startOfWeek && selectedDate <= endOfWeek) {
+                    selectedDateText.style.color = 'green';
+                } else {
+                    selectedDateText.style.color = 'red';
+                }
             }
 
             let formattedDate = selectedDate.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -156,10 +178,67 @@ function addEventListeners() {
             console.log('Клик на кнопке: ' + target.textContent);
         }
     });
-
-//    calendar.removeEventListener('click', clickHandler);
-//    calendar.addEventListener('click', clickHandler);
 }
+
+//function addEventListeners() {
+//    let selectedDateText = document.getElementById('selected-date-text');
+//    let selectedDateInput = document.getElementById('selected-date-input');
+//    let calendar = document.querySelector('.calendar');
+//
+//    console.log(userId);
+//
+//    calendar.addEventListener('click', (event) => {
+//        let target = event.target;
+//
+//        if (target.tagName === 'DIV') {
+//            let selectedDate = new Date(currYear.value, currMonth.value, parseInt(target.textContent));
+//            let currentDate = new Date();
+//            let currentWeek = getISOWeek(currentDate); // Получаем текущую неделю
+//            let targetWeek;
+//            console.log(currentDate)
+//            if (currentDate.getDay() === 0) {
+//                targetWeek = currentWeek + 1; // Добавляем 2 недели для воскресенья
+//            } else {
+//                targetWeek = currentWeek; //
+//            }
+//            console.log(targetWeek)
+//
+//
+//            let startOfWeek = getStartOfWeek(currentDate, targetWeek); // Получаем начало целевой недели
+//            let endOfWeek = new Date(startOfWeek);
+//
+//            endOfWeek.setDate(startOfWeek.getDate() + 14); // Добавляем 13 дней к началу недели
+//            console.log(startOfWeek)
+//            console.log(endOfWeek)
+//
+//            // Проверяем, входит ли выбранная дата в диапазон целевой недели
+//            if (selectedDate >= startOfWeek && selectedDate <= endOfWeek) {
+//                selectedDateText.style.color = 'green';
+//            } else {
+//                selectedDateText.style.color = 'red';
+//            }
+//
+//            let formattedDate = selectedDate.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' });
+//            selectedDateText.textContent = formattedDate;
+//
+//            if (isValidDate(formatDateToYYYYMMDD(selectedDate))) {
+//                console.log(selectedDate);
+//                sendAjaxRequest(formatDateToYYYYMMDD(selectedDate));
+//            } else {
+//                console.log("Дата некорректна:", selectedDate);
+//            }
+//
+//            selectedDateInput.value = formatDateToYYYYMMDD(selectedDate);
+//        } else if (target.tagName === 'A') {
+//            window.location.href = target.href;
+//        } else if (target.tagName === 'BUTTON') {
+//            console.log('Клик на кнопке: ' + target.textContent);
+//        }
+//    });
+//
+////    calendar.removeEventListener('click', clickHandler);
+////    calendar.addEventListener('click', clickHandler);
+//}
 
 // Функция для получения номера недели
 function getISOWeek(date) {
