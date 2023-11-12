@@ -1,26 +1,24 @@
 import datetime
 import json
-from pprint import pprint
 import locale
 
 from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.http import Http404, JsonResponse, HttpResponse
-from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
-from django.views.generic import TemplateView, ListView, DetailView
+from django.views.generic import TemplateView, ListView
 from loguru import logger
 from openpyxl.utils import get_column_letter
 from openpyxl.workbook import Workbook
 
 from completed_works.models import WorkRecord, WorkRecordQuantity, Standards
-from pay_sheet.models import PaySheetModel
-from users.models import CustomUser
-from utils.utils import get_year_week, get_dates
+from pay_sheet.models import PaySheetModel, PaySheetMonthModel
+from users.models import CustomUser, Role
+from utils.utils import get_dates, get_days_for_current_and_next_month
 from work_schedule.models import Appointment
 
 
@@ -34,16 +32,20 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         worksheet = workbook.active
         worksheet.title = 'Расчет'
 
-        # Получите модель 'Appointment' из вашего приложения
-        pay_sheet_model = apps.get_model(app_label='pay_sheet', model_name='PaySheetModel')
+        if self.template_name == 'pay_sheet/pay_sheet.html':
+            pay_sheet_model = apps.get_model(app_label='pay_sheet', model_name='PaySheetModel')
+        elif self.template_name == 'pay_sheet/pay_sheet_month.html':
+            pay_sheet_model = apps.get_model(app_label='pay_sheet', model_name='PaySheetMonthModel')
 
         # Получите метаданные модели, чтобы получить поля
         model_fields = pay_sheet_model._meta.fields
-
+        logger.debug(pay_sheet_model)
+        logger.debug(model_fields)
         # Добавьте столбец "Role" к заголовкам столбцов
         headers = [field.verbose_name for field in model_fields]
         headers.append('Телефон')
         headers.append('Карта')
+        logger.debug(headers)
 
         # Создайте заголовки столбцов на основе полей модели
         for col_num, header in enumerate(headers, 1):
@@ -95,21 +97,41 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         if hasattr(self, '_queryset'):
             return self._queryset
 
-        year = self.request.GET.get('year')
-        week = self.request.GET.get('week')
+        year = self.request.GET.get('year', None)
+        week = self.request.GET.get('week', None)
+        month = self.request.GET.get('month', None)
         if not year or not week:
             import datetime
             today = datetime.date.today()
             year = today.year
+            month = today.month
             week = today.isocalendar()[1] - 1
-        queryset = PaySheetModel.objects.filter(
-            year=year,
-            week=week
-        )
+        if self.template_name == 'pay_sheet/pay_sheet.html':
+            queryset = PaySheetModel.objects.filter(
+                year=year,
+                week=week,
+                user__role__type_salary=Role.TYPE_SALARY[1][0]
+            )
+
+        elif self.template_name == 'pay_sheet/pay_sheet_month.html':
+            queryset = PaySheetMonthModel.objects.filter(
+                year=year,
+                month=month,
+                user__role__type_salary=Role.TYPE_SALARY[2][0]
+            )
         self._queryset = queryset
+        logger.debug(queryset)
         return queryset
 
     def get_context_data(self, **kwargs):
+        logger.debug(self.template_name)
+        if self.template_name == 'pay_sheet/pay_sheet.html':
+            filter_role = Q(role__type_salary=Role.TYPE_SALARY[1][0])
+            filter_role2 = Q(user__role__type_salary=Role.TYPE_SALARY[1][0])
+        elif self.template_name == 'pay_sheet/pay_sheet_month.html':
+            filter_role = Q(role__type_salary=Role.TYPE_SALARY[2][0])
+            filter_role2 = Q(user__role__type_salary=Role.TYPE_SALARY[2][0])
+
         context = super().get_context_data(**kwargs)
         if not self.request.user.is_staff:
             raise Http404
@@ -129,7 +151,7 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         else:
             year, week = int(year), int(week)
         monday, sunday = get_dates(year, week)
-        user_list = CustomUser.objects.all()
+        user_list = CustomUser.objects.filter(filter_role)
         for user in user_list:
             queryset_appointments = Appointment.objects.filter(user=user, date__year=year, date__week=week,
                                                                verified=True)
@@ -217,7 +239,9 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         sorted_dict = dict(sorted(users_dict.items(), key=lambda x: int(x[1]['hours']), reverse=True))
         context['users_dict'] = sorted_dict
 
-        timedelta_tuples = Appointment.objects.filter(date__week=week, verified=True).values_list('duration')
+        timedelta_tuples = (Appointment.objects.filter(date__week=week, verified=True)
+                            .filter(filter_role2)
+                            .values_list('duration'))
         timedelta_list = [item[0] for item in timedelta_tuples]
         total_hours = int(sum([i.total_seconds() for i in timedelta_list]) // 3600)
         context['total_hours'] = total_hours
@@ -227,17 +251,164 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         context['year'], context['week'] = year, week
         context['monday'], context['sunday'] = monday, sunday
 
-        context['pay_sheets'] = PaySheetModel.objects.filter(year=year, week=week)
+        context['pay_sheets'] = PaySheetModel.objects.filter(year=year, week=week).filter(filter_role2)
         context['flag_button'] = False if current_week <= week else True
         # pprint(context['users_dict'])
         logger.success(datetime.datetime.now() - time_start)
         return context
 
 
-def calculate_work_totals_for_week(user, hours, week_start_date, week_end_date):
+class PaySheetMonth(PaySheet):
+    template_name = 'pay_sheet/pay_sheet_month.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        filter_role = Q(role__type_salary=Role.TYPE_SALARY[2][0])
+        filter_role2 = Q(user__role__type_salary=Role.TYPE_SALARY[2][0])
+
+        if not self.request.user.is_staff:
+            raise Http404
+        time_start = datetime.datetime.now()
+        users_dict = {}
+        total_salary = 0
+        total_result_salary = 0
+        today = datetime.date.today()
+        current_month = today.month
+
+        year = self.request.GET.get('year', None)
+        month = self.request.GET.get('month', None)
+        if not year or not month:
+            year = today.year
+            month = today.month
+        else:
+            year, month = int(year), int(month)
+        first_day, last_day, days = get_days_for_current_and_next_month(year, month)
+
+        user_list = CustomUser.objects.filter(filter_role)
+
+        for user in user_list:
+            queryset_appointments = Appointment.objects.filter(user=user, date__year=year, date__month=month,
+                                                               verified=True)
+            if len(queryset_appointments) == 0:
+                continue
+            week_hours_work = []
+            for day in days:
+                try:
+                    duration_day = sum([int(i.duration.total_seconds() / 3600) for i in
+                                        queryset_appointments.filter(user=user, date=day)])
+                    week_hours_work.append(duration_day)
+                except Exception as ex:
+                    logger.error(f'Нет записи на {day}')
+
+            users_dict[user] = {'week_hours_work': week_hours_work}
+            users_dict[user]['hours'] = sum(users_dict[user]['week_hours_work'])
+            count_of_12 = users_dict[user]['week_hours_work'].count(12)
+            users_dict[user]['count_of_12'] = count_of_12
+
+            users_dict[user]['flag'] = True if count_of_12 >= 3 else False
+
+            # Высчитывание зарплаты по часам
+            salary = 0
+            mess = ''
+
+            if user.role.type_salary2 == 'Почасовая':
+                for day_hour in users_dict[user]['week_hours_work']:
+                    if day_hour == 12:
+                        salary += 12 * user.role.salary
+            else:
+                salary = user.role.salary
+
+            users_dict[user]['salary'] = salary
+            total_salary += salary
+            # высчитывание коэффецента к зарплате
+            try:
+                users_dict[user]['works'] = {}
+                users_dict[user]['kf'] = 0
+                if user.role.calc_kf:
+                    work_totals_dict = calculate_work_totals_for_week(user, users_dict[user]['hours'],
+                                                                      first_day, last_day)
+                    if work_totals_dict:
+                        users_dict[user]['works'] = work_totals_dict
+                        kf = sum([i[1] for i in work_totals_dict.values()]) * 100
+                        users_dict[user]['kf'] = round(kf, 2)
+
+                        if users_dict[user]['hours'] < 20:
+                            mess += 'Отработанно меньше 20 часов; '
+                        if kf >= 80:
+                            result_salary = salary
+                        else:
+                            result_salary = salary * kf / 100
+                            mess += 'Коэффецент меньше 80%; '
+
+                        users_dict[user]['result_salary'] = round(result_salary, 2)
+                        total_result_salary += result_salary
+                    else:
+                        users_dict[user]['result_salary'] = 0
+                        mess = 'Нет сдельных листов; '
+
+                else:
+                    if user.role.type_salary2 == 'Почасовая':
+                        users_dict[user]['result_salary'] = user.role.salary * users_dict[user]['hours']
+                        total_result_salary += user.role.salary
+                    else:
+                        users_dict[user]['result_salary'] = user.role.salary
+                        total_result_salary += user.role.salary
+                if user.status_work == False:
+                    mess += 'Уволен;'
+            except Exception as ex:
+                logger.error(ex)
+
+            try:
+                row = PaySheetMonthModel.objects.get(user=user, month=month, year=year)
+                users_dict[user]['bonus'] = row.bonus
+                users_dict[user]['penalty'] = row.penalty
+            except:
+                users_dict[user]['bonus'] = 0
+                users_dict[user]['penalty'] = 0
+            if users_dict[user]['kf'] > 110 and user.role.calc_kf and more_than_30_days_ago(user.date_joined.date(),
+                                                                                            last_day):
+                users_dict[user]['bonus'] += 5000
+                mess += 'Премия 5000 р.;'
+            users_dict[user]['comment'] = mess
+            users_dict[user]['result_salary'] += users_dict[user]['bonus']
+        sorted_dict = dict(sorted(users_dict.items(), key=lambda x: int(x[1]['hours']), reverse=True))
+        context['users_dict'] = sorted_dict
+
+        timedelta_tuples = (Appointment.objects.filter(date__month=month, verified=True)
+                            .filter(filter_role2)
+                            .values_list('duration'))
+        timedelta_list = [item[0] for item in timedelta_tuples]
+        total_hours = int(sum([i.total_seconds() for i in timedelta_list]) // 3600)
+        context['total_hours'] = total_hours
+        context['total_salary'] = total_salary
+        context['total_result_salary'] = round(total_result_salary, 2)
+
+        context['year'], context['month'] = year, month
+        context['monday'], context['sunday'] = first_day, last_day
+
+        context['pay_sheets'] = PaySheetMonthModel.objects.filter(year=year, month=month)
+        context['flag_button'] = False if current_month <= month else True
+        # pprint(context)
+        logger.success(datetime.datetime.now() - time_start)
+        return context
+
+
+def more_than_30_days_ago(date1, date2):
+    # Парсинг строковых представлений дат в объекты datetime
+    # date1 = datetime.datetime.strptime(date1, "%Y-%m-%d")
+    # date2 = datetime.datetime.strptime(date2, "%Y-%m-%d")
+    date_difference = abs(date1 - date2)
+    if date_difference.days > 30:
+        return True
+    else:
+        return False
+
+
+def calculate_work_totals_for_week(user, hours, first_day, last_day):
     # Получите все записи работы за заданный период
     work_records = WorkRecord.objects.filter(user=user, delivery=None,
-                                             date__range=(week_start_date, week_end_date), is_checked=True)
+                                             date__range=(first_day, last_day), is_checked=True)
 
     # Используйте агрегацию, чтобы вычислить сумму работы для каждого вида работы
     work_totals = WorkRecordQuantity.objects.filter(work_record__in=work_records).values('standard').annotate(
@@ -267,17 +438,18 @@ def created_salary_check(request):
         data_dict = json.loads(data_str)
 
         rowData = data_dict.get('rowData', [])
-        year = data_dict.get('year')
-        week = data_dict.get('week')
+        year = data_dict.get('year', None)
+        week = data_dict.get('week', None)
+        month = data_dict.get('month', None)
         clean_data = map(clean_data_post, rowData)
         dict_pays = {}
         for row in clean_data:
             try:
-
                 user = CustomUser.objects.get(username=row[0].split('тел:')[0])
                 temp = {
                     'year': year,
                     'week': week,
+                    'month': month,
                     'role': row[1],
                     'role_salary': row[2],
                     'hours': round(float(row[3]), 2) if row[3] != '' else 0,
@@ -300,7 +472,11 @@ def created_salary_check(request):
             for user, data in dict_pays.items():
                 try:
                     # Проверяем существование записи для данного пользователя, недели и года
-                    pay_sheet = PaySheetModel.objects.get(user=user, year=data['year'], week=data['week'])
+                    if not month:
+                        pay_sheet = PaySheetModel.objects.get(user=user, year=data['year'], week=data['week'])
+                    else:
+                        pay_sheet = PaySheetMonthModel.objects.get(user=user, year=data['year'], month=data['month'])
+
                     # Обновляем поля записи данными из запроса
                     pay_sheet.role = data['role']
                     pay_sheet.role_salary = data['role_salary']
@@ -314,24 +490,43 @@ def created_salary_check(request):
                     pay_sheet.penalty = data['penalty']
                     pay_sheet.comment = data['comment']
                     pay_sheet.save()
-                except PaySheetModel.DoesNotExist:
+                except Exception as ex:
+                    logger.error(ex)
                     # Если запись не существует, создаем новую
-                    pay_sheet = PaySheetModel(
-                        user=user,
-                        year=data['year'],
-                        week=data['week'],
-                        role=data['role'],
-                        role_salary=data['role_salary'],
-                        hours=data['hours'],
-                        salary=data['salary'],
-                        works=data['works'],
-                        count_of_12=data['count_of_12'],
-                        kf=data['kf'],
-                        result_salary=data['result_salary'],
-                        bonus=data['bonus'],
-                        penalty=data['penalty'],
-                        comment=data['comment'],
-                    )
+                    if not month:
+                        pay_sheet = PaySheetModel(
+                            user=user,
+                            year=data['year'],
+                            week=data['week'],
+                            role=data['role'],
+                            role_salary=data['role_salary'],
+                            hours=data['hours'],
+                            salary=data['salary'],
+                            works=data['works'],
+                            count_of_12=data['count_of_12'],
+                            kf=data['kf'],
+                            result_salary=data['result_salary'],
+                            bonus=data['bonus'],
+                            penalty=data['penalty'],
+                            comment=data['comment'],
+                        )
+                    else:
+                        pay_sheet = PaySheetMonthModel(
+                            user=user,
+                            year=data['year'],
+                            month=data['month'],
+                            role=data['role'],
+                            role_salary=data['role_salary'],
+                            hours=data['hours'],
+                            salary=data['salary'],
+                            works=data['works'],
+                            count_of_12=data['count_of_12'],
+                            kf=data['kf'],
+                            result_salary=data['result_salary'],
+                            bonus=data['bonus'],
+                            penalty=data['penalty'],
+                            comment=data['comment'],
+                        )
                     pay_sheet.save()
 
             return JsonResponse({'message': 'Успешно'})
@@ -364,28 +559,37 @@ class PaySheetListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         current_user = self.request.user
-        queryset = PaySheetModel.objects.filter(user=current_user).order_by('-year', '-week')
+        if current_user.role.type_salary == 'Раз в неделю':
+            queryset = PaySheetModel.objects.filter(user=current_user).order_by('-year', '-week')
+        else:
+            queryset = PaySheetMonthModel.objects.filter(user=current_user).order_by('-year', '-month')
         return queryset
 
 
-class PaySheetDetailView(LoginRequiredMixin, DetailView):
-    model = PaySheetModel
+class PaySheetDetailView(LoginRequiredMixin, TemplateView):
     template_name = 'pay_sheet/pay_sheet_detail.html'
-    context_object_name = 'pay_sheet'
-    slug_field = 'pk'
-    slug_url_kwarg = 'pk'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if not self.test_func():
+        pk = context['pk']
+        model = context['model']
+        if not self.test_func(pk, model):
             raise PermissionDenied
-        pay_sheet = self.get_object()
-        context['monday'], context['sunday'] = get_dates(pay_sheet.year, pay_sheet.week)
+        if context['model'] == 'paysheetmonthmodel':
+            pay_sheet = PaySheetMonthModel.objects.get(pk=pk)
+        else:
+            pay_sheet = PaySheetModel.objects.get(pk=pk)
+            context['monday'], context['sunday'] = get_dates(pay_sheet.year, pay_sheet.week)
+        context['pay_sheet'] = pay_sheet
+
         return context
 
-    def test_func(self):
+    def test_func(self, pk, model):
         # Получите объект записи, к которой осуществляется доступ
-        pay_sheet = self.get_object()
+        if model == 'paysheetmonthmodel':
+            pay_sheet = PaySheetMonthModel.objects.get(pk=pk)
+        else:
+            pay_sheet = PaySheetModel.objects.get(pk=pk)
 
         # Проверьте, что текущий пользователь - владелец записи или имеет права is_staff
         return self.request.user == pay_sheet.user or self.request.user.is_staff

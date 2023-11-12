@@ -18,8 +18,12 @@
 <br>
 
 <div>
+    {% if pay_sheet.week %}
     <p>{{ pay_sheet.year }} год {{ pay_sheet.week }} неделя </p>
     <p>С {{ monday }} по {{ sunday }} </p>
+    {% else %}
+    <p>{{ pay_sheet.year }} год {{ pay_sheet.month }} месяц </p>
+    {% endif %}
     <br>
     <p>Сотрудник:
         {% if pay_sheet.user.last_name %}

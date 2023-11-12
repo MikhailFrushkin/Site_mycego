@@ -1,26 +1,19 @@
 {% extends 'main_base.html' %}
 {% load i18n %}
 {% load static %}
-{% load custom_tags_choice_date %}
+{% load custom_filters %}  <!-- Load the custom filter -->
 
 {% block title %}
-{% trans 'Расчетный лист' %}
-{% endblock %}
-
-{% block link %}
-<link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% trans 'Расчетные листы' %}
 {% endblock %}
 
 {% block content %}
-
-
 <div class="card card-body" style="background-color:#130518;color:#198754!important;">
     <ol class="list-group list-group-numbered" style="font-size:18px;">
-        {% if pay_sheets%}
+        {% if pay_sheets %}
         {% for item in pay_sheets %}
         <li class="list-group-item" style="background-color:#130518;">
-            <a href="{% url 'pay_sheet:pay_sheet_detail' item.id %}">{{item}}</a>
+            <a href="{% url 'pay_sheet:pay_sheet_detail' item.id item|model_name %}">{{ item }}</a>
         </li>
         {% endfor %}
         {% else %}
@@ -28,5 +21,4 @@
         {% endif %}
     </ol>
 </div>
-
 {% endblock %}

@@ -1,8 +1,9 @@
 {% extends 'main_base.html' %}
 {% load i18n %}
 {% load static %}
-{% load custom_tags_choice_date %}
 {% load custom_filters %}
+{% load custom_tags_choice_date %}
+
 {% block title %}
 {% trans 'Расчетные листы' %}
 {% endblock %}
@@ -36,7 +37,7 @@
             animation: move5 8s infinite linear;
         }
 </style>
-{% choice_date year week monday sunday %}
+{% choice_date_month year month first_day last_day %}
 
 <div class="container" style="margin: 0; margin-top: 20px;width: 100%;">
     <div class="row align-items-start">
@@ -67,13 +68,13 @@
         </div>
         <div class="col d-flex flex-column align-items-center">
             {% if flag_button %}
-            <button class="btn-grad btn-gradient-border btn-glow" onclick="saveTableData({{week}}, {{year}}, {{week}})">
+            <button class="btn-grad btn-gradient-border btn-glow" onclick="saveTableData({{month}}, {{year}}, {{month}})">
                 Сформировать расчетные листы
             </button>
             {% else %}
             <button class="btn-grad btn-gradient-border btn-glow" disabled>Сформировать расчетные листы</button>
             <br>
-            <p class="text-center">Когда ты уже всё, а неделя еще нет</p>
+            <p class="text-center">Когда ты уже всё, а месяц еще нет</p>
             {%endif%}
         </div>
     </div>
@@ -81,13 +82,13 @@
 
 <br><br>
 <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Поиск имен..">
-<table class="display nowrap dataTable dtr-inline collapsed sortable" id="{{week}}">
+<table class="display nowrap dataTable dtr-inline collapsed sortable" id="{{month}}">
     <thead>
     <tr style="font-size: 16px;">
         <th scope="col" style="width: 3%;">№</th>
         <th scope="col" style="width: 15%;">Сотрудник</th>
         <th scope="col" style="width: 10%;">Должность</th>
-        <th scope="col" style="width: 7%;">Ставка</th>
+        <th scope="col" style="width: 7%;">Ставка/Оклад</th>
         <th scope="col" style="width: 7%;">Отработано часов</th>
         <th scope="col" style="width: 7%;">Сумма</th>
         <th scope="col" style="width: 11%;">Работы</th>
@@ -112,7 +113,7 @@
                 карта:{{user.card_details}}
             </a></td>
         <td>{{user.role.name}}</td>
-        <td>{{user.role.salary}} <br>руб/час</td>
+        <td>{{user.role.salary}}</td>
 
         <td>{{value.hours}}</td>
         <td>{{value.salary}}</td>
@@ -151,7 +152,7 @@
 
 
 <script>
-    function saveTableData(tableId, year, week) {
+    function saveTableData(tableId, year, month) {
     const table = document.getElementById(tableId);
     const rowDataList = [];
     if (!table) {
@@ -200,7 +201,7 @@
     const dataToSend = {
         rowData: rowDataList,
         year: year,
-        week: week,
+        month: month,
         };
     xhr.send(JSON.stringify(dataToSend));
     }

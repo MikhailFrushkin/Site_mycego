@@ -66,3 +66,57 @@ def choice_date(year=None, week=None, monday=None, sunday=None, download_excel=T
         </div>
         </div>"""
     return mark_safe(html)
+
+
+@register.simple_tag
+def choice_date_month(year=None, month=None, first_day=None, last_day=None, download_excel=True):
+    if not year:
+        today = datetime.date.today()
+        year = today.year
+        month = today.month
+
+    html = f"""
+        <div class="container text-center">
+            <div class="row justify-content-md-center">
+                <form method="get" class="custom-form">
+                    <div class="form-group">
+                        <span for="text_field_1" style="font-size: 14px;">Год:</span>
+                        <input type="number"
+                               min="2023" max="2050"
+                               name="year"
+                               placeholder="{year}"
+                               class="narrower-input3"
+                               value="{year}"
+                               id="text_field_1">
+                        <span for="text_field_2" style="font-size: 14px;">Месяц:</span>
+                        <input type="number"
+                               name="month"
+                               min="1" max="12"
+                               placeholder="{month}"
+                               class="narrower-input3"
+                               value="{month}"
+
+                               id="text_field_2">
+
+                        <button type="submit" class="btn-lg">Загрузить</button>
+                    </div>
+                </form>
+                <div>
+                    <h4>
+                        С {first_day} по {last_day}
+                    </h4>
+                </div>
+        """
+    if download_excel:
+        html += f"""
+        <div>
+                <a class="fw-4 fs-20" href="?download_excel=1&year={year}&month={month}">Скачать Excel</a>
+                </div>
+            </div>
+        </div>
+        """
+    else:
+        html += """
+        </div>
+        </div>"""
+    return mark_safe(html)
