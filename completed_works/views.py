@@ -578,15 +578,15 @@ def cut_state(request, delivery_id, delivery_nums_id):
         state = nums.state
         current_state = state.number
         after_state = current_state + 1
-        nums2 = DeliveryNums.objects.get(delivery=delivery.id, state__number=after_state)
+        # nums2 = DeliveryNums.objects.get(delivery=delivery.id, state__number=after_state)
 
         if state.num_emp == 1:
             nums_av = nums.available_numbers
             [nums.ready_numbers.append(i) for i in nums_av]
             nums.save()
 
-            [nums2.available_numbers.append(i) for i in nums_av]
-            nums2.save()
+            # [nums2.available_numbers.append(i) for i in nums_av]
+            # nums2.save()
 
             work_record = WorkRecord.objects.create(user=user, date=datetime.date.today(), delivery=delivery)
             work_record.save()
@@ -633,36 +633,39 @@ def cut_state(request, delivery_id, delivery_nums_id):
             if not numbers:
                 messages.error(request, f'Не указан номер(а)!')
                 return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
-            numbers = re.sub(r'[^0-9\s, -]+', '', numbers)
-
-            if '-' in numbers:
-                number_from, number_to = int(numbers.split('-')[0]), int(numbers.split('-')[1])
-                if (delivery.products_count >= number_from > 0
-                        and delivery.products_count >= number_to > 0
-                        and number_to >= number_from):
-                    take_nums = list(range(number_from, number_to + 1))
-                else:
-                    messages.error(request, message)
-                    return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
-
-            elif ',' in numbers:
-                take_nums = sorted(list(set(int(i.strip()) for i in numbers.split(',') if i)))
-                if not take_nums:
-                    messages.error(request, message)
-                    return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
+            if 'все' in numbers.lower() or 'всё' in numbers.lower():
+                take_nums = nums.available_numbers
             else:
-                take_nums = sorted(list(set(int(i.strip()) for i in numbers.split() if i)))
-                if not take_nums:
-                    messages.error(request, message)
-                    return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
+                numbers = re.sub(r'[^0-9\s, -]+', '', numbers)
+
+                if '-' in numbers:
+                    number_from, number_to = int(numbers.split('-')[0]), int(numbers.split('-')[1])
+                    if (delivery.products_count >= number_from > 0
+                            and delivery.products_count >= number_to > 0
+                            and number_to >= number_from):
+                        take_nums = list(range(number_from, number_to + 1))
+                    else:
+                        messages.error(request, message)
+                        return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
+
+                elif ',' in numbers:
+                    take_nums = sorted(list(set(int(i.strip()) for i in numbers.split(',') if i)))
+                    if not take_nums:
+                        messages.error(request, message)
+                        return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
+                else:
+                    take_nums = sorted(list(set(int(i.strip()) for i in numbers.split() if i)))
+                    if not take_nums:
+                        messages.error(request, message)
+                        return HttpResponseRedirect(reverse_lazy('completed_works:delivery_view', args=[delivery_id]))
 
             av_nums = set(nums.available_numbers)
             result = set(take_nums) - av_nums
             if len(result) == 0:
                 [nums.ready_numbers.append(i) for i in take_nums]
                 nums.save()
-                [nums2.available_numbers.append(i) for i in take_nums]
-                nums2.save()
+                # [nums2.available_numbers.append(i) for i in take_nums]
+                # nums2.save()
 
                 work_record = WorkRecord.objects.create(user=user, date=datetime.date.today(), delivery=delivery)
                 work_record.save()

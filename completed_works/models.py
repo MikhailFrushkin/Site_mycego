@@ -117,12 +117,11 @@ class DeliveryNums(models.Model):
             all_nums = list(range(1, len(self.delivery.products_nums_on_list) + 1))
             if self.state and self.state.name == 'Печать':
                 self.available_numbers = all_nums
+            self.available_numbers = [x for x in all_nums if
+                                      x not in self.ready_numbers and x not in self.not_available_numbers]
 
             self.not_available_numbers = [x for x in all_nums if
                                           x not in self.available_numbers and x not in self.ready_numbers]
-
-            self.available_numbers = [x for x in all_nums if
-                                      x not in self.ready_numbers and x not in self.not_available_numbers]
 
             self.status = self.are_lists_equal(all_nums, self.ready_numbers)
 

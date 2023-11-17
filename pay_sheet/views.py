@@ -363,15 +363,18 @@ class PaySheetMonth(PaySheet):
                 row = PaySheetMonthModel.objects.get(user=user, month=month, year=year)
                 users_dict[user]['bonus'] = row.bonus
                 users_dict[user]['penalty'] = row.penalty
+                if row.kf > 110:
+                    mess += 'Премия 5000 р.;'
             except:
                 users_dict[user]['bonus'] = 0
                 users_dict[user]['penalty'] = 0
-            if users_dict[user]['kf'] > 110 and user.role.calc_kf and more_than_30_days_ago(user.date_joined.date(),
-                                                                                            last_day):
-                users_dict[user]['bonus'] += 5000
-                mess += 'Премия 5000 р.;'
+                if users_dict[user]['kf'] > 110 and user.role.calc_kf and more_than_30_days_ago(user.date_joined.date(),
+                                                                                                last_day):
+                    users_dict[user]['bonus'] += 5000
+                    mess += 'Премия 5000 р.;'
             users_dict[user]['comment'] = mess
             users_dict[user]['result_salary'] += users_dict[user]['bonus']
+            users_dict[user]['result_salary'] -= users_dict[user]['penalty']
         sorted_dict = dict(sorted(users_dict.items(), key=lambda x: int(x[1]['hours']), reverse=True))
         context['users_dict'] = sorted_dict
 
@@ -462,7 +465,7 @@ def created_salary_check(request):
                     'penalty': round(abs(float(row[10])), 2) if row[10] != '' else 0,
                     'comment': row[11],
                 }
-                temp['result_salary'] = round(temp['result_salary'] + temp['bonus'] - temp['penalty'], 2)
+                # temp['result_salary'] = round(temp['result_salary'] + temp['bonus'] - temp['penalty'], 2)
                 dict_pays[user] = temp
             except Exception as ex:
                 logger.error(ex)
