@@ -21,4 +21,6 @@ urlpatterns = [
     path('get_delivery/', views.DeliveryView.as_view(), name='get_delivery'),
     path('get_list_delivery/', views.DeliveryListView.as_view(), name='get_list_delivery'),
     path('statistic/', views.StatisticUserWork.as_view(), name='statistic'),
+
+    path('request/', views.RequestTg.as_view(), name='request_tg'),
 ]

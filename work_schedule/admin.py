@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from work_schedule.models import Appointment, VacationRequest, FingerPrint, BadFingerPrint
+from work_schedule.models import Appointment, VacationRequest, FingerPrint, BadFingerPrint, RequestsModel
 
 
 class WorkSchedule(admin.ModelAdmin):
@@ -43,3 +43,13 @@ class AdminBadFingerPrint(admin.ModelAdmin):
 
 
 admin.site.register(BadFingerPrint, AdminBadFingerPrint)
+
+
+class AdminRequestsModel(admin.ModelAdmin):
+    list_display = [field.name for field in RequestsModel._meta.fields]
+    search_fields = ('user__username',)
+    list_filter = ['read', 'created_at']
+    ordering = ('read', 'created_at')
+
+
+admin.site.register(RequestsModel, AdminRequestsModel)

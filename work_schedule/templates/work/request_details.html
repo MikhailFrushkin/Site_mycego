@@ -1,0 +1,74 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+{% load cache %}
+
+{% block link %}
+<style>
+label { font-size: 20px; }
+select.form-select, textarea.form-control {font-size: 18px;}
+a {font-size: 18px;margin-bottom:15px;}
+h2 {margin-bottom:15px;}
+button {font-size: 22px!important;}
+</style>
+{% endblock %}
+
+{% block title %}
+{% trans 'Заявка' %}
+{% endblock %}
+
+{% block content %}
+
+<div class="list-group">
+    <h2>
+        {{ item.type_request}} {{item.user}}
+    </h2>
+    <br>
+    <p>
+        {% if item.result %}
+        Статус: Сделано
+        {% else %}
+        {% if item.result == None %}
+        Статус: В работе
+        {% else %}
+        Статус: Отказано
+        {% endif %}
+        {% endif %}
+        <br>
+        Создано: {{item.created_at}}
+        <br>
+        Обновлено: {{item.updated_at}}
+        <br>
+        Комментарий: {{item.comment}}
+        {% if item.comment_admin %}
+        <br>
+        Ответ руководителя: {{item.comment_admin}}
+        {% endif %}
+        <br>
+        {% if item.result != None %}
+        Итог:
+        {% if item.result %}
+        Сделано
+        {% else %}
+        Отказано
+        {% endif %}
+        {% endif %}
+    </p>
+</div>
+
+{%  if user.is_staff %}
+<form method="post" action="{% url 'work:request_details' item.id %}">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="exampleFormControlTextarea1" class="form-label">Ответ сотруднику:</label>
+        <textarea class="form-control" name="comment" id="exampleFormControlTextarea1" rows="10"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <button type="submit" name="status" value="completed" class="btn btn-success">Выполнено</button>
+        <button type="submit" name="status" value="rejected" class="btn btn-danger">Отказ</button>
+    </div>
+</form>
+
+{% endif %}
+{% endblock %}

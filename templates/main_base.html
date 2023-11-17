@@ -35,7 +35,7 @@
     <link rel="stylesheet" href="{% static 'my_css/buttons.css' %}">
 
     <script src="{% static 'js/jquery-3.7.0.min.js' %}"></script>
-    <script src="{% static 'calendar/calendar.js' %}"></script>
+<!--    <script src="{% static 'calendar/calendar.js' %}"></script>-->
     <script src="{% static 'my_js/table.js' %}"></script>
     <script src="{% static 'my_js/myjs.js' %}"></script>
 
@@ -82,7 +82,7 @@
 <body>
 
 {% block nav %}
-{% cache 600 nav request.user.id %}
+<!--{% cache 600 nav request.user.id %}-->
 <header id="header_main" class="header_1 js-header">
     <div class="themes-container">
         <div class="row">
@@ -214,6 +214,11 @@
                                                 Расчетный лист
                                             </a>
                                         </li>
+                                        <li class="menu-item">
+                                            <a href="{% url 'work:request_page' %}">
+                                                Создать заявку
+                                            </a>
+                                        </li>
                                         {% if request.user.is_staff %}
                                         <li class="menu-item">
                                             <a href="{% url 'pay_sheet:pay_sheet' %}">
@@ -223,6 +228,15 @@
                                         <li class="menu-item">
                                             <a href="{% url 'pay_sheet:pay_sheet_month' %}">
                                                 Расчетные листы <br>на месяц
+                                            </a>
+                                        </li>
+                                        <li class="menu-item">
+                                            <a href="{% url 'work:request_all' %}">
+                                                Заявки на<br>изменение
+                                                (<span id="unread-count"></span>)
+
+                                                {% if unread_count %}
+                                                {% endif %}
                                             </a>
                                         </li>
                                         <li class="menu-item">
@@ -261,7 +275,7 @@
     <!--    </div>-->
 
 </header>
-{% endcache %}
+<!--{% endcache %}-->
 {% endblock %}
 
 <main class="page-content">
@@ -300,6 +314,21 @@
 <img class="absolute mark-page2 animate-rotate draggable"
      src="{% static 'nufti/assets/images/icon/mark-header-01.png' %}"
      alt="">
+<script>
+    function updateUnreadCount() {
+        $.ajax({
+            url: "{% url 'work:unread_count_api' %}",
+            method: "GET",
+            success: function(data) {
+                $('#unread-count').text(data.unread_count);
+            },
+            error: function() {
+                console.error('Failed to update unread count.');
+            }
+        });
+    }
+    updateUnreadCount();
+</script>
 <script>
     let currentlyDragged = null;
 

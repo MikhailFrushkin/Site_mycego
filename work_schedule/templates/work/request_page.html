@@ -1,0 +1,73 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+{% load cache %}
+
+{% block link %}
+<style>
+label { font-size: 20px; }
+select.form-select, textarea.form-control {font-size: 18px;}
+a {font-size: 18px;margin-bottom:15px;}
+h2 {margin-bottom:15px;}
+.green {font-size: 18px;color:green;}
+.red {font-size: 18px;color:red;}
+</style>
+{% endblock %}
+
+{% block title %}
+{% trans 'Заявка' %}
+{% endblock %}
+
+{% block content %}
+
+{% if form.errors %}
+<div class="alert alert-danger">
+    <ul>
+        {% for field, errors in form.errors.items %}
+        {% for error in errors %}
+        <li>{{ error }}</li>
+        {% endfor %}
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+<h2>Заявка на изменение утвержденных заявок</h2>
+<br><br>
+<form method="post" action="{% url 'work:request_page' %}">
+    {% csrf_token %}
+    <select class="form-select" name="type_request" aria-label="Пример выбора по умолчанию">
+        <option selected value="График">График</option>
+        <option value="Лист работ">Лист работ</option>
+        <option value="Отпуск">Отпуск</option>
+    </select>
+    <br><br>
+    <div class="mb-3">
+        <label for="exampleFormControlTextarea1" class="form-label">Опишите проблему и что необходимо сделать</label>
+        <textarea class="form-control" name="comment" id="exampleFormControlTextarea1" rows="10"></textarea>
+    </div>
+
+    <button type="submit">Отправить</button>
+</form>
+<br><br><br><br>
+<h2>Предыдущие заявки:</h2>
+<div class="list-group">
+    {% for item in requests_list %}
+    <a href="{% url 'work:request_details' item.id %}">
+        {{forloop.counter}}. {{item.type_request}}
+        <br>
+        {% if item.result %}
+        Статус: <span class="green">Сделано</span>
+        {% else %}
+        {% if item.result == None %}
+        <span>Статус: В работе</span>
+        {% else %}
+        Статус: <span class="red">Отказано</span>
+        {% endif %}
+        {% endif %}
+        <br>
+        Создана: {{item.created_at}}
+        Обновлено: {{item.updated_at}}
+    </a>
+    {%endfor%}
+</div>
+{% endblock %}

@@ -1,8 +1,7 @@
 from django.urls import path
-from django.views.decorators.cache import cache_page
 from .views import WorkSchedule, EditWork, ajax_view, delete_appointment, update_appointment, GrafUser, \
     VacationRequestCreateView, VacationRequestAdmin, delete_vacation, confirm_vacation, search_emp, FingerPrintView, \
-    EditWorkMonth
+    EditWorkMonth, unread_count_api, request_page, request_all, request_details
 
 app_name = 'work'
 
@@ -21,4 +20,10 @@ urlpatterns = [
     path('update_rows/', update_appointment, name='update_rows'),
     path('ajax/', ajax_view, name='ajax_view'),
     path('ajax/search_emp/', search_emp, name='search_emp'),
+
+    path('ajax/unread_count_api/', unread_count_api, name='unread_count_api'),
+
+    path('request_page/', request_page, name='request_page'),
+    path('request_all/', request_all, name='request_all'),
+    path('request_details/<int:pk>/', request_details, name='request_details'),
 ]

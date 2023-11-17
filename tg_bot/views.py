@@ -18,7 +18,7 @@ from rest_framework.views import APIView
 from completed_works.models import Standards, WorkRecord, WorkRecordQuantity, Delivery
 from pay_sheet.models import PaySheetModel
 from users.models import CustomUser
-from work_schedule.models import Appointment
+from work_schedule.models import Appointment, RequestsModel
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -281,7 +281,7 @@ class StatisticUserWork(APIView):
             sorted_work_summary = dict(sorted(work_summary.items(), key=lambda item: item[1], reverse=True))
 
             context = {
-                'profile': (profile.role.name , profile.avg_kf),
+                'profile': (profile.role.name, profile.avg_kf),
                 'work_summary': sorted_work_summary,
             }
             pprint(context)
@@ -290,3 +290,38 @@ class StatisticUserWork(APIView):
         except Exception as ex:
             logger.error(ex)
             return Response({'data': f'Ошибка! {ex}'}, status=HTTP_401_UNAUTHORIZED)
+
+
+class RequestTg(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        user_id = int(request.data.get('user_id'))
+        try:
+            user = CustomUser.objects.get(pk=user_id)
+            data = {}
+            rows = RequestsModel.objects.filter(user=user)
+            for row in rows:
+                data[f'{row.type_request} - {row.created_at}'] = {
+                    'comment': row.comment,
+                    'result': row.result,
+                    'comment_admin': row.comment_admin,
+                }
+            return JsonResponse({'data': data}, status=200)
+        except Exception as ex:
+            return Response({'data': 'Не найденно!'}, status=HTTP_401_UNAUTHORIZED)
+
+    def post(self, request):
+        logger.debug(request.data)
+        type_r = request.data.get('type_r')
+        comment = request.data.get('comment')
+        user_id = int(request.data.get('user_id'))
+
+        user = CustomUser.objects.get(pk=user_id)
+        try:
+            RequestsModel.objects.create(user=user, comment=comment, type_request=type_r)
+            return Response({'data': 'Успешно'}, status=200)
+        except Exception as ex:
+            logger.error(ex)
+            return Response({'data': 'Ошибка'}, status=HTTP_401_UNAUTHORIZED)

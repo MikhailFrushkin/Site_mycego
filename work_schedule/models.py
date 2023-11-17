@@ -42,8 +42,6 @@ class Appointment(models.Model):
         super().save(*args, **kwargs)
 
 
-
-
 class FingerPrint(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name='Сотрудник',
                              related_name='fingerprints')
@@ -96,4 +94,24 @@ class VacationRequest(models.Model):
         verbose_name_plural = 'Заявки на отпуск'
 
 
+class RequestsModel(models.Model):
+    TYPE_CHOICES = [
+        ('График', 'График'),
+        ('Лист работ', 'Лист работ'),
+        ('Отпуск', 'Отпуск'),
+    ]
+    user = models.ForeignKey(CustomUser, verbose_name='Сотрудник', on_delete=models.SET_NULL, null=True)
+    comment = models.TextField(verbose_name='Комментарий', blank=True)
+    comment_admin = models.TextField(verbose_name='Комментарий руководителя', null=True, blank=True)
+    created_at = models.DateTimeField(verbose_name='Создано', auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name='Обновленно', auto_now=True)
+    type_request = models.CharField(verbose_name='Тип заявки', max_length=30, choices=TYPE_CHOICES)
+    read = models.BooleanField(verbose_name='Прочитано', default=False)
+    result = models.BooleanField(verbose_name='Решение', default=None, null=True, blank=True)
 
+    def __str__(self):
+        return f'{self.type_request} - {self.user}'
+
+    class Meta:
+        verbose_name = "Заявка на изменение"
+        verbose_name_plural = "Заявки на изменения"

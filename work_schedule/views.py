@@ -23,7 +23,7 @@ from openpyxl.workbook import Workbook
 from users.models import CustomUser, Role
 from utils.utils import get_year_week
 from work_schedule.forms import AppointmentForm, VacationRequestForm
-from work_schedule.models import Appointment, VacationRequest, FingerPrint, BadFingerPrint
+from work_schedule.models import Appointment, VacationRequest, FingerPrint, BadFingerPrint, RequestsModel
 from django.core.exceptions import ValidationError
 
 
@@ -773,3 +773,55 @@ class FingerPrintView(LoginRequiredMixin, TemplateView):
 
         context['output_dict'] = sorted_dict
         return context
+
+
+def unread_count_api(request):
+    """Ajax запрос, который возвращает кол-во не прочитаных заявок"""
+    unread_count = RequestsModel.objects.filter(read=False).count()
+    return JsonResponse({'unread_count': unread_count})
+
+
+@login_required
+def request_page(request):
+    user = request.user
+    if request.method == 'POST':
+        logger.debug(request.POST)
+        data = request.POST
+        RequestsModel.objects.create(user=user, type_request=data['type_request'], comment=data['comment'])
+        messages.success(request, 'Успешно')
+        return redirect('main_site:main_site')
+    if request.method == 'GET':
+        logger.debug(request.user)
+    requests_list = RequestsModel.objects.filter(user=user).order_by('created_at')
+    return render(request, 'work/request_page.html', {'requests_list': requests_list})
+
+
+@login_required
+def request_all(request):
+    requests_list_new = RequestsModel.objects.filter(read=False).order_by('-created_at')
+    requests_list_wait = RequestsModel.objects.filter(read=True, result=None).order_by('-created_at')
+    requests_list_other = RequestsModel.objects.filter(read=True).exclude(result=None).order_by('-created_at')
+    return render(request, 'work/request_all.html', {
+        'requests_list_new': requests_list_new,
+        'requests_list_wait': requests_list_wait,
+        'requests_list_other': requests_list_other
+    })
+
+
+@login_required
+def request_details(request, pk):
+    item = RequestsModel.objects.get(pk=pk)
+    if request.user.is_staff:
+        item.read = True
+    if request.method == 'POST':
+        logger.debug(request.POST)
+        data = request.POST
+        item.comment_admin = data['comment']
+        if data['status'] == 'completed':
+            item.result = True
+        elif data['status'] == 'rejected':
+            item.result = False
+        item.save()
+        return redirect('work:request_all')
+    item.save()
+    return render(request, 'work/request_details.html', {'item': item})
