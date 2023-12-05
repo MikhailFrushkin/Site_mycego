@@ -2,7 +2,6 @@
 {% load cache %}
 {% load i18n %}
 {% load static %}
-{% cache 6000 main_head %}
 <html lang="en" class="light-theme">
 <head>
     <!-- Required meta tags -->
@@ -73,16 +72,97 @@
         }
         .header_1 {left: 0;}
         .header_1 #main-nav {left: 14.3%;}
-    </style>
-    {% endcache %}
 
+
+        .items__count {
+            --swiper-theme-color: #007aff;
+    --swiper-navigation-size: 44px;
+    --bs-blue: #0d6efd;
+    --bs-indigo: #6610f2;
+    --bs-purple: #6f42c1;
+    --bs-pink: #d63384;
+    --bs-red: #dc3545;
+    --bs-orange: #fd7e14;
+    --bs-yellow: #ffc107;
+    --bs-green: #198754;
+    --bs-teal: #20c997;
+    --bs-cyan: #0dcaf0;
+    --bs-white: #fff;
+    --bs-gray: #6c757d;
+    --bs-gray-dark: #343a40;
+    --bs-primary: #0d6efd;
+    --bs-secondary: #6c757d;
+    --bs-success: #198754;
+    --bs-info: #0dcaf0;
+    --bs-warning: #ffc107;
+    --bs-danger: #dc3545;
+    --bs-light: #f8f9fa;
+    --bs-dark: #212529;
+    --bs-font-sans-serif: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    --bs-font-monospace: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+    --bs-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0));
+    --secondary-color: #F65005;
+    --secondary-color2: #FF7800;
+    --theme-color: #3CB815;
+    --theme-color2: #35A212;
+    --theme-color3: #76A713;
+    --theme-color4: #e0f1db;
+    --yellow-color: #FFC107;
+    --light-color: #707070;
+    --light-color2: #AAAAAA;
+    --white-color: #FFFFFF;
+    --black-color: #000000;
+    --dark-color: #242424;
+    --sky-color: #647589;
+    --border-color: #AEAEBF;
+    --border-color2: #E4E4E4;
+    --border-dark: #383434;
+    --bg-gray-color: #F7F8FC;
+    --gray-color: #FAFBFE;
+    --gray-color2: #F5F5F5;
+    --text-gray-color: #555;
+    --font-lato: 'Lato',sans-serif;
+    --font-lora: 'Lora',serif;
+    --font-poppins: 'Poppins',sans-serif;
+    --body-font-size: 1.5rem;
+    --body-font-weight: 400;
+    --body-line-height: 27px;
+    --headings-weight: 700;
+    --transition: all 0.3s ease 0s;
+    --container-fluid-offset: 10rem;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    font-family: var(--font-lato);
+    font-weight: var(--body-font-weight);
+    font-style: normal;
+    visibility: visible;
+    list-style: none;
+    cursor: pointer;
+    box-sizing: border-box;
+    display: inline-block;
+    transition: var(--transition);
+    pointer-events: none;
+    position: absolute;
+    right: 10%;
+    bottom: 40%;
+    width: 2.7rem;
+    height: 2.7rem;
+    font-size: 2.1rem;
+    line-height: 2.5rem;
+    background: var(--white-color);
+    border: 2px solid var(--theme-color);
+    text-align: center;
+    border-radius: 50%;
+    color: var(--black-color);
+    display: none;
+        }
+    </style>
     <title>{% block title %} {% trans 'Главная страница' %} {% endblock %}</title>
     {% block link %}{% endblock %}
 </head>
 <body>
 
 {% block nav %}
-<!--{% cache 600 nav request.user.id %}-->
 <header id="header_main" class="header_1 js-header">
     <div class="themes-container">
         <div class="row">
@@ -233,7 +313,7 @@
                                         <li class="menu-item">
                                             <a href="{% url 'work:request_all' %}">
                                                 Заявки на<br>изменение
-                                                (<span id="unread-count"></span>)
+                                                <span id="unread-count" class="items__count"></span>
 
                                                 {% if unread_count %}
                                                 {% endif %}
@@ -275,7 +355,6 @@
     <!--    </div>-->
 
 </header>
-<!--{% endcache %}-->
 {% endblock %}
 
 <main class="page-content">
@@ -309,7 +388,6 @@
     {% endblock %}
 
 </main>
-{% cache 6000 scripts %}
 <img class="absolute mark-page4 draggable" src="{% static 'nufti/assets/images/icon/mark-header-03.png' %}" alt="">
 <img class="absolute mark-page2 animate-rotate draggable"
      src="{% static 'nufti/assets/images/icon/mark-header-01.png' %}"
@@ -320,7 +398,16 @@
             url: "{% url 'work:unread_count_api' %}",
             method: "GET",
             success: function(data) {
-                $('#unread-count').text(data.unread_count);
+                // Проверяем, равно ли значение нулю
+                if (data.unread_count !== 0) {
+                    $('#unread-count').text(data.unread_count);
+                    // Показываем элемент при наличии непустого значения
+                    $('.items__count').show();
+                } else {
+                    // Если значение равно 0, не выводим его и скрываем элемент
+                    $('#unread-count').empty(); // или $('#unread-count').text('');
+                    $('.items__count').hide();
+                }
             },
             error: function() {
                 console.error('Failed to update unread count.');
@@ -329,6 +416,7 @@
     }
     updateUnreadCount();
 </script>
+
 <script>
     let currentlyDragged = null;
 
@@ -379,7 +467,5 @@
 <script src="{% static 'nufti/assets/js/bootstrap.min.js' %}"></script>
 <script src="{% static 'nufti/assets/js/swiper-bundle.min.js' %}"></script>
 <script src="{% static 'nufti/assets/js/wow.min.js' %}"></script>
-
-{% endcache %}
 </body>
 </html>

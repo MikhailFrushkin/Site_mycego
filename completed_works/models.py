@@ -151,7 +151,7 @@ class WorkRecord(models.Model):
     date = models.DateField(verbose_name='Дата')
     is_checked = models.BooleanField(verbose_name='Проверено', default=False)
     works = models.ManyToManyField(Standards, verbose_name='Виды работ', blank=True)
-    delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE, verbose_name='Поставка', null=True)
+    delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE, verbose_name='Поставка', null=True, blank=True)
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
 
     def __str__(self):

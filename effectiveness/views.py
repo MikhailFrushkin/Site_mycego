@@ -277,16 +277,19 @@ class StatisticKfUsers(LoginRequiredMixin, TemplateView):
         current_datetime = timezone.now()
         current_year = current_datetime.year
         current_week_number = current_datetime.isocalendar()[1]
+        two_months_ago = current_datetime - timedelta(days=60)
+
         standards = Standards.objects.all()
         # Создаем словарь для хранения данных
         data_dict = {}
         role_user = ['Фасовщик пакетов на упаковке', 'Маркировщик', 'Печатник', 'Упаковщик', 'Упаковщик 2']
         # Аннотируем данные с группировкой по году и вычисляем минимальную и максимальную неделю
-        year_week_data = WorkRecord.objects.filter(user__role__name__in=role_user).annotate(
+        year_week_data = (WorkRecord.objects.filter(date__gte=two_months_ago)
+                          .filter(user__role__name__in=role_user).annotate(
             year=ExtractYear('date'),
             week=ExtractWeek('date'),
             user_role=F('user__role__name')  # Аннотация должности сотрудника
-        ).values('year', 'week', 'user_role').order_by('user_role', 'year', 'week')
+        ).values('year', 'week', 'user_role').order_by('user_role', 'year', 'week'))
 
         for data in year_week_data:
             year = data['year']

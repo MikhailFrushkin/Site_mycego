@@ -27,6 +27,8 @@ class Role(models.Model):
         default='Почасовая'
     )
     calc_kf = models.BooleanField(verbose_name='Расчет коэффецента эффективности', default=True)
+    works_standards = models.ManyToManyField('completed_works.Standards', verbose_name='Виды работ',
+                                             blank=True)
 
     def __str__(self):
         return self.name

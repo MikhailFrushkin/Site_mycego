@@ -263,7 +263,6 @@ class StatisticUserWork(APIView):
 
     def get(self, request):
         try:
-            start = datetime.now()
             date = datetime.now().date() - timedelta(days=7)
             user_id = int(request.data.get('user_id'))
             profile = get_object_or_404(CustomUser, pk=user_id)
@@ -284,8 +283,6 @@ class StatisticUserWork(APIView):
                 'profile': (profile.role.name, profile.avg_kf),
                 'work_summary': sorted_work_summary,
             }
-            pprint(context)
-            logger.success(datetime.now() - start)
             return JsonResponse({'data': context}, status=200)
         except Exception as ex:
             logger.error(ex)

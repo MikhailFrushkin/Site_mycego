@@ -163,6 +163,14 @@ def create_work_record_admin_add(request):
                 comment = request.POST['comment']
                 cleaned_text = remove_special_characters(comment).strip()
 
+                try:
+                    exec_work_records = WorkRecord.objects.get(user=work_record.user, date=work_record.date, delivery=None)
+                    messages.error(request, 'Запись на эту дату существует')
+                    return render(request, 'completed_works/completed_works_admin_add.html',
+                                  {'form': form, 'users': users})
+                except Exception as ex:
+                    logger.error(ex)
+
                 over_work = request.POST.get('Другие работы(в минутах)', None)
                 if len(cleaned_text) == 0 and over_work:
                     logger.error(len(cleaned_text))
@@ -182,13 +190,7 @@ def create_work_record_admin_add(request):
                         messages.error(request, 'Выбрана неверная поставка.')
                         return render(request, 'completed_works/completed_works.html', {'form': form, 'users': users})
 
-                try:
-                    exec_work_records = WorkRecord.objects.get(user=work_record.user, date=work_record.date)
-                    messages.error(request, 'Запись на эту дату существует')
-                    return render(request, 'completed_works/completed_works_admin_add.html',
-                                  {'form': form, 'users': users})
-                except Exception as ex:
-                    logger.error(ex)
+
 
                 standards = Standards.objects.all()
 

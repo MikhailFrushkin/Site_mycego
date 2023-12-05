@@ -1,6 +1,7 @@
 import datetime
 import json
 import locale
+from pprint import pprint
 
 from django.apps import apps
 from django.contrib.auth.decorators import login_required
@@ -39,13 +40,10 @@ class PaySheet(LoginRequiredMixin, TemplateView):
 
         # Получите метаданные модели, чтобы получить поля
         model_fields = pay_sheet_model._meta.fields
-        logger.debug(pay_sheet_model)
-        logger.debug(model_fields)
         # Добавьте столбец "Role" к заголовкам столбцов
         headers = [field.verbose_name for field in model_fields]
         headers.append('Телефон')
         headers.append('Карта')
-        logger.debug(headers)
 
         # Создайте заголовки столбцов на основе полей модели
         for col_num, header in enumerate(headers, 1):
@@ -100,13 +98,13 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         year = self.request.GET.get('year', None)
         week = self.request.GET.get('week', None)
         month = self.request.GET.get('month', None)
-        if not year or not week:
-            import datetime
-            today = datetime.date.today()
-            year = today.year
-            month = today.month
-            week = today.isocalendar()[1] - 1
+
         if self.template_name == 'pay_sheet/pay_sheet.html':
+            if not year or not week:
+                import datetime
+                today = datetime.date.today()
+                year = today.year
+                week = today.isocalendar()[1] - 1
             queryset = PaySheetModel.objects.filter(
                 year=year,
                 week=week,
@@ -114,13 +112,17 @@ class PaySheet(LoginRequiredMixin, TemplateView):
             )
 
         elif self.template_name == 'pay_sheet/pay_sheet_month.html':
+            if not year or not month:
+                import datetime
+                today = datetime.date.today()
+                year = today.year
+                month = today.month
             queryset = PaySheetMonthModel.objects.filter(
                 year=year,
                 month=month,
                 user__role__type_salary=Role.TYPE_SALARY[2][0]
             )
         self._queryset = queryset
-        logger.debug(queryset)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -211,7 +213,6 @@ class PaySheet(LoginRequiredMixin, TemplateView):
                             mess += 'Коэффецент меньше 80%; '
 
                         users_dict[user]['result_salary'] = round(result_salary, 2)
-                        total_result_salary += result_salary
                     else:
                         users_dict[user]['works'] = {}
                         users_dict[user]['kf'] = 0
@@ -314,8 +315,7 @@ class PaySheetMonth(PaySheet):
 
             if user.role.type_salary2 == 'Почасовая':
                 for day_hour in users_dict[user]['week_hours_work']:
-                    if day_hour == 12:
-                        salary += 12 * user.role.salary
+                    salary += day_hour * user.role.salary
             else:
                 salary = user.role.salary
 
@@ -342,7 +342,6 @@ class PaySheetMonth(PaySheet):
                             mess += 'Коэффецент меньше 80%; '
 
                         users_dict[user]['result_salary'] = round(result_salary, 2)
-                        total_result_salary += result_salary
                     else:
                         users_dict[user]['result_salary'] = 0
                         mess = 'Нет сдельных листов; '
@@ -350,10 +349,8 @@ class PaySheetMonth(PaySheet):
                 else:
                     if user.role.type_salary2 == 'Почасовая':
                         users_dict[user]['result_salary'] = user.role.salary * users_dict[user]['hours']
-                        total_result_salary += user.role.salary
                     else:
                         users_dict[user]['result_salary'] = user.role.salary
-                        total_result_salary += user.role.salary
                 if user.status_work == False:
                     mess += 'Уволен;'
             except Exception as ex:
@@ -377,6 +374,7 @@ class PaySheetMonth(PaySheet):
             users_dict[user]['result_salary'] -= users_dict[user]['penalty']
         sorted_dict = dict(sorted(users_dict.items(), key=lambda x: int(x[1]['hours']), reverse=True))
         context['users_dict'] = sorted_dict
+        total_result_salary = sum(item['result_salary'] for item in sorted_dict.values())
 
         timedelta_tuples = (Appointment.objects.filter(date__month=month, verified=True)
                             .filter(filter_role2)
@@ -388,11 +386,10 @@ class PaySheetMonth(PaySheet):
         context['total_result_salary'] = round(total_result_salary, 2)
 
         context['year'], context['month'] = year, month
-        context['monday'], context['sunday'] = first_day, last_day
+        context['first_day'], context['last_day'] = first_day, last_day
 
         context['pay_sheets'] = PaySheetMonthModel.objects.filter(year=year, month=month)
         context['flag_button'] = False if current_month <= month else True
-        # pprint(context)
         logger.success(datetime.datetime.now() - time_start)
         return context
 

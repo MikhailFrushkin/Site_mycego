@@ -25,8 +25,8 @@ button.depth {
     padding: 0;
     text-shadow: 0 1px 1px hsla(0,0%,100%,.25),
                  0 -1px 1px hsla(0,0%,0%,.75);
-    width: 12%;
     overflow: hidden;
+
 }
 button.depth:hover,
 button.depth:focus {
@@ -301,3 +301,27 @@ button.depth-graf:focus {
                  0 1px 1px hsla(0,0%,100%,.25),
                  0 -1px 1px hsla(0,0%,0%,.75);
 }
+
+
+/* Медиазапрос для уменьшения размера кнопки на больших экранах */
+@media screen and (max-width: 400px) {
+    .depth {
+        width: 80vw; /* Уменьшение ширины при увеличении экрана */
+    }
+
+}
+/* Медиазапрос для увеличения размера кнопки на маленьких экранах */
+@media screen and (max-width: 600px) {
+    .depth {
+        width: 40vw; /* Увеличение ширины при уменьшении экрана */
+    }
+}
+
+/* Медиазапрос для уменьшения размера кнопки на больших экранах */
+@media screen and (min-width: 1200px) {
+    .depth {
+        width: 10vw; /* Уменьшение ширины при увеличении экрана */
+    }
+
+}
+

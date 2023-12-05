@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy
@@ -798,13 +798,25 @@ def request_page(request):
 
 @login_required
 def request_all(request):
+    current_month = datetime.today().month
     requests_list_new = RequestsModel.objects.filter(read=False).order_by('-created_at')
     requests_list_wait = RequestsModel.objects.filter(read=True, result=None).order_by('-created_at')
     requests_list_other = RequestsModel.objects.filter(read=True).exclude(result=None).order_by('-created_at')
+    user_requests_counts = (RequestsModel.objects.filter(created_at__month=current_month).values('user__username')
+                            .annotate(requests_count=Count('id'))
+                            .prefetch_related('user')
+                            .order_by('-requests_count'))
+    all_requests = user_requests_counts.count()
+    date_list = [i['created_at'] for i in user_requests_counts.values('created_at')]
+    date_min, date_max = min(date_list), max(date_list)
     return render(request, 'work/request_all.html', {
         'requests_list_new': requests_list_new,
         'requests_list_wait': requests_list_wait,
-        'requests_list_other': requests_list_other
+        'requests_list_other': requests_list_other,
+        'user_requests_counts': user_requests_counts[:10],
+        'all_requests': all_requests,
+        'date_min': date_min,
+        'date_max': date_max,
     })
 
 

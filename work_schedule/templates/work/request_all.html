@@ -5,12 +5,13 @@
 
 {% block link %}
 <style>
-label { font-size: 20px; }
-select.form-select, textarea.form-control {font-size: 18px;}
-    a {font-size: 18px;margin-bottom:15px;}
-    h2 {margin-bottom:15px;}
-    .green {font-size: 18px;color:green;}
-    .red {font-size: 18px;color:red;}
+    label { font-size: 20px; }
+    select.form-select, textarea.form-control {font-size: 18px;}
+        a {font-size: 18px;margin-bottom:15px;}
+        h2 {margin-bottom:15px;}
+        .green {font-size: 18px;color:green;}
+        .red {font-size: 18px;color:red;}
+    .users {font-size: 18px;}
 </style>
 {% endblock %}
 
@@ -19,74 +20,89 @@ select.form-select, textarea.form-control {font-size: 18px;}
 {% endblock %}
 
 {% block content %}
-<h2>Все заявки</h2>
-{% if requests_list_new %}
-<h2>Новые заявки:</h2>
-<div class="list-group">
-    {% for item in requests_list_new %}
-        <a href="{% url 'work:request_details' item.id %}">
-            {{forloop.counter}}. {{item.type_request}} {{item.user}}
-            {% if not item.read %}
-                <span class="green">Новая!</span>
-            {%endif%}
-            <br>
-            Создано: {{item.created_at}}
-            Обновлено: {{item.updated_at}}
-        </a>
-    {%endfor%}
-</div>
-{% endif %}
+<h2 class="text-center" style="margin-bottom:20px;">Все заявки</h2>
+<div class="container" style="margin:10px;width: auto">
+    <div class="row">
+        <div class="col-sm-8">
+            {% if requests_list_new %}
+            <h2>Новые заявки:</h2>
+            <div class="list-group">
+                {% for item in requests_list_new %}
+                <a href="{% url 'work:request_details' item.id %}">
+                    {{forloop.counter}}. {{item.type_request}} {{item.user}}
+                    {% if not item.read %}
+                    <span class="green">Новая!</span>
+                    {%endif%}
+                    <br>
+                    Создано: {{item.created_at}}
+                    Обновлено: {{item.updated_at}}
+                </a>
+                {%endfor%}
+            </div>
+            {% endif %}
 
-{% if requests_list_wait %}
-<h2>Ждут решения:</h2>
-<div class="list-group">
-    {% for item in requests_list_wait %}
-        <a href="{% url 'work:request_details' item.id %}">
-            {{forloop.counter}}. {{item.type_request}} {{item.user}}
-            {% if not item.read %}
-                <span class="green">Новая!</span>
-            {%endif%}
-            <br>
-            {% if item.result %}
-                Статус: <span class="green">Сделано</span>
-            {% else %}
-                {% if item.result == None %}
+            {% if requests_list_wait %}
+            <h2>Ждут решения:</h2>
+            <div class="list-group">
+                {% for item in requests_list_wait %}
+                <a href="{% url 'work:request_details' item.id %}">
+                    {{forloop.counter}}. {{item.type_request}} {{item.user}}
+                    {% if not item.read %}
+                    <span class="green">Новая!</span>
+                    {%endif%}
+                    <br>
+                    {% if item.result %}
+                    Статус: <span class="green">Сделано</span>
+                    {% else %}
+                    {% if item.result == None %}
                     <span>Статус: Ждет решения</span>
-                {% else %}
+                    {% else %}
                     Статус: <span class="red">Отказано</span>
-                {% endif %}
+                    {% endif %}
+                    {% endif %}
+                    <br>
+                    Создано: {{item.created_at}}
+                    Обновлено: {{item.updated_at}}
+                </a>
+                {%endfor%}
+            </div>
             {% endif %}
-            <br>
-            Создано: {{item.created_at}}
-            Обновлено: {{item.updated_at}}
-        </a>
-    {%endfor%}
-</div>
-{% endif %}
-{% if requests_list_other %}
-<h2>Расмотренные:</h2>
-<div class="list-group">
-    {% for item in requests_list_other %}
-        <a href="{% url 'work:request_details' item.id %}">
-            {{forloop.counter}}. {{item.type_request}} {{item.user}}
-            {% if not item.read %}
-                <span class="green">Новая!</span>
-            {%endif%}
-            <br>
-            {% if item.result %}
-                Статус: <span class="green">Сделано</span>
-            {% else %}
-                {% if item.result == None %}
+            {% if requests_list_other %}
+            <h2>Расмотренные:</h2>
+            <div class="list-group">
+                {% for item in requests_list_other %}
+                <a href="{% url 'work:request_details' item.id %}">
+                    {{forloop.counter}}. {{item.type_request}} {{item.user}}
+                    {% if not item.read %}
+                    <span class="green">Новая!</span>
+                    {%endif%}
+                    <br>
+                    {% if item.result %}
+                    Статус: <span class="green">Сделано</span>
+                    {% else %}
+                    {% if item.result == None %}
                     <span>Статус: Ждет решения</span>
-                {% else %}
+                    {% else %}
                     Статус: <span class="red">Отказано</span>
-                {% endif %}
-            {% endif %}
-            <br>
-            Создано: {{item.created_at}}
-            Обновлено: {{item.updated_at}}
-        </a>
-    {%endfor%}
+                    {% endif %}
+                    {% endif %}
+                    <br>
+                    Создано: {{item.created_at}}
+                    Обновлено: {{item.updated_at}}
+                </a>
+                {%endfor%}
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <p>
+                Всего заявок за период с {{ date_min|date:"d M Y" }} по {{ date_max|date:"d M Y" }}:
+                <span style="color:red; font-size:20px;">{{ all_requests }}</span>
+            </p>
+            {% for item in user_requests_counts %}
+                <p class="users">{{item.user__username}} - Заявок: {{item.requests_count}} </p>
+            {% endfor %}
+        </div>
+    </div>
 </div>
 {% endif %}
 {% endblock %}
