@@ -45,10 +45,7 @@ def create_work_record(request):
             date_today = datetime.datetime.now().date()
             date_last_chance = date_today - datetime.timedelta(days=7)
             year, month, day = map(int, date.split('-', maxsplit=3))
-            print(year, month, day)
             date_result = datetime.date(year=year, month=month, day=day)
-            print(date_last_chance)
-            print(date_result)
             if not date_last_chance <= date_result <= date_today:
                 messages.error(request,
                                'Укажите верную дату работ, не раньше, '
@@ -68,11 +65,8 @@ def create_work_record(request):
                 messages.error(request, 'Запись уже существует для этой даты.')
                 return redirect('completed_works:completed_works_view')
 
-            if work_record.user.role.name == 'Печатник':
-                standards = Standards.objects.filter(Q(type_for_printer=True) | Q(name='Другие работы(в минутах)'))
-            else:
-                standards = Standards.objects.filter(type_for_printer=False)
 
+            standards = request.user.role.works_standards.all()
             # Проверка, что все поля quantity не равны нулю
             has_non_zero_quantity = False
             for standard in standards:
