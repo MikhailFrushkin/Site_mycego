@@ -86,12 +86,13 @@ class StatisticViewBad(LoginRequiredMixin, TemplateView):
         missing_appointments_dict = {}
         missing_work_records_dict = {}
 
-        # Итерируемся по каждому пользователю
+        role_control = ['Фасовщик пакетов на упаковке', 'Маркировщик', 'Печатник', 'Упаковщик', 'Стажёр']
         for user in users:
             # Находим даты, у которых есть записи в модели Appointment, но нет в модели WorkRecord для данного пользователя
-            appointments_without_work_records = Appointment.objects.filter(
-                user=user, date__range=(past_date, current_date)
-            ).exclude(
+            appointments_without_work_records = Appointment.objects.filter(user__role__name__in=role_control,
+                                                                           user=user,
+                                                                           date__range=(past_date, current_date)
+                                                                           ).exclude(
                 date__in=WorkRecord.objects.filter(user=user, date__range=(past_date, current_date),
                                                    delivery=None).values(
                     'date')

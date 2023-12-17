@@ -24,6 +24,15 @@ key = env.str('SECRET_KEY')
 api_key1 = env.str('api_key1')
 api_key2 = env.str('api_key2')
 
+
+# Настройка вывода логов в файл
+logger.add(
+    "logs/app.log",
+    rotation="20 MB",
+    level="ERROR",
+    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {module} | {message}"  # Include {module}
+)
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -224,5 +233,3 @@ DEFAULT_FROM_EMAIL = 'mycego@mail.ru'
 DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'backup/')}
 
-# Настройка вывода логов в файл
-logger.add("logs/app.log", rotation="20 MB", level="ERROR", format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
