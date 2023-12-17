@@ -7,9 +7,7 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 
 
 def df_in_xlsx(df, filename, max_width=50):
-    # Создание нового рабочего книги Excel
     workbook = Workbook()
-    # Создание нового листа в рабочей книге
     sheet = workbook.active
     # Конвертация DataFrame в строки данных
     for row in dataframe_to_rows(df, index=False, header=True):
