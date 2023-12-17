@@ -171,41 +171,49 @@ def result_list_data(delivery_list, api_key, data_list=None, seller=None):
 
 
 @transaction.atomic
-def create_rows_delivery(data_list):
+def create_rows_delivery(data_list=None):
     data_pg = update_base_postgresql()
-    state_badge = DeliveryState.objects.get(name='Печать', type='Значки')
-    state_poster = DeliveryState.objects.get(name='Печать', type='Постеры')
-    for data in data_list:
-        pattern = r'[\\/:"*?<>|]'
-        name = re.sub(pattern, '', data['name'])
-        delivery_instance = Delivery.objects.filter(name=name, createdAt=data['createdAt']).order_by(
-            'createdAt').first()
+    logger.success(len(data_pg))
 
-        if delivery_instance:
-            delivery_instance.closedAt = data['closedAt']
-            delivery_instance.scanDt = data['scanDt']
-            delivery_instance.done = data['done']
-            delivery_instance.save()
-        else:
-            try:
-                created_ins = Delivery(
-                    id_wb=data['id'],
-                    name=name,
-                    createdAt=data['createdAt'],
-                    closedAt=data['closedAt'],
-                    scanDt=data['scanDt'],
-                    done=data['done'],
-                    products_count=data['products_count'],
-                    products=data['products'],
-                    price=data['price'],
-                    type=data['type'],
-                    type_d=data['type_d'],
-                    state=state_poster if data['type_d'] == 'posters' else state_badge,
+    try:
+        state_badge = DeliveryState.objects.get(name='Печать', type='Значки')
+        state_poster = DeliveryState.objects.get(name='Печать', type='Постеры')
+    except Exception as ex:
+        logger.error(ex)
+        return
 
-                )
-                created_ins.save()
-            except Exception as ex:
-                logger.error(ex)
+    if data_list:
+        for data in data_list:
+            pattern = r'[\\/:"*?<>|]'
+            name = re.sub(pattern, '', data['name'])
+            delivery_instance = Delivery.objects.filter(name=name, createdAt=data['createdAt']).order_by(
+                'createdAt').first()
+
+            if delivery_instance:
+                delivery_instance.closedAt = data['closedAt']
+                delivery_instance.scanDt = data['scanDt']
+                delivery_instance.done = data['done']
+                delivery_instance.save()
+            else:
+                try:
+                    created_ins = Delivery(
+                        id_wb=data['id'],
+                        name=name,
+                        createdAt=data['createdAt'],
+                        closedAt=data['closedAt'],
+                        scanDt=data['scanDt'],
+                        done=data['done'],
+                        products_count=data['products_count'],
+                        products=data['products'],
+                        price=data['price'],
+                        type=data['type'],
+                        type_d=data['type_d'],
+                        state=state_poster if data['type_d'] == 'posters' else state_badge,
+
+                    )
+                    created_ins.save()
+                except Exception as ex:
+                    logger.error(ex)
     if data_pg:
         for key, value in data_pg.items():
             pattern = r'[\\/:"*?<>|]'
@@ -242,15 +250,18 @@ def update_rows_delivery():
     start_time = datetime.now()
     os.makedirs('files', exist_ok=True)
     data_list = []
-    try:
-        delivery_list, seller = parser_wb_delivery(api_key=api_key1, seller='Ярослав')
-        data_list = result_list_data(delivery_list, api_key=api_key1, seller=seller)
-
-        delivery_list, seller = parser_wb_delivery(api_key=api_key2, seller='Андрей')
-        data_list = result_list_data(delivery_list, data_list=data_list, api_key=api_key2, seller=seller)
-    except Exception as ex:
-        with open('Ошибка парсинга WB.txt', 'w') as f:
-            f.write(f'{ex}')
+    # try:
+    #     seller = 'Ярослав'
+    #     delivery_list = None
+    #     delivery_list, seller = parser_wb_delivery(api_key=api_key1, seller=seller)
+    #     data_list = result_list_data(delivery_list, api_key=api_key1, seller=seller)
+    #
+    #     seller = 'Андрей'
+    #     delivery_list, seller = parser_wb_delivery(api_key=api_key2, seller=seller)
+    #     data_list = result_list_data(delivery_list, data_list=data_list, api_key=api_key2, seller=seller)
+    # except Exception as ex:
+    #     with open('Ошибка парсинга WB.txt', 'w') as f:
+    #         f.write(f'{ex}')
     try:
         create_rows_delivery(data_list)
     except Exception as ex:

@@ -162,6 +162,7 @@
 </head>
 <body>
 
+{% cache 600 user_role_cache user.role %}
 {% block nav %}
 <header id="header_main" class="header_1 js-header">
     <div class="themes-container">
@@ -310,6 +311,7 @@
                                                 Расчетные листы <br>на месяц
                                             </a>
                                         </li>
+
                                         <li class="menu-item">
                                             <a href="{% url 'work:request_all' %}">
                                                 Заявки на<br>изменение
@@ -356,8 +358,13 @@
 
 </header>
 {% endblock %}
+{% endcache %}
 
 <main class="page-content">
+    <img class="absolute mark-page4 draggable" src="{% static 'nufti/assets/images/icon/mark-header-03.png' %}" alt="">
+    <img class="absolute mark-page2 animate-rotate draggable"
+     src="{% static 'nufti/assets/images/icon/mark-header-01.png' %}"
+     alt="">
     {% if messages %}
     {% for message in messages %}
     {% if message.tags == 'success' %}
@@ -385,38 +392,40 @@
     {% endif %}
     <br><br><br>
     {% block content %}
+
     {% endblock %}
 
 </main>
-<img class="absolute mark-page4 draggable" src="{% static 'nufti/assets/images/icon/mark-header-03.png' %}" alt="">
-<img class="absolute mark-page2 animate-rotate draggable"
-     src="{% static 'nufti/assets/images/icon/mark-header-01.png' %}"
-     alt="">
-<script>
-    function updateUnreadCount() {
-        $.ajax({
-            url: "{% url 'work:unread_count_api' %}",
-            method: "GET",
-            success: function(data) {
-                // Проверяем, равно ли значение нулю
-                if (data.unread_count !== 0) {
-                    $('#unread-count').text(data.unread_count);
-                    // Показываем элемент при наличии непустого значения
-                    $('.items__count').show();
-                } else {
-                    // Если значение равно 0, не выводим его и скрываем элемент
-                    $('#unread-count').empty(); // или $('#unread-count').text('');
-                    $('.items__count').hide();
-                }
-            },
-            error: function() {
-                console.error('Failed to update unread count.');
-            }
-        });
-    }
-    updateUnreadCount();
-</script>
 
+
+{% if user.is_staff %}
+    <script>
+        function updateUnreadCount() {
+            $.ajax({
+                url: "{% url 'work:unread_count_api' %}",
+                method: "GET",
+                success: function(data) {
+                    // Проверяем, равно ли значение нулю
+                    if (data.unread_count !== 0) {
+                        $('#unread-count').text(data.unread_count);
+                        // Показываем элемент при наличии непустого значения
+                        $('.items__count').show();
+                        console.log(data.unread_count);
+                    } else {
+                        // Если значение равно 0, не выводим его и скрываем элемент
+                        $('#unread-count').empty(); // или $('#unread-count').text('');
+                        $('.items__count').hide();
+                    }
+                },
+                error: function() {
+                    console.error('Failed to update unread count.');
+                }
+            });
+        }
+        updateUnreadCount();
+    </script>
+{% endif %}
+{% cache 600 scripts_main %}
 <script>
     let currentlyDragged = null;
 
@@ -467,5 +476,6 @@
 <script src="{% static 'nufti/assets/js/bootstrap.min.js' %}"></script>
 <script src="{% static 'nufti/assets/js/swiper-bundle.min.js' %}"></script>
 <script src="{% static 'nufti/assets/js/wow.min.js' %}"></script>
+{% endcache %}
 </body>
 </html>

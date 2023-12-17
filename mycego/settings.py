@@ -16,6 +16,7 @@ from django.conf import settings
 from environs import Env
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
+from loguru import logger
 
 env = Env()
 env.read_env()
@@ -223,3 +224,5 @@ DEFAULT_FROM_EMAIL = 'mycego@mail.ru'
 DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'backup/')}
 
+# Настройка вывода логов в файл
+logger.add("logs/app.log", rotation="20 MB", level="ERROR", format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")

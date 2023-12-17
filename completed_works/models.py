@@ -78,6 +78,7 @@ class Delivery(models.Model):
                 super(Delivery, self).save(*args, **kwargs)
             except Exception as ex:
                 logger.error(ex)
+                # logger.error(self.products_nums_on_list)
             if DeliveryNums.objects.filter(delivery=self).count() == 0:
                 if self.type_d == "badges":
                     delivery_states = DeliveryState.objects.filter(type="Значки").order_by('number')
