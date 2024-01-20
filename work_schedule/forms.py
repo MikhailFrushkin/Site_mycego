@@ -8,21 +8,20 @@ from loguru import logger
 
 from .models import Appointment, VacationRequest
 
-# Создайте список с интервалом в 30 минут от 9:00 до 21:00
 HOUR_CHOICES = []
 current_time = dt.time(9, 0)  # Начинаем с 9:00
-end_time = dt.time(21, 0)  # Завершаем в 21:00
+end_time = dt.time(20, 0)  # Завершаем в 23:00
 
-while current_time <= end_time:
-    HOUR_CHOICES.append((current_time, current_time.strftime('%H:%M')))
+while current_time != dt.time(0, 0) and current_time <= end_time:
+    HOUR_CHOICES.append((current_time.strftime('%H:%M'), current_time.strftime('%H:%M')))
     current_time = (dt.datetime.combine(dt.date(1, 1, 1), current_time) + dt.timedelta(minutes=60)).time()
 
 HOUR_CHOICES2 = []
-current_time = dt.time(10, 0)  # Начинаем с 9:00
-end_time = dt.time(21, 0)  # Завершаем в 21:00
+current_time = dt.time(10, 0)  # Начинаем с 10:00
+end_time = dt.time(21, 0)  # Завершаем в 23:00
 
-while current_time <= end_time:
-    HOUR_CHOICES2.append((current_time, current_time.strftime('%H:%M')))
+while current_time != dt.time(0, 0) and current_time <= end_time:
+    HOUR_CHOICES2.append((current_time.strftime('%H:%M'), current_time.strftime('%H:%M')))
     current_time = (dt.datetime.combine(dt.date(1, 1, 1), current_time) + dt.timedelta(minutes=60)).time()
 
 
@@ -42,7 +41,6 @@ class AppointmentForm(forms.ModelForm):
         choices=HOUR_CHOICES2,
         widget=forms.Select(attrs={'class': 'custom-select'})
     )
-
 
 
 class VacationRequestForm(forms.ModelForm):

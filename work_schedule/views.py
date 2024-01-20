@@ -307,8 +307,8 @@ class WorkSchedule(LoginRequiredMixin, FormView):
                 target_week = current_week
 
             start_date = current_date + timedelta(weeks=target_week - current_week, days=-current_date.weekday())
-            days_in_target_week = [start_date + timedelta(days=i) for i in range(14)]
-            end_day = start_date + timedelta(days=14)
+            days_in_target_week = [start_date + timedelta(days=i) for i in range(21)]
+            end_day = start_date + timedelta(days=21)
 
             if self.request.user.role.type_salary == 'Раз в месяц':
                 days_in_target_week = get_days_for_current_and_next_month()

@@ -73,11 +73,10 @@ class AppointmentView(APIView):
 
         try:
             current_date = datetime.now()
-            current_week_number = current_date.isocalendar()[1]
-            next_week_number = current_date.isocalendar()[1] + 1
+            current_day_of_week = current_date.weekday()
+            current_week_monday = current_date - timedelta(days=current_day_of_week)
 
-            rows = Appointment.objects.filter(user=user, date__week=current_week_number) | \
-                   Appointment.objects.filter(user=user, date__week=next_week_number)
+            rows = Appointment.objects.filter(user=user, date__gte=current_week_monday)
             rows_data = [(i.date, i.start_time, i.end_time, i.verified, i.id) for i in rows.order_by('date')]
             return JsonResponse({'message': rows_data})
         except Exception as ex:

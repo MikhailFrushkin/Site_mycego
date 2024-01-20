@@ -39,20 +39,24 @@ def get_year_week(data, type=None):
 
 
 def get_dates(year, week_number):
-    import datetime
-    # Создаем объект даты для первого дня года
-    first_day_of_year = datetime.date(year, 1, 1)
-    # Вычисляем дату понедельника первой недели года
-    days_to_add = 0 - first_day_of_year.weekday()
-    monday_of_week_1 = first_day_of_year + datetime.timedelta(days=days_to_add)
-    # Вычисляем дату понедельника заданной недели
-    days_to_add = (week_number) * 7
-    monday_of_given_week = monday_of_week_1 + datetime.timedelta(days=days_to_add)
+    from datetime import datetime, timedelta
+    # Находим первый день года
+    jan_first = datetime(year, 1, 1)
+    # Определяем день недели для 1 января
+    day_of_week = jan_first.isoweekday()
 
-    # Вычисляем дату воскресенья заданной недели
-    sunday_of_given_week = monday_of_given_week + datetime.timedelta(days=6)
+    # Если 1 января - понедельник, вторник, среда или четверг, то это первая неделя
+    if day_of_week < 5:
+        start_delta = -day_of_week + 1
+    else:
+        # Иначе первая неделя начнется в следующем году
+        start_delta = 8 - day_of_week
 
-    return monday_of_given_week, sunday_of_given_week
+    # Находим начало и конец нужной недели
+    start_date = jan_first + timedelta(days=start_delta) + timedelta(weeks=week_number - 1)
+    end_date = start_date + timedelta(days=6)
+
+    return start_date, end_date
 
 
 def get_days_for_current_and_next_month(year, month):

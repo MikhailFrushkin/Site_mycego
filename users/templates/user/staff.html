@@ -51,14 +51,19 @@
 
 {% block content %}
 {% cache 600 staff %}
-
+<style>
+span {
+    display: flex;
+    justify-content: center;
+}
+</style>
 {% for key, value in staff_by_role.items %}
-<span class="staff-name">{{ key }}</span>
-<br>
-<br>
 
 <div class="flat-top-seller home2">
+        <span class="staff-name">{{ key }}</span>
+    <br><br>
     <div class="themes-container2 style-container">
+
         <div class="container">
             <div class="row">
                 {% for emp in value %}

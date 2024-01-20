@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (containerElement) {
         var userId = containerElement.getAttribute('data-user-id');
-        console.log(userId);
     } else {
         console.error('Элемент с классом .container не найден.');
     }
@@ -113,25 +112,26 @@ function addEventListeners() {
     let selectedDateInput = document.getElementById('selected-date-input');
     let calendar = document.querySelector('.calendar');
 
-    console.log(userId);
-
     calendar.addEventListener('click', (event) => {
         let target = event.target;
-        console.log(target);
         if (target.tagName === 'DIV') {
             let selectedDate = new Date(currYear.value, currMonth.value, parseInt(target.textContent));
             let currentDate = new Date();
             console.log(userId);
-
             if (userId === "Раз в месяц") {
                 // Если userId равен "Раз в месяц", выделяем зеленым текущий месяц и следующий
                 let currentMonth = currentDate.getMonth();
                 let selectedMonth = selectedDate.getMonth();
                 let selectedYear = selectedDate.getFullYear();
+                console.log(currentMonth);
+                console.log(selectedMonth);
+                console.log(selectedYear);
 
-                if (
+                console.log(currentDate.getFullYear());
+
+               if (
                     (selectedYear === currentDate.getFullYear() && selectedMonth === currentMonth) ||
-                    (selectedYear === currentDate.getFullYear() && selectedMonth === currentMonth + 1)
+                    (selectedYear === currentDate.getFullYear() + 1 && selectedMonth === 0)
                 ) {
                     selectedDateText.style.color = 'green';
                 } else {
@@ -143,7 +143,7 @@ function addEventListeners() {
                 let targetWeek;
 
                 if (currentDate.getDay() === 0) {
-                    targetWeek = currentWeek + 1; // Добавляем 2 недели для воскресенья
+                    targetWeek = currentWeek + 2; // Добавляем 2 недели для воскресенья
                 } else {
                     targetWeek = currentWeek; //
                 }
@@ -151,7 +151,7 @@ function addEventListeners() {
                 let startOfWeek = getStartOfWeek(currentDate, targetWeek); // Получаем начало целевой недели
                 let endOfWeek = new Date(startOfWeek);
 
-                endOfWeek.setDate(startOfWeek.getDate() + 14); // Добавляем 13 дней к началу недели
+                endOfWeek.setDate(startOfWeek.getDate() + 21); // Добавляем 13 дней к началу недели
 
                 // Проверяем, входит ли выбранная дата в диапазон целевой недели
                 if (selectedDate >= startOfWeek && selectedDate <= endOfWeek) {
@@ -165,7 +165,6 @@ function addEventListeners() {
             selectedDateText.textContent = formattedDate;
 
             if (isValidDate(formatDateToYYYYMMDD(selectedDate))) {
-                console.log(selectedDate);
                 sendAjaxRequest(formatDateToYYYYMMDD(selectedDate));
             } else {
                 console.log("Дата некорректна:", selectedDate);
@@ -282,14 +281,11 @@ function sendAjaxRequest(selectedDate) {
     xhr.send(data);
     // Определить обработчик события при завершении запроса
     xhr.onreadystatechange = function () {
-        console.log(xhr.status);
-
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
                 // Обработать успешный ответ от сервера
                 var responseData = JSON.parse(xhr.responseText);
                 // Добавьте здесь логику для обновления данных на вашей странице
-                console.log(responseData);
                 updateAppointmentsTable(responseData.appointments, responseData.user);
             } else {
                 // Обработать ошибку при запросе
@@ -314,7 +310,6 @@ function updateAppointmentsTable(appointments, currentUser) {
     for (var i = 0; i < appointments.length; i++) {
         var appointment = appointments[i];
         var canDelete = appointment.user === currentUser && !appointment.verified;
-        console.log(appointment.id);
         var row = '<tr id="row-' + appointment.id + '">' +
             '<th scope="row">' + (i + 1) + '</th>' +
             '<td>' + appointment.user + '</td>' +
@@ -355,7 +350,6 @@ function deleteAppointment(appointmentId) {
                     // Handle success
                     var responseData = JSON.parse(xhr.responseText);
                     // You can update the table or perform any other action as needed
-                    console.log(responseData);
                     var tableRow = document.getElementById('row-' + appointmentId);
                     if (tableRow) {
                         tableRow.parentNode.removeChild(tableRow);

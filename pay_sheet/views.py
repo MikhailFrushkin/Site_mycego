@@ -104,12 +104,16 @@ class PaySheet(LoginRequiredMixin, TemplateView):
                 import datetime
                 today = datetime.date.today()
                 year = today.year
-                week = today.isocalendar()[1] - 1
+                week = today.isocalendar()[1]
+                if week != 1:
+                    week -= 1
             queryset = PaySheetModel.objects.filter(
                 year=year,
                 week=week,
                 user__role__type_salary=Role.TYPE_SALARY[1][0]
             )
+            logger.debug(year)
+            logger.debug(week)
 
         elif self.template_name == 'pay_sheet/pay_sheet_month.html':
             if not year or not month:
@@ -128,6 +132,7 @@ class PaySheet(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         logger.debug(self.template_name)
         if self.template_name == 'pay_sheet/pay_sheet.html':
+            logger.success(Role.TYPE_SALARY[1][0])
             filter_role = Q(role__type_salary=Role.TYPE_SALARY[1][0])
             filter_role2 = Q(user__role__type_salary=Role.TYPE_SALARY[1][0])
         elif self.template_name == 'pay_sheet/pay_sheet_month.html':
@@ -142,18 +147,26 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         total_salary = 0
         total_result_salary = 0
 
+        logger.debug(self.request.GET)
         year = self.request.GET.get('year', None)
         week = self.request.GET.get('week', None)
+        month = self.request.GET.get('month', None)
         today = datetime.date.today()
+        current_year = today.year
+        current_month = today.month
         current_week = today.isocalendar()[1]
 
         if not year or not week:
             year = today.year
-            week = today.isocalendar()[1] - 1
+            week = today.isocalendar()[1]
+            if week != 1:
+                week -= 1
         else:
             year, week = int(year), int(week)
+
         monday, sunday = get_dates(year, week)
         user_list = CustomUser.objects.filter(filter_role)
+        logger.debug(user_list)
         for user in user_list:
             queryset_appointments = Appointment.objects.filter(user=user, date__year=year, date__week=week,
                                                                verified=True)
@@ -240,7 +253,7 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         sorted_dict = dict(sorted(users_dict.items(), key=lambda x: int(x[1]['hours']), reverse=True))
         context['users_dict'] = sorted_dict
 
-        timedelta_tuples = (Appointment.objects.filter(date__week=week, verified=True)
+        timedelta_tuples = (Appointment.objects.filter(date__year=year, date__week=week, verified=True)
                             .filter(filter_role2)
                             .values_list('duration'))
         timedelta_list = [item[0] for item in timedelta_tuples]
@@ -253,9 +266,14 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         context['monday'], context['sunday'] = monday, sunday
 
         context['pay_sheets'] = PaySheetModel.objects.filter(year=year, week=week).filter(filter_role2)
-        context['flag_button'] = False if current_week <= week else True
-        # pprint(context['users_dict'])
+        flag_button = True
+        if current_week <= week and current_year == year:
+            flag_button = False
+
+        logger.success(flag_button)
+        context['flag_button'] = flag_button
         logger.success(datetime.datetime.now() - time_start)
+        pprint(context)
         return context
 
 
@@ -275,6 +293,7 @@ class PaySheetMonth(PaySheet):
         total_salary = 0
         total_result_salary = 0
         today = datetime.date.today()
+        current_year = today.year
         current_month = today.month
 
         year = self.request.GET.get('year', None)
@@ -389,7 +408,11 @@ class PaySheetMonth(PaySheet):
         context['first_day'], context['last_day'] = first_day, last_day
 
         context['pay_sheets'] = PaySheetMonthModel.objects.filter(year=year, month=month)
-        context['flag_button'] = False if current_month <= month else True
+        flag_button = True
+        if current_month <= month and current_year == year:
+            flag_button = False
+            logger.debug('asdasdasd')
+        context['flag_button'] = flag_button
         logger.success(datetime.datetime.now() - time_start)
         return context
 
