@@ -321,17 +321,22 @@
                                                 {% endif %}
                                             </a>
                                         </li>
-                                        <li class="menu-item">
-                                            <a href="{% url 'effectiveness:statistic_main' %}">
-                                                Статистика
-                                            </a>
-                                        </li>
+
                                         <li class="menu-item">
                                             <a href="{% url 'download:download' %}">
                                                 Загрузить файлы
                                             </a>
                                         </li>
                                         {% endif %}
+
+                                        {% if request.user.is_staff or request.user.role.name == 'Тренер' %}
+                                        <li class="menu-item">
+                                            <a href="{% url 'effectiveness:statistic_main' %}">
+                                                Статистика
+                                            </a>
+                                        </li>
+                                        {% endif %}
+
                                         <li>
                                             <a class="menu-item" href="{% url 'users:logout' %}">Выход</a>
                                         </li>

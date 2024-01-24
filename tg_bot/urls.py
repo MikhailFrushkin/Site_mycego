@@ -23,4 +23,5 @@ urlpatterns = [
     path('statistic/', views.StatisticUserWork.as_view(), name='statistic'),
 
     path('request/', views.RequestTg.as_view(), name='request_tg'),
+    path('pay_sheet/', views.PaySheets.as_view(), name='pay_sheet'),
 ]

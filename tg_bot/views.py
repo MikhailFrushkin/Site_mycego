@@ -16,7 +16,7 @@ from rest_framework.status import HTTP_401_UNAUTHORIZED
 from rest_framework.views import APIView
 
 from completed_works.models import Standards, WorkRecord, WorkRecordQuantity, Delivery
-from pay_sheet.models import PaySheetModel
+from pay_sheet.models import PaySheetModel, PaySheetMonthModel
 from users.models import CustomUser
 from work_schedule.models import Appointment, RequestsModel
 
@@ -321,3 +321,52 @@ class RequestTg(APIView):
         except Exception as ex:
             logger.error(ex)
             return Response({'data': 'Ошибка'}, status=HTTP_401_UNAUTHORIZED)
+
+
+class PaySheets(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            data = {}
+            user_id = int(request.data.get('user_id'))
+            user = get_object_or_404(CustomUser, pk=user_id)
+            rows = PaySheetMonthModel.objects.filter(user=user).order_by('-created_at')[:5]
+            for row in rows:
+                data['month-' + str(row)] = {
+                    'role': row.role,
+                    'role_salary': row.role_salary,
+                    'hours': row.hours,
+                    'salary': row.salary,
+                    'works': row.works,
+                    'count_of_12': row.count_of_12,
+                    'kf': row.kf,
+                    'bonus': row.bonus,
+                    'penalty': row.penalty,
+                    'result_salary': row.result_salary,
+                    'comment': row.comment,
+                    'created_at': row.created_at,
+                    'updated_at': row.updated_at,
+                }
+            rows = PaySheetModel.objects.filter(user=user).order_by('-created_at')[:5]
+            for row in rows:
+                data['week-' + str(row)] = {
+                    'role': row.role,
+                    'role_salary': row.role_salary,
+                    'hours': row.hours,
+                    'salary': row.salary,
+                    'works': row.works,
+                    'count_of_12': row.count_of_12,
+                    'kf': row.kf,
+                    'bonus': row.bonus,
+                    'penalty': row.penalty,
+                    'result_salary': row.result_salary,
+                    'comment': row.comment,
+                    'created_at': row.created_at,
+                    'updated_at': row.updated_at,
+                }
+            pprint(data)
+            return JsonResponse({'data': data}, status=200)
+        except Exception as ex:
+            logger.error(ex)
+            return Response({'data': f'Ошибка! {ex}'}, status=HTTP_401_UNAUTHORIZED)
