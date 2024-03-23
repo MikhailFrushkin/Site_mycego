@@ -344,8 +344,8 @@ class StatisticKfUsers(LoginRequiredMixin, TemplateView):
         context['data'] = changes
         context.pop('view', None)
         cache.set('context_kf', context, 3600)
-        with open(f"json.json", "w") as f:
-            json.dump(changes, f, indent=4, ensure_ascii=False)
+        # with open(f"json.json", "w") as f:
+        #     json.dump(changes, f, indent=4, ensure_ascii=False)
 
         logger.success(datetime.now() - start_time)
         return context

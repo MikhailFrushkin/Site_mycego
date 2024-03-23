@@ -68,44 +68,39 @@ class Staff(LoginRequiredMixin, ListView):
         if cashed_data:
             return cashed_data
 
-        # Желаемые роли, которые должны идти впереди
-        desired_roles = ['Директор',
-                         'Директор по производству',
-                         'Администратор сайта',
-                         'Руководитель сервисного отдела',
-                         'Сервисный инженер',
-                         'Сервисный инженер (стажер)',
-                         'Руководитель',
-                         'Руководитель склада',
-                         'Тренер',
-                         'Печатник',
-                         'Маркировщик',
-                         'Фасовщик пакетов на упаковке',
-                         ]
+        # # Желаемые роли, которые должны идти впереди
+        # desired_roles = ['Директор',
+        #                  'Директор по производству',
+        #                  'Администратор сайта',
+        #                  'Руководитель сервисного отдела',
+        #                  'Сервисный инженер',
+        #                  'Сервисный инженер (стажер)',
+        #                  'Руководитель',
+        #                  'Руководитель склада',
+        #                  'Руководитель 3д наклеек, наклеек на карту',
+        #                  'Руководитель отдела Постеров, боксов, попсокетов',
+        #                  'Руководитель отдела значков',
+        #                  'Руководитель отдела FBO',
+        #                  'Руководитель отдела кружек',
+        #                  'Тренер',
+        #                  'Печатник',
+        #                  'Маркировщик',
+        #                  'Фасовщик пакетов на упаковке',
+        #                  ]
 
         # Создаем упорядоченный словарь для хранения данных
         staff_by_role = OrderedDict()
-
+        desired_roles = Role.objects.order_by('order_by')
         # Добавляем выбранные роли и соответствующие им пользователи
-        for role_name in desired_roles:
-            try:
-                role = Role.objects.get(name=role_name)
-                users_with_role = CustomUser.objects.filter(role=role, status_work=True).order_by('-avg_kf')
-                staff_by_role[role] = list(users_with_role)
-            except:
-                pass
-
-        # Получаем остальные роли и добавляем их в словарь
-        other_roles = Role.objects.exclude(name__in=desired_roles)
-        for role in other_roles:
+        for role in desired_roles:
             users_with_role = CustomUser.objects.filter(role=role, status_work=True).order_by('-avg_kf')
-            if len(users_with_role) > 0:
+            if users_with_role.count() > 0:
                 staff_by_role[role] = list(users_with_role)
 
         context['staff_by_role'] = staff_by_role
 
         context.pop('view', None)
-        cache.set('staff', context, 600)
+        cache.set('staff', context, 30)
         return context
 
 

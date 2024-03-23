@@ -799,6 +799,10 @@ def request_page(request):
 @login_required
 def request_all(request):
     current_month = datetime.today().month
+    today = datetime.today()
+    first_day_of_month = today.replace(day=1)
+    last_day_of_month = (today.replace(month=today.month % 12 + 1, day=1) - timedelta(days=1))
+
     requests_list_new = RequestsModel.objects.filter(read=False).order_by('-created_at')
     requests_list_wait = RequestsModel.objects.filter(read=True, result=None).order_by('-created_at')
     requests_list_other = RequestsModel.objects.filter(read=True).exclude(result=None).order_by('-created_at')
@@ -807,16 +811,14 @@ def request_all(request):
                             .prefetch_related('user')
                             .order_by('-requests_count'))
     all_requests = user_requests_counts.count()
-    date_list = [i['created_at'] for i in user_requests_counts.values('created_at')]
-    date_min, date_max = min(date_list), max(date_list)
     return render(request, 'work/request_all.html', {
         'requests_list_new': requests_list_new,
         'requests_list_wait': requests_list_wait,
-        'requests_list_other': requests_list_other,
+        'requests_list_other': requests_list_other[:30],
         'user_requests_counts': user_requests_counts[:10],
         'all_requests': all_requests,
-        'date_min': date_min,
-        'date_max': date_max,
+        'date_min': first_day_of_month,
+        'date_max': last_day_of_month,
     })
 
 

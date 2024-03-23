@@ -77,6 +77,7 @@ class Delivery(models.Model):
                 self.machin = self.products_nums_on_list.get('1').get('comp')
                 super(Delivery, self).save(*args, **kwargs)
             except Exception as ex:
+                logger.error(self.products_nums_on_list)
                 logger.error(ex)
                 # logger.error(self.products_nums_on_list)
             if DeliveryNums.objects.filter(delivery=self).count() == 0:

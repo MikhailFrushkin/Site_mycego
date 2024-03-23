@@ -29,6 +29,7 @@ class Role(models.Model):
     calc_kf = models.BooleanField(verbose_name='Расчет коэффецента эффективности', default=True)
     works_standards = models.ManyToManyField('completed_works.Standards', verbose_name='Виды работ',
                                              blank=True)
+    order_by = models.IntegerField(verbose_name='Порядок', default=10)
 
     def __str__(self):
         return self.name

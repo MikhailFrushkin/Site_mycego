@@ -258,6 +258,8 @@ class PaySheet(LoginRequiredMixin, TemplateView):
                             .values_list('duration'))
         timedelta_list = [item[0] for item in timedelta_tuples]
         total_hours = int(sum([i.total_seconds() for i in timedelta_list]) // 3600)
+        total_result_salary = sum(item['result_salary'] for item in sorted_dict.values())
+
         context['total_hours'] = total_hours
         context['total_salary'] = total_salary
         context['total_result_salary'] = round(total_result_salary, 2)
