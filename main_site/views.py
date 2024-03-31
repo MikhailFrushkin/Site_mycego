@@ -1,4 +1,7 @@
+import collections
+import datetime
 from datetime import timedelta
+from pprint import pprint
 
 from django.core.cache import cache
 from django.core.paginator import Paginator
@@ -20,42 +23,38 @@ class MainPage(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        cashed_data = cache.get('main', None)
-        if cashed_data:
-            return cashed_data
-        locale_name = 'ru_RU.UTF-8'
-        locale.setlocale(locale.LC_TIME, locale_name)
-        current_datetime = timezone.now()
-        current_year = current_datetime.year
-        current_week_number = current_datetime.isocalendar()[1]
-        # Отфильтруйте записи за текущий месяц
-        current_month_appointments = Appointment.objects.filter(
-            date__week=current_week_number,
-            date__year=current_year,
-            verified=True,
-        )
+        today = datetime.datetime.now().today()
+        day_first = today - datetime.timedelta(days=1)
+        day_last = today + datetime.timedelta(days=5)
 
-        first_day_of_current_week = timezone.datetime.fromisocalendar(current_year, current_week_number, 1).date()
+        user_appointments = (Appointment.objects.filter(date__range=[day_first, day_last])
+                             .order_by('user__username', 'date'))
 
-        user_works_day = {}
-        uniq_user_id = current_month_appointments.values_list('user', flat=True).distinct()
-        users = CustomUser.objects.filter(id__in=uniq_user_id)
-        for user in users:
-            hours_list = []
-            for day in range(7):
-                target_date = first_day_of_current_week + timedelta(days=day)
-                hours_work = ""
-                try:
-                    apport = current_month_appointments.get(user=user, date=target_date)
-                    hours_work = f'{apport.start_time.strftime("%H:%M")} - {apport.end_time.strftime("%H:%M")}'
-                except Exception as ex:
-                    pass
-                hours_list.append(hours_work)
-            user_works_day[user] = hours_list
-        sorted_user_works_day = dict(sorted(user_works_day.items(), key=lambda x: x[0].username))
-        context['days'] = [day.strftime("%d.%m") for day in
-                           (first_day_of_current_week + timedelta(days=day) for day in range(7))]
-        context['user_works_day'] = sorted_user_works_day
+        set_date = user_appointments.values('date').order_by('date')
+
+        user_schedule = {}
+
+        for appointment in user_appointments:
+            user = appointment.user
+            date = appointment.date
+            start_time = appointment.start_time
+            end_time = appointment.end_time
+            user_schedule[user] = {}
+
+            if date not in user_schedule[user]:
+                user_schedule[user][date] = {'start_time': None, 'end_time': None}
+
+            user_schedule[user][date]['start_time'] = start_time
+            user_schedule[user][date]['end_time'] = end_time
+
+        # Заполнение дат, где записи отсутствуют, значениями None
+        for user, dates in user_schedule.items():
+            all_dates = set_date.values_list('date', flat=True)
+            for date in all_dates:
+                if date not in dates:
+                    user_schedule[user][date] = {'start_time': None, 'end_time': None}
+        context['user_schedule'] = user_schedule
+        context['set_date'] = set_date
 
         # Добавляем объявления с пагинацией
         announcements = Announcement.objects.all().order_by('-is_pinned', '-date_created')

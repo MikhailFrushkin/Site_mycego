@@ -41,6 +41,8 @@ class Appointment(models.Model):
 
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return f'{self.user.username} {self.date}'
 
 class FingerPrint(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name='Сотрудник',
