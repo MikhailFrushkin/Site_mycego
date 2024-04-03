@@ -1,0 +1,39 @@
+{% extends 'main_base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block link %}
+<style>
+    label {
+    font-size: 2rem;
+    }
+    button {
+    margin-top:4rem;
+    }
+    .cell {
+    margin-top:4rem;
+    }
+</style>
+{% endblock %}
+
+{% block title %}
+{% trans 'Загрузка пользователей' %}
+{% endblock %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="cell">
+        <label for="{{ form.excel_file.id_for_label }}">{{ form.excel_file.label }}</label>
+        {{ form.excel_file }}
+    </div>
+
+    <div class="cell">
+        <label for="{{ form.excel_file2.id_for_label }}">{{ form.excel_file2.label }}</label>
+        {{ form.excel_file2 }}
+    </div>
+
+
+    <button type="submit" class="upload-button">Загрузить</button>
+</form>
+{% endblock %}

@@ -1,4 +1,5 @@
 from django import template
+from loguru import logger
 
 register = template.Library()
 

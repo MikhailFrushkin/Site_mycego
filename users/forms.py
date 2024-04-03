@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.images import ImageFile
 from loguru import logger
 
-from .models import CustomUser, Role
+from .models import CustomUser, Role, Department
 from django.utils.translation import gettext_lazy as _
 
 
@@ -24,15 +24,17 @@ class UserLoginForm(AuthenticationForm):
 
 class CustomUserCreationForm(UserCreationForm):
     role = forms.ModelChoiceField(queryset=Role.objects.all(), empty_label="Выберите должность")
+    department = forms.ModelChoiceField(queryset=Department.objects.all(), empty_label="Выберите отдел")
     status_work = forms.BooleanField(label='Работает', initial=True)
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'role')
+        fields = ('username', 'email', 'role', 'department')
 
 
 class CustomUserChangeForm(UserChangeForm):
     role = forms.ModelChoiceField(queryset=Role.objects.all(), empty_label="Выберите должность")
+    department = forms.ModelChoiceField(queryset=Department.objects.all(), empty_label="Выберите отдел")
     status_work = forms.BooleanField(label='Работает', initial=True, required=False)
 
     class Meta:
@@ -46,8 +48,8 @@ class CustomUserChangeForm(UserChangeForm):
 class CustomUserEditForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'email', 'role', 'status_work', 'photo', 'phone_number', 'telegram_id',
-                  'card_details', 'birth_date', 'hobbies']
+        fields = ['first_name', 'last_name', 'email', 'role', 'status_work', 'photo', 'phone_number',
+                  'telegram_id', 'card_details', 'birth_date', 'hobbies']
 
     def __init__(self, *args, **kwargs):
         super(CustomUserEditForm, self).__init__(*args, **kwargs)

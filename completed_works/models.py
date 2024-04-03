@@ -77,9 +77,8 @@ class Delivery(models.Model):
                 self.machin = self.products_nums_on_list.get('1').get('comp')
                 super(Delivery, self).save(*args, **kwargs)
             except Exception as ex:
-                logger.error(self.products_nums_on_list)
-                logger.error(ex)
-                # logger.error(self.products_nums_on_list)
+                pass
+
             if DeliveryNums.objects.filter(delivery=self).count() == 0:
                 if self.type_d == "badges":
                     delivery_states = DeliveryState.objects.filter(type="Значки").order_by('number')
@@ -175,18 +174,3 @@ class WorkRecordQuantity(models.Model):
     class Meta:
         verbose_name = "Количество работы"
         verbose_name_plural = "Количества работы"
-
-# @receiver(post_save, sender=Delivery)
-# def create_delivery_nums(sender, instance, created, **kwargs):
-#     if created:
-#         if len(instance.products_nums_on_list) == 0:
-#             logger.error(instance)
-#             return
-#         logger.success(instance)
-#         if instance.type_d == "badges":
-#             delivery_states = DeliveryState.objects.filter(type="Значки").order_by('number')
-#         else:
-#             delivery_states = DeliveryState.objects.filter(type="Постеры").order_by('number')
-#
-#         for state in delivery_states:
-#             DeliveryNums.objects.create(delivery=instance, state=state)

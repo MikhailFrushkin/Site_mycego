@@ -3,7 +3,7 @@ from django.contrib.auth.views import (
     PasswordResetView, PasswordResetConfirmView,
     PasswordResetCompleteView, PasswordResetDoneView, PasswordChangeView, PasswordChangeDoneView
 )
-from .views import UserLogout, UserLogin, EditProfileView, Staff, user_profile
+from .views import UserLogout, UserLogin, EditProfileView, Staff, user_profile, toggle_favorite
 
 app_name = 'users'
 
@@ -27,4 +27,5 @@ urlpatterns = [
     path('password_change/', PasswordChangeView.as_view(success_url=reverse_lazy('users:login')),
          name='password_change'),
     path('password_change/done/', PasswordChangeDoneView.as_view(), name='password_change_done'),
+    path('toggle_favorite/<int:user_id>/', toggle_favorite, name='toggle_favorite'),
 ]

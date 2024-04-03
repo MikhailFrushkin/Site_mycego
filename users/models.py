@@ -41,6 +41,9 @@ class Role(models.Model):
 
 class CustomUser(AbstractUser):
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
+    department = models.ForeignKey("users.Department", on_delete=models.SET_NULL, null=True)
+    favorites = models.ManyToManyField('self', symmetrical=False, related_name='favorited_by', blank=True)
+
     status_work = models.BooleanField(default=True, blank=True)
     photo = models.ImageField(verbose_name='Фото', upload_to='user_photos', blank=True, null=True)
     phone_number = models.CharField(verbose_name='Номер телефона', max_length=15, blank=True)
@@ -53,6 +56,44 @@ class CustomUser(AbstractUser):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+        if self.first_name:
+            if self.last_name:
+                return f'{self.last_name} {self.first_name}'
+            return f'{self.first_name}'
         return self.username
+
+
+class Department(models.Model):
+    name = models.CharField(verbose_name='Отдел', max_length=255)
+    parent_department = models.ForeignKey(
+        'self',
+        verbose_name='Вышестоящий отдел',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='subdepartments'
+    )
+    head = models.ManyToManyField(
+        "users.CustomUser",
+        verbose_name='Руководитель отдела',
+        blank=True,
+        related_name='head_of_department'
+    )
+
+    @classmethod
+    def get_or_none(cls, **kwargs):
+        """Получает объект или возвращает None, если не найден."""
+        try:
+            return cls.objects.get(**kwargs)
+        except cls.DoesNotExist:
+            return None
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Отдел"
+        verbose_name_plural = "Отделы"
+
 
 

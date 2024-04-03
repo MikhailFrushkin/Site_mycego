@@ -105,7 +105,7 @@
         <th scope="row">{{ forloop.counter }}</th>
         <td>
             <a href="{% url 'users:user_profile' user.id %}">
-                {{user}}
+                {{user.username}}
                 <br>
                 тел:{{user.phone_number}}
                 <br>

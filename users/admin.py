@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from .forms import CustomUserCreationForm, CustomUserChangeForm
-from .models import CustomUser, Role
+from .models import CustomUser, Role, Department
 
 
 class CustomUserAdmin(UserAdmin):
@@ -13,17 +13,18 @@ class CustomUserAdmin(UserAdmin):
     list_display = ('id', 'username', 'avg_kf', 'role', 'status_work', 'updated_at')
 
     fieldsets = UserAdmin.fieldsets + (
-        ('Доп. инофрмация', {'fields': ('role', 'status_work', 'photo', 'phone_number',
+        ('Доп. информация', {'fields': ('role', 'department', 'status_work', 'photo', 'phone_number',
                                         'telegram_id', 'card_details', 'birth_date', 'hobbies', 'nick')}),
+        ('Избранные', {'fields': ('favorites',)}),  # Добавляем поле favorites в админку
     )
 
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'password1', 'password2', 'role', 'status_work'),
+            'fields': ('username', 'email', 'password1', 'password2', 'role', 'department', 'status_work'),
         }),
     )
-    search_fields = ('username', )
+    search_fields = ('username',)
 
 
 class AdminRole(admin.ModelAdmin):
@@ -33,3 +34,11 @@ class AdminRole(admin.ModelAdmin):
 
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Role, AdminRole)
+
+
+class AdminDepartment(admin.ModelAdmin):
+    list_display = [field.name for field in Department._meta.fields]
+    list_display_links = ('name',)
+
+
+admin.site.register(Department, AdminDepartment)

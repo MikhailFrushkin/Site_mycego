@@ -28,6 +28,31 @@
     width: 420px; /* Для обеспечения правильного размера изображения */
     height: 420px; /* Для обеспечения правильного размера изображения */
     }
+
+
+.favorite-button .yellow-star {
+    display: {% if profile in request.user.favorites.all %}inline{% else %}none{% endif %};
+}
+
+.favorite-button .gray-star {
+    display: {% if profile in request.user.favorites.all %}none{% else %}inline{% endif %};
+}
+
+.favorite-button {
+    position: absolute;
+    top: 10px;
+    right: -10px;
+    background: none; /* Убираем задний фон */
+    border: none; /* Убираем границу */
+    padding: 0;
+    cursor: pointer;
+}
+.favorite-button:hover,
+.favorite-button:focus {
+    background: none; /* Сбрасываем фон при наведении */
+    border: none; /* Убираем границу */
+}
+
 </style>
 {% endblock %}
 
@@ -35,18 +60,33 @@
 <div class="container text-center">
     <div class="row">
         <div class="col-4">
+            {% if request.user != profile %}
+                        <button id="toggle-favorite-button" data-user-id="{{ profile.id }}" class="favorite-button {% if profile in request.user.favorites.all %}favorite{% else %}not-favorite{% endif %}">
+                            <!-- Желтая звезда -->
+                            <svg class="yellow-star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="40" height="40">
+                                <path fill="#F0D355" d="M510.504,195.362c-3.499-10.728-12.581-18.522-23.702-20.341l-139.454-22.804L282.757,25.04 C277.611,14.902,267.359,8.603,256,8.603c-11.357,0-21.611,6.297-26.76,16.435l-64.59,127.179L25.196,175.021 c-11.124,1.82-20.206,9.615-23.701,20.342c-3.495,10.723-0.76,22.379,7.141,30.419l99.73,101.511L86.671,468.765 c-1.719,11.204,2.91,22.29,12.082,28.931c5.152,3.729,11.236,5.701,17.593,5.701c4.721,0,9.441-1.136,13.647-3.286L256,435.7 l126.007,64.412c4.207,2.149,8.926,3.285,13.645,3.285c6.357,0,12.441-1.972,17.594-5.702 c9.172-6.642,13.801-17.728,12.082-28.929l-21.694-141.474l99.729-101.51C511.265,217.742,514.001,206.086,510.504,195.362z"/>
+                            </svg>
+
+                            <!-- Серая звезда -->
+                            <svg class="gray-star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="40" height="40">
+                                <path fill="#414042" d="M510.504,195.362c-3.499-10.728-12.581-18.522-23.702-20.341l-139.454-22.804L282.757,25.04 C277.611,14.902,267.359,8.603,256,8.603c-11.357,0-21.611,6.297-26.76,16.435l-64.59,127.179L25.196,175.021 c-11.124,1.82-20.206,9.615-23.701,20.342c-3.495,10.723-0.76,22.379,7.141,30.419l99.73,101.511L86.671,468.765 c-1.719,11.204,2.91,22.29,12.082,28.931c5.152,3.729,11.236,5.701,17.593,5.701c4.721,0,9.441-1.136,13.647-3.286L256,435.7 l126.007,64.412c4.207,2.149,8.926,3.285,13.645,3.285c6.357,0,12.441-1.972,17.594-5.702 c9.172-6.642,13.801-17.728,12.082-28.929l-21.694-141.474l99.729-101.51C511.265,217.742,514.001,206.086,510.504,195.362z"/>
+                            </svg>
+                        </button>
+                        {% endif%}
             <div>
                 <div class="img-box flat-img">
                     <div class="img-author">
+
                         {% if profile.photo %}
                         <img src="{{ profile.photo.url }}" class="rounded float-start" alt="{{ profile.username }}">
                         {% else %}
-                        <img src="{% static 'Нет фото.jpg' %}" class="rounded float-start"
+                        <img src="{% static 'image.png' %}" class="rounded float-start"
                              alt="{{ profile.username }}">
                         {% endif %}
                     </div>
                 </div>
             </div>
+
             {% if request.user == profile %}
             <div>
                 <br>
@@ -177,4 +217,32 @@
 </div>
 {% endif %}
 {% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleFavoriteButton = document.getElementById('toggle-favorite-button');
+    const yellowStar = toggleFavoriteButton.querySelector('.yellow-star');
+    const grayStar = toggleFavoriteButton.querySelector('.gray-star');
+
+    toggleFavoriteButton.addEventListener('click', function() {
+        fetch(`/users/toggle_favorite/${toggleFavoriteButton.dataset.userId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_favorite !== undefined) {
+                    if (data.is_favorite) {
+                        yellowStar.style.display = 'inline';
+                        grayStar.style.display = 'none';
+                    } else {
+                        yellowStar.style.display = 'none';
+                        grayStar.style.display = 'inline';
+                    }
+                } else {
+                    console.error('Error toggling favorite');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    });
+});
+
+</script>
 {% endblock %}

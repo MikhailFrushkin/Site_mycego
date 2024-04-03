@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.cache import cache
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views import View
@@ -147,3 +147,18 @@ def user_profile(request, user_id):
     }
     pprint(context)
     return render(request, 'user/user_profile.html', context)
+
+
+def toggle_favorite(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    current_user = request.user
+    if current_user.is_authenticated:
+        if user in current_user.favorites.all():
+            current_user.favorites.remove(user)
+            is_favorite = False
+        else:
+            current_user.favorites.add(user)
+            is_favorite = True
+        return JsonResponse({'is_favorite': is_favorite})
+    else:
+        return JsonResponse({'error': 'User is not authenticated'}, status=401)

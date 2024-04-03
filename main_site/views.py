@@ -1,19 +1,12 @@
-import collections
 import datetime
-from datetime import timedelta
-from pprint import pprint
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.core.paginator import Paginator
-from django.utils import timezone
-from django.views.generic import TemplateView, ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from loguru import logger
-import locale
+from django.views.generic import TemplateView
 
 from completed_works.models import Standards
-from main_site.models import Announcement, Category, GoodLink, Knowledge
-from users.models import CustomUser
+from main_site.models import Announcement, GoodLink, Knowledge
 from work_schedule.models import Appointment
 
 
@@ -24,22 +17,25 @@ class MainPage(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         today = datetime.datetime.now().today()
-        day_first = today - datetime.timedelta(days=1)
-        day_last = today + datetime.timedelta(days=5)
+        start_of_week = today - datetime.timedelta(days=today.weekday())
+        end_of_week = start_of_week + datetime.timedelta(days=6)
 
-        user_appointments = (Appointment.objects.filter(date__range=[day_first, day_last])
+        user_appointments = (Appointment.objects.filter(date__range=[start_of_week, end_of_week])
                              .order_by('user__username', 'date'))
 
-        set_date = user_appointments.values('date').order_by('date')
+        unique_dates = set(appointment.date for appointment in user_appointments)
+        sorted_unique_dates = sorted(unique_dates)
 
         user_schedule = {}
+        for appointment in user_appointments:
+            user = appointment.user
+            user_schedule[user] = {}
 
         for appointment in user_appointments:
             user = appointment.user
             date = appointment.date
             start_time = appointment.start_time
             end_time = appointment.end_time
-            user_schedule[user] = {}
 
             if date not in user_schedule[user]:
                 user_schedule[user][date] = {'start_time': None, 'end_time': None}
@@ -47,14 +43,13 @@ class MainPage(LoginRequiredMixin, TemplateView):
             user_schedule[user][date]['start_time'] = start_time
             user_schedule[user][date]['end_time'] = end_time
 
-        # Заполнение дат, где записи отсутствуют, значениями None
         for user, dates in user_schedule.items():
-            all_dates = set_date.values_list('date', flat=True)
-            for date in all_dates:
+            for date in sorted_unique_dates:
                 if date not in dates:
                     user_schedule[user][date] = {'start_time': None, 'end_time': None}
+
         context['user_schedule'] = user_schedule
-        context['set_date'] = set_date
+        context['set_date'] = sorted_unique_dates
 
         # Добавляем объявления с пагинацией
         announcements = Announcement.objects.all().order_by('-is_pinned', '-date_created')
@@ -63,8 +58,6 @@ class MainPage(LoginRequiredMixin, TemplateView):
         page = paginator.get_page(page_number)
         context['announcements'] = page
 
-        context.pop('view', None)
-        cache.set('main', context, 600)
         return context
 
 

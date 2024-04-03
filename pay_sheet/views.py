@@ -56,7 +56,6 @@ class PaySheet(LoginRequiredMixin, TemplateView):
 
                 # Получите должность пользователя и добавьте ее в конец строки
                 if field.name == 'user' and isinstance(cell_value, CustomUser):
-                    logger.debug(cell_value.phone_number)
                     worksheet.cell(row=row_num, column=col_num, value=cell_value.username)
                     worksheet.cell(row=row_num, column=len(headers) - 1, value=str(cell_value.phone_number))
                     worksheet.cell(row=row_num, column=len(headers), value=str(cell_value.card_details))
@@ -112,9 +111,6 @@ class PaySheet(LoginRequiredMixin, TemplateView):
                 week=week,
                 user__role__type_salary=Role.TYPE_SALARY[1][0]
             )
-            logger.debug(year)
-            logger.debug(week)
-
         elif self.template_name == 'pay_sheet/pay_sheet_month.html':
             if not year or not month:
                 import datetime
@@ -130,9 +126,7 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         return queryset
 
     def get_context_data(self, **kwargs):
-        logger.debug(self.template_name)
         if self.template_name == 'pay_sheet/pay_sheet.html':
-            logger.success(Role.TYPE_SALARY[1][0])
             filter_role = Q(role__type_salary=Role.TYPE_SALARY[1][0])
             filter_role2 = Q(user__role__type_salary=Role.TYPE_SALARY[1][0])
         elif self.template_name == 'pay_sheet/pay_sheet_month.html':
@@ -145,15 +139,11 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         time_start = datetime.datetime.now()
         users_dict = {}
         total_salary = 0
-        total_result_salary = 0
 
-        logger.debug(self.request.GET)
         year = self.request.GET.get('year', None)
         week = self.request.GET.get('week', None)
-        month = self.request.GET.get('month', None)
         today = datetime.date.today()
         current_year = today.year
-        current_month = today.month
         current_week = today.isocalendar()[1]
 
         if not year or not week:
@@ -166,7 +156,6 @@ class PaySheet(LoginRequiredMixin, TemplateView):
 
         monday, sunday = get_dates(year, week)
         user_list = CustomUser.objects.filter(filter_role)
-        logger.debug(user_list)
         for user in user_list:
             queryset_appointments = Appointment.objects.filter(user=user, date__year=year, date__week=week,
                                                                verified=True)
@@ -272,10 +261,8 @@ class PaySheet(LoginRequiredMixin, TemplateView):
         if current_week <= week and current_year == year:
             flag_button = False
 
-        logger.success(flag_button)
         context['flag_button'] = flag_button
         logger.success(datetime.datetime.now() - time_start)
-        pprint(context)
         return context
 
 
@@ -413,7 +400,6 @@ class PaySheetMonth(PaySheet):
         flag_button = True
         if current_month <= month and current_year == year:
             flag_button = False
-            logger.debug('asdasdasd')
         context['flag_button'] = flag_button
         logger.success(datetime.datetime.now() - time_start)
         return context
@@ -487,16 +473,13 @@ def created_salary_check(request):
                     'penalty': round(abs(float(row[10])), 2) if row[10] != '' else 0,
                     'comment': row[11],
                 }
-                # temp['result_salary'] = round(temp['result_salary'] + temp['bonus'] - temp['penalty'], 2)
                 dict_pays[user] = temp
             except Exception as ex:
                 logger.error(ex)
 
         try:
-            # Цикл для создания и сохранения объектов PaySheetModel
             for user, data in dict_pays.items():
                 try:
-                    # Проверяем существование записи для данного пользователя, недели и года
                     if not month:
                         pay_sheet = PaySheetModel.objects.get(user=user, year=data['year'], week=data['week'])
                     else:

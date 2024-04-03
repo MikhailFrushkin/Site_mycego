@@ -43,6 +43,10 @@ th, td {
         word-wrap: break-word;
         white-space: normal;
     }
+.favorite-row {
+    background-color: #00fffc4a;
+    color: white; /* Цвет текста в строке таблицы */
+}
 </style>
 <div class="container text-center">
     <div class="row justify-content-md-center">
@@ -61,24 +65,26 @@ th, td {
 <div class="collapse" id="collapseExample{{ forloop.counter }}">
     <table>
         <thead>
-        <tr>
-            <th>Сотрудник</th>
-            {% for date in set_date %}
-            <th>{{ date.date|date:"j F, D" }}</th>
-            {% endfor %}
-        </tr>
+            <tr>
+                <th style="width: 20%;">Сотрудник</th>
+                {% for date in set_date %}
+                <th style="width: auto;">{{ date|date:"j F, D" }}</th>
+                {% endfor %}
+            </tr>
         </thead>
         <tbody>
-        {% for user, schedule in user_schedule.items %}
-        <tr>
-            <td>{{ user }}</td>
-            {% for date in set_date %}
-            <td>
-                {% get_date user_schedule user date.date %}
-            </td>
+            {% for user, schedule in user_schedule.items %}
+            <tr {% if user in request.user.favorites.all %}class="favorite-row"{% endif %}>
+                <td><a href="{% url 'users:user_profile' user.id %}">
+                    {{user}}
+                </a></td>
+                {% for date in set_date %}
+                <td>
+                    {% get_date user_schedule user date %}
+                </td>
+                {% endfor %}
+            </tr>
             {% endfor %}
-        </tr>
-        {% endfor %}
         </tbody>
     </table>
 </div>
