@@ -121,13 +121,6 @@ class DownloadUser(LoginRequiredMixin, FormView):
                     phone_number = str(row['Телефон']).split('.')[0]
                 password = row['Пароль']
                 status_work = True
-                logger.info(username)
-                logger.info(first_name)
-                logger.info(last_name)
-                logger.info(role_name)
-                logger.info(email)
-                logger.info(phone_number)
-                logger.info(password)
                 try:
                     # Находим или создаем роль
                     role, created = Role.objects.get_or_create(name=role_name)

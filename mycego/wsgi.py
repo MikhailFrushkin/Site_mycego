@@ -12,7 +12,7 @@ import os
 from django.core.wsgi import get_wsgi_application
 
 from utils.scheduler import start_scheduler
-
+import users.signals
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mycego.settings')
 
 application = get_wsgi_application()

@@ -87,6 +87,31 @@ class UserProfileEditForm(forms.ModelForm):
             # Проверка размера изображения (не обязательная часть)
             max_size = (1024, 1024)  # Пример: максимальный размер 1024x1024
             image = Image.open(photo)
+
+            # Поворот изображения, если оно в горизонтальной ориентации
+            if hasattr(image, '_getexif'):  # Проверка наличия EXIF данных (для JPEG)
+                exif = image._getexif()
+                if exif and exif.get(0x0112):
+                    orientation = exif.get(0x0112)
+                    if orientation == 2:
+                        image = image.transpose(Image.FLIP_LEFT_RIGHT)
+                    elif orientation == 3:
+                        image = image.rotate(180)
+                    elif orientation == 4:
+                        image = image.rotate(180).transpose(Image.FLIP_LEFT_RIGHT)
+                    elif orientation == 5:
+                        image = image.rotate(-90, expand=True).transpose(Image.FLIP_LEFT_RIGHT)
+                    elif orientation == 6:
+                        image = image.rotate(-90, expand=True)
+                    elif orientation == 7:
+                        image = image.rotate(90, expand=True).transpose(Image.FLIP_LEFT_RIGHT)
+                    elif orientation == 8:
+                        image = image.rotate(90, expand=True)
+            else:  # Если нет EXIF данных, то проверяем размеры изображения
+                width, height = image.size
+                if width > height:
+                    image = image.transpose(Image.ROTATE_270)
+
             image.thumbnail(max_size)
             output = BytesIO()
             image.save(output, format=image.format)

@@ -1,21 +1,23 @@
 from collections import OrderedDict
 from datetime import datetime
 from pprint import pprint
-
+from django.db.models import Count, Case, When, Value, IntegerField, F, Subquery, OuterRef
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.cache import cache
+from django.db.models import Count
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView, UpdateView
+from loguru import logger
 
 from completed_works.models import WorkRecord, WorkRecordQuantity
 from pay_sheet.models import PaySheetModel
 from users.forms import UserLoginForm, CustomUserEditForm, UserProfileEditForm
-from users.models import CustomUser, Role
+from users.models import CustomUser, Role, Department
 from work_schedule.models import Appointment
 
 
@@ -56,51 +58,38 @@ class EditProfileView(LoginRequiredMixin, UpdateView):
 
 
 class Staff(LoginRequiredMixin, ListView):
-    model = CustomUser
     template_name = 'user/staff.html'
     login_url = '/users/login/'
     success_url = reverse_lazy('users:staff')
 
+    def get_queryset(self):
+        departments = Department.objects.all()
+
+        # Sort the departments based on the length of their parent_departments list
+        departments = sorted(departments, key=lambda d: len(d.get_all_parent_departments()))
+
+        for department in departments:
+            parent_departments = department.get_all_parent_departments()
+            logger.info(department)
+            logger.info(parent_departments)
+        return departments
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        departments = self.object_list
+        user_dict = OrderedDict()
+        for department in departments:
+            department_name = department.name if department.name else "Не указан отдел"
+            head_of_department = department.head.all()
 
-        cashed_data = cache.get('staff', None)
-        if cashed_data:
-            return cashed_data
+            # Получение всех пользователей, кроме руководителей отделов
+            users = CustomUser.objects.filter(department=department).exclude(
+                id__in=head_of_department.values_list('id', flat=True)).order_by('-avg_kf')
+            user_dict[department_name] = (head_of_department, users)
 
-        # # Желаемые роли, которые должны идти впереди
-        # desired_roles = ['Директор',
-        #                  'Директор по производству',
-        #                  'Администратор сайта',
-        #                  'Руководитель сервисного отдела',
-        #                  'Сервисный инженер',
-        #                  'Сервисный инженер (стажер)',
-        #                  'Руководитель',
-        #                  'Руководитель склада',
-        #                  'Руководитель 3д наклеек, наклеек на карту',
-        #                  'Руководитель отдела Постеров, боксов, попсокетов',
-        #                  'Руководитель отдела значков',
-        #                  'Руководитель отдела FBO',
-        #                  'Руководитель отдела кружек',
-        #                  'Тренер',
-        #                  'Печатник',
-        #                  'Маркировщик',
-        #                  'Фасовщик пакетов на упаковке',
-        #                  ]
-
-        # Создаем упорядоченный словарь для хранения данных
-        staff_by_role = OrderedDict()
-        desired_roles = Role.objects.order_by('order_by')
-        # Добавляем выбранные роли и соответствующие им пользователи
-        for role in desired_roles:
-            users_with_role = CustomUser.objects.filter(role=role, status_work=True).order_by('-avg_kf')
-            if users_with_role.count() > 0:
-                staff_by_role[role] = list(users_with_role)
-
-        context['staff_by_role'] = staff_by_role
-
-        context.pop('view', None)
-        cache.set('staff', context, 30)
+        not_dep = CustomUser.objects.filter(status_work=True, department__isnull=True).order_by('-avg_kf')
+        context['user_dict'] = user_dict
+        context['not_dep'] = not_dep
         return context
 
 
@@ -145,7 +134,6 @@ def user_profile(request, user_id):
         'work_summary': sorted_work_summary,
         'summary_data': summary_data
     }
-    pprint(context)
     return render(request, 'user/user_profile.html', context)
 
 

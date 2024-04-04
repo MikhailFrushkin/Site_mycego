@@ -1,9 +1,11 @@
 {% extends 'main_base.html' %}
-{% load i18n %}
 {% load static %}
 {% load cache %}
+{% block title %}
+Сотрудники
+{% endblock %}
 
-{% block link %}
+{% block content %}
 <style>
     .col {
         float: left;
@@ -20,14 +22,12 @@
     .col:nth-child(-n+5) {
     margin-top: 0; /* Убираем отступ сверху */
     }
-    .row {
-        max-width: 100%;
-    }
-
     .staff-name {
     font-size: 44px;
     text-align: center;
     margin-left: 140px;
+    margin-left: auto; /* Убираем левый отступ */
+    margin-right: auto; /* Убираем правый отступ */
     }
     .img-author img {
     width: 110px; /* Для обеспечения правильного размера изображения */
@@ -42,37 +42,56 @@
     margin-right: 5px;
     width: 100%;
     }
-</style>
-{% endblock %}
+    .row {
+        max-width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+body {
+    overflow-y: hidden;
+}
+   .profile-button {
+    position: absolute;
+    bottom: 15px; /* Настройте в соответствии с вашими требованиями */
+    left: 42%; /* Расположить в середине по горизонтали */
+    transform: translateX(-50%);
+    text-align: center;
+    width: 100%; /* Ширина кнопки на всю ширину карточки */
+}
 
-{% block title %}
-{% trans 'Сотрудники' %}
-{% endblock %}
+/* Стили для кнопки "Профиль" */
+.profile-button a {
+    display: inline-block;
+    background-color: #4CAF50; /* Цвет фона кнопки */
+    color: white; /* Цвет текста кнопки */
+    padding: 10px 20px; /* Отступы кнопки */
+    text-decoration: none;
+    border-radius: 5px; /* Закругление углов */
+}
 
-{% block content %}
-{% cache 600 staff %}
-<style>
-span {
-    display: flex;
-    justify-content: center;
+/* Эффект при наведении */
+.profile-button a:hover {
+    background-color: #45a049; /* Цвет фона кнопки при наведении */
 }
 </style>
-{% for key, value in staff_by_role.items %}
 
+
+{% for dep, users in user_dict.items %}
 <div class="flat-top-seller home2">
-        <span class="staff-name">{{ key }}</span>
+    <h2 class="staff-name">{{ dep }}</h2>
     <br><br>
     <div class="themes-container2 style-container">
-
         <div class="container">
-            <div class="row">
-                {% for emp in value %}
+            <div class="row" style="margin-bottom:8rem;">
+                {% for emp in users.0 %}
                 <div class="col">
                     <div class="wrap-seller">
                         <div class="img-box flat-img">
                             <div class="img-author">
                                 {% if emp.photo %}
-                                <img src="{{ emp.photo.url }}" class="rounded float-start" alt="{{ emp.username }}" loading="lazy">
+                                <img src="{{ emp.photo.url }}" class="rounded float-start" alt="{{ emp.username }}"
+                                     loading="lazy">
                                 {% else %}
                                 <img src="{% static 'image.png' %}" class="rounded float-start" loading="lazy"
                                      alt="{{ emp.username }}">
@@ -80,11 +99,8 @@ span {
                             </div>
                         </div>
                         <div class="content">
-                            {% if emp.last_name %}
-                            <h3><a href="{% url 'users:user_profile' emp.id %}">{{ emp.last_name }} {{ emp.first_name }}</a></h3>
-                            {% else %}
                             <h3><a href="{% url 'users:user_profile' emp.id %}">{{ emp }}</a></h3>
-                            {% endif %}
+                            <h3> {{ emp.role.name }} </h3>
 
                             <div class="price flex" style="height:2rem;">
                                 <div class="title-price fs-16">
@@ -93,8 +109,48 @@ span {
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="button-follow">
-                                <a href="{% url 'users:user_profile' emp.id %}" class="sc-button btn-6 bt"><span>Профиль</span></a>
+
+                            <div class="profile-button">
+                                <a href="{% url 'users:user_profile' emp.id %}" class="sc-button btn-6 bt">
+                                    <span>Профиль</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="row">
+                {% for emp in users.1 %}
+                <div class="col">
+                    <div class="wrap-seller">
+                        <div class="img-box flat-img">
+                            <div class="img-author">
+                                {% if emp.photo %}
+                                <img src="{{ emp.photo.url }}" class="rounded float-start" alt="{{ emp.username }}"
+                                     loading="lazy">
+                                {% else %}
+                                <img src="{% static 'image.png' %}" class="rounded float-start" loading="lazy"
+                                     alt="{{ emp.username }}">
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="content">
+                            <h3><a href="{% url 'users:user_profile' emp.id %}">{{ emp }}</a></h3>
+                            <h3> {{ emp.role.name }} </h3>
+
+                            <div class="price flex" style="height:2rem;">
+                                <div class="title-price fs-16">
+                                    {% if emp.avg_kf %}
+                                    Эффективность: {{ emp.avg_kf }}%
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="profile-button">
+                                <a href="{% url 'users:user_profile' emp.id %}" class="sc-button btn-6 bt">
+                                    <span>Профиль</span>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -106,11 +162,92 @@ span {
 </div>
 {% endfor %}
 
+<div class="flat-top-seller home2">
+    <h2 class="staff-name">Сотрудники без отдела</h2>
+    <br><br>
+    <div class="themes-container2 style-container">
+        <div class="container">
+            <div class="row" style="margin-bottom:8rem;">
+                {% for emp in not_dep %}
+                <div class="col">
+                    <div class="wrap-seller">
+                        <div class="img-box flat-img">
+                            <div class="img-author">
+                                {% if emp.photo %}
+                                <img src="{{ emp.photo.url }}" class="rounded float-start" alt="{{ emp.username }}"
+                                     loading="lazy">
+                                {% else %}
+                                <img src="{% static 'image.png' %}" class="rounded float-start" loading="lazy"
+                                     alt="{{ emp.username }}">
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="content">
+                            <h3><a href="{% url 'users:user_profile' emp.id %}">{{ emp }}</a></h3>
+                            <h3> {{ emp.role.name }} </h3>
 
-<script src="{% static 'nufti/assets/js/switchmode.js' %}"></script>
-<script src="{% static 'nufti/assets/js/bootstrap.min.js' %}"></script>
-<script src="{% static 'nufti/assets/js/swiper-bundle.min.js' %}"></script>
-<script src="{% static 'nufti/assets/js/wow.min.js' %}"></script>
-{% endcache %}
+                            <div class="price flex" style="height:2rem;">
+                                <div class="title-price fs-16">
+                                    {% if emp.avg_kf %}
+                                    Эффективность: {{ emp.avg_kf }}%
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="profile-button">
+                                <a href="{% url 'users:user_profile' emp.id %}" class="sc-button btn-6 bt">
+                                    <span>Профиль</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // Находим все строки
+    var rows = document.querySelectorAll('.row');
+
+    // Для каждой строки
+    rows.forEach(function(row) {
+        // Находим все карточки в этой строке
+        var cards = row.querySelectorAll('.col');
+
+        // Инициализируем переменную для хранения высоты самой большой карточки в строке
+        var maxHeight = 0;
+
+        // Для каждой карточки
+        cards.forEach(function(card) {
+            // Получаем высоту текущей карточки
+            var cardHeight = card.offsetHeight;
+
+            // Обновляем значение maxHeight, если текущая карточка выше
+            if (cardHeight > maxHeight) {
+                maxHeight = cardHeight;
+            }
+        });
+
+        cards.forEach(function(card) {
+            var newHeight = maxHeight + 30; // Добавляем 30px к высоте карточки
+            card.style.height = newHeight + 'px';
+
+            // Устанавливаем высоту всех дочерних элементов .wrap-seller
+            var wrapSeller = card.querySelector('.wrap-seller');
+            if (wrapSeller) {
+                wrapSeller.style.height = newHeight + 'px';
+            }
+
+            // Устанавливаем высоту всех дочерних элементов .button-follow
+            var buttonFollow = card.querySelector('.button-follow');
+            if (buttonFollow) {
+                buttonFollow.style.height = newHeight + 'px';
+            }
+        });
+    });
+</script>
+
 
 {% endblock %}

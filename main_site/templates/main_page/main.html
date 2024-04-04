@@ -56,35 +56,92 @@ th, td {
                 data-bs-target="#collapseExample"
                 aria-expanded="false"
                 aria-controls="collapseExample">
-            Показать график
+            Общий график
         </button>
-        <br><br>
+        <button class="depth"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseExample2"
+                aria-expanded="false"
+                aria-controls="collapseExample">
+            График
+            <svg class="yellow-star" xmlns="http://www.w3.org/2000/svg" viewBox="0 30 512 512" width="15" height="15">
+                <path fill="#F0D355"
+                      d="M510.504,195.362c-3.499-10.728-12.581-18.522-23.702-20.341l-139.454-22.804L282.757,25.04 C277.611,14.902,267.359,8.603,256,8.603c-11.357,0-21.611,6.297-26.76,16.435l-64.59,127.179L25.196,175.021 c-11.124,1.82-20.206,9.615-23.701,20.342c-3.495,10.723-0.76,22.379,7.141,30.419l99.73,101.511L86.671,468.765 c-1.719,11.204,2.91,22.29,12.082,28.931c5.152,3.729,11.236,5.701,17.593,5.701c4.721,0,9.441-1.136,13.647-3.286L256,435.7 l126.007,64.412c4.207,2.149,8.926,3.285,13.645,3.285c6.357,0,12.441-1.972,17.594-5.702 c9.172-6.642,13.801-17.728,12.082-28.929l-21.694-141.474l99.729-101.51C511.265,217.742,514.001,206.086,510.504,195.362z"/>
+            </svg>
+        </button>
     </div>
 </div>
 <br><br>
-<div class="collapse" id="collapseExample{{ forloop.counter }}">
-    <table>
+
+<div class="collapse" id="collapseExample">
+    <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Поиск имен.." style="margin-bottom:20px;">
+    <table id="week_graf">
         <thead>
-            <tr>
-                <th style="width: 20%;">Сотрудник</th>
-                {% for date in set_date %}
-                <th style="width: auto;">{{ date|date:"j F, D" }}</th>
-                {% endfor %}
-            </tr>
+        <tr>
+            <th style="width: 20%;">Сотрудник</th>
+            {% for date in set_date %}
+            <th style="width: auto;">{{ date|date:"j F, D" }}</th>
+            {% endfor %}
+        </tr>
         </thead>
         <tbody>
-            {% for user, schedule in user_schedule.items %}
-            <tr {% if user in request.user.favorites.all %}class="favorite-row"{% endif %}>
-                <td><a href="{% url 'users:user_profile' user.id %}">
+        {% for user, schedule in user_schedule.items %}
+        <tr {% if user in request.user.favorites.all %}class="favorite-row" {% endif %}>
+            <td>
+                {% if user in request.user.favorites.all %}
+                <svg class="yellow-star" xmlns="http://www.w3.org/2000/svg" viewBox="0 30 512 512" width="15"
+                     height="15">
+                    <path fill="#F0D355"
+                          d="M510.504,195.362c-3.499-10.728-12.581-18.522-23.702-20.341l-139.454-22.804L282.757,25.04 C277.611,14.902,267.359,8.603,256,8.603c-11.357,0-21.611,6.297-26.76,16.435l-64.59,127.179L25.196,175.021 c-11.124,1.82-20.206,9.615-23.701,20.342c-3.495,10.723-0.76,22.379,7.141,30.419l99.73,101.511L86.671,468.765 c-1.719,11.204,2.91,22.29,12.082,28.931c5.152,3.729,11.236,5.701,17.593,5.701c4.721,0,9.441-1.136,13.647-3.286L256,435.7 l126.007,64.412c4.207,2.149,8.926,3.285,13.645,3.285c6.357,0,12.441-1.972,17.594-5.702 c9.172-6.642,13.801-17.728,12.082-28.929l-21.694-141.474l99.729-101.51C511.265,217.742,514.001,206.086,510.504,195.362z"/>
+                </svg>
+                {% endif %}
+                <a href="{% url 'users:user_profile' user.id %}">
                     {{user}}
-                </a></td>
-                {% for date in set_date %}
-                <td>
-                    {% get_date user_schedule user date %}
-                </td>
-                {% endfor %}
-            </tr>
+                </a>
+            </td>
+            {% for date in set_date %}
+            <td>
+                {% get_date user_schedule user date %}
+            </td>
             {% endfor %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="collapse" id="collapseExample2">
+    <table>
+        <thead>
+        <tr>
+            <th style="width: 20%;">Сотрудник</th>
+            {% for date in set_date %}
+            <th style="width: auto;">{{ date|date:"j F, D" }}</th>
+            {% endfor %}
+        </tr>
+        </thead>
+        <tbody>
+        {% for user, schedule in user_schedule.items %}
+        {% if user in request.user.favorites.all %}
+        <tr>
+            <td><a href="{% url 'users:user_profile' user.id %}">
+                <svg class="yellow-star" xmlns="http://www.w3.org/2000/svg" viewBox="0 30 512 512" width="15"
+                     height="15">
+                    <path fill="#F0D355"
+                          d="M510.504,195.362c-3.499-10.728-12.581-18.522-23.702-20.341l-139.454-22.804L282.757,25.04 C277.611,14.902,267.359,8.603,256,8.603c-11.357,0-21.611,6.297-26.76,16.435l-64.59,127.179L25.196,175.021 c-11.124,1.82-20.206,9.615-23.701,20.342c-3.495,10.723-0.76,22.379,7.141,30.419l99.73,101.511L86.671,468.765 c-1.719,11.204,2.91,22.29,12.082,28.931c5.152,3.729,11.236,5.701,17.593,5.701c4.721,0,9.441-1.136,13.647-3.286L256,435.7 l126.007,64.412c4.207,2.149,8.926,3.285,13.645,3.285c6.357,0,12.441-1.972,17.594-5.702 c9.172-6.642,13.801-17.728,12.082-28.929l-21.694-141.474l99.729-101.51C511.265,217.742,514.001,206.086,510.504,195.362z"/>
+                </svg>
+                {{user}}
+            </a></td>
+            {% for date in set_date %}
+            <td>
+                {% get_date user_schedule user date %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endif %}
+
+        {% endfor %}
         </tbody>
     </table>
 </div>
@@ -158,4 +215,27 @@ th, td {
     </div>
 </div>
 {% endfor %}
+<script>
+    function myFunction() {
+      // Объявить переменные
+      var input, filter, table, tr, td, i, txtValue;
+      input = document.getElementById("myInput");
+      filter = input.value.toUpperCase();
+      table = document.getElementById("week_graf");
+      tr = table.getElementsByTagName("tr");
+
+      // Перебирайте все строки таблицы и скрывайте тех, кто не соответствует поисковому запросу
+      for (i = 0; i < tr.length; i++) {
+        td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+          txtValue = td.textContent || td.innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            tr[i].style.display = "";
+          } else {
+            tr[i].style.display = "none";
+          }
+        }
+      }
+    }
+</script>
 {% endblock %}

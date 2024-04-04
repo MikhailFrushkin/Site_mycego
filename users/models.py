@@ -91,9 +91,16 @@ class Department(models.Model):
     def __str__(self):
         return self.name
 
+    def get_all_parent_departments(self, parent_departments=None):
+        if parent_departments is None:
+            parent_departments = []
+
+        if self.parent_department:
+            parent_departments.append(self.parent_department)
+            self.parent_department.get_all_parent_departments(parent_departments)
+
+        return parent_departments
+
     class Meta:
         verbose_name = "Отдел"
         verbose_name_plural = "Отделы"
-
-
-
