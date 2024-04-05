@@ -76,7 +76,6 @@
             <div>
                 <div class="img-box flat-img">
                     <div class="img-author">
-
                         {% if profile.photo %}
                         <img src="{{ profile.photo.url }}" class="rounded float-start" alt="{{ profile.username }}">
                         {% else %}
@@ -105,12 +104,18 @@
             <div class="widget widget-categories">
                 <ul>
                     <li class="active">
-                        <span class="user-name">{{ profile.last_name }} {{ profile.first_name }}</span>
+                        <span class="user-name">{{ profile }}</span>
+                    </li>
+
+                    <li class="active">
+                        <a href="#" class="user-name">Отдел: </a>
+                        <span class="user-name-small">{{ profile.department }}</span>
                     </li>
                     <li class="active">
                         <a href="#" class="user-name">Должность: </a>
                         <span class="user-name-small">{{ profile.role }}</span>
                     </li>
+
                     <li class="active">
                         <a href="#">Дата рождения:</a>
                         {% if profile.birth_date %}

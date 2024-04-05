@@ -161,7 +161,7 @@ body {
     </div>
 </div>
 {% endfor %}
-
+{% if not_dep %}
 <div class="flat-top-seller home2">
     <h2 class="staff-name">Сотрудники без отдела</h2>
     <br><br>
@@ -207,6 +207,7 @@ body {
         </div>
     </div>
 </div>
+{% endif %}
 <script>
     // Находим все строки
     var rows = document.querySelectorAll('.row');

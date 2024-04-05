@@ -58,6 +58,16 @@ th, td {
                 aria-controls="collapseExample">
             Общий график
         </button>
+        {% if request.user.department %}
+        <button class="depth"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseExample3"
+                aria-expanded="false"
+                aria-controls="collapseExample">
+            График отдела
+        </button>
+        {% endif%}
         <button class="depth"
                 type="button"
                 data-bs-toggle="collapse"
@@ -106,6 +116,37 @@ th, td {
             </td>
             {% endfor %}
         </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="collapse" id="collapseExample3">
+    <table>
+        <thead>
+        <tr>
+            <th style="width: 20%;">Сотрудник</th>
+            {% for date in set_date %}
+            <th style="width: auto;">{{ date|date:"j F, D" }}</th>
+            {% endfor %}
+        </tr>
+        </thead>
+        <tbody>
+        {% for user, schedule in user_schedule.items %}
+            {% if user.department == request.user.department %}
+            <tr>
+                <td>
+                    <a href="{% url 'users:user_profile' user.id %}">
+                        {{user}}
+                    </a>
+                </td>
+                {% for date in set_date %}
+                <td>
+                    {% get_date user_schedule user date %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endif %}
         {% endfor %}
         </tbody>
     </table>
