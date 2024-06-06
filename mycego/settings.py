@@ -23,8 +23,6 @@ env.read_env()
 key = env.str('SECRET_KEY')
 api_key1 = env.str('api_key1')
 api_key2 = env.str('api_key2')
-
-
 # Настройка вывода логов в файл
 logger.add(
     "logs/app.log",
@@ -116,14 +114,24 @@ WSGI_APPLICATION = 'mycego.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',  # Используется SQLite по умолчанию
+#         'NAME': BASE_DIR / 'db.sqlite3',  # Путь к файлу базы данных SQLite
+#         'USER': '',  # Имя пользователя базы данных (по умолчанию пусто)
+#         'PASSWORD': '',  # Пароль базы данных (по умолчанию пусто)
+#         'HOST': '',  # Хост базы данных (по умолчанию пусто)
+#         'PORT': '',  # Порт базы данных (по умолчанию пусто)
+#     }
+# }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',  # Используется SQLite по умолчанию
-        'NAME': BASE_DIR / 'db.sqlite3',  # Путь к файлу базы данных SQLite
-        'USER': '',  # Имя пользователя базы данных (по умолчанию пусто)
-        'PASSWORD': '',  # Пароль базы данных (по умолчанию пусто)
-        'HOST': '',  # Хост базы данных (по умолчанию пусто)
-        'PORT': '',  # Порт базы данных (по умолчанию пусто)
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'mycego',
+        'USER': 'root',
+        'PASSWORD': 'fma160392',
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
 
@@ -187,7 +195,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
-LOGIN_URL = 'user/login'
+LOGIN_URL = '/users/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 

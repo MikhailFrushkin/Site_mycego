@@ -104,3 +104,15 @@ class Department(models.Model):
     class Meta:
         verbose_name = "Отдел"
         verbose_name_plural = "Отделы"
+
+
+class DepartmentWorks(models.Model):
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, verbose_name='Отдел')
+    works = models.ManyToManyField('completed_works.Standards', verbose_name='работы')
+
+    def __str__(self):
+        return self.department.name
+
+    class Meta:
+        verbose_name = "Работа отдела"
+        verbose_name_plural = "Работы отдела"

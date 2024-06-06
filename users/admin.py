@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from .forms import CustomUserCreationForm, CustomUserChangeForm
-from .models import CustomUser, Role, Department
+from .models import CustomUser, Role, Department, DepartmentWorks
 
 
 class CustomUserAdmin(UserAdmin):
@@ -42,3 +42,4 @@ class AdminDepartment(admin.ModelAdmin):
 
 
 admin.site.register(Department, AdminDepartment)
+admin.site.register(DepartmentWorks)

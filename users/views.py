@@ -1,24 +1,18 @@
 from collections import OrderedDict
-from datetime import datetime
-from pprint import pprint
-from django.db.models import Count, Case, When, Value, IntegerField, F, Subquery, OuterRef
-from django.contrib import messages
+
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
-from django.core.cache import cache
-from django.db.models import Count
 from django.http import HttpResponseRedirect, JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, get_object_or_404
 from django.urls import reverse_lazy
-from django.views import View
 from django.views.generic import ListView, UpdateView
 from loguru import logger
 
 from completed_works.models import WorkRecord, WorkRecordQuantity
 from pay_sheet.models import PaySheetModel
-from users.forms import UserLoginForm, CustomUserEditForm, UserProfileEditForm
-from users.models import CustomUser, Role, Department
-from work_schedule.models import Appointment
+from users.forms import UserLoginForm, UserProfileEditForm
+from users.models import CustomUser, Department
 
 
 class UserLogin(LoginView):
@@ -93,6 +87,7 @@ class Staff(LoginRequiredMixin, ListView):
         return context
 
 
+@login_required(login_url='/users/login/')
 def user_profile(request, user_id):
     profile = get_object_or_404(CustomUser, pk=user_id)
     pay_sheets = PaySheetModel.objects.filter(user=profile)

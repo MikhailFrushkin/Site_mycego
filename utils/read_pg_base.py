@@ -7,6 +7,9 @@ from loguru import logger
 
 env = Env()
 env.read_env()
+env_dict = env.dump()
+print(env_dict)
+
 machine_name = env.str('machine_name')
 dbname = env.str('dbname')
 dbname2 = env.str('dbname2')
