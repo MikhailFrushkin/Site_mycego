@@ -10,7 +10,7 @@ class PaySheetModel(models.Model):
     year = models.IntegerField(verbose_name='Год')
     week = models.IntegerField(verbose_name='Неделя')
 
-    role = models.CharField(verbose_name='Должность', max_length=50)
+    role = models.CharField(verbose_name='Должность', max_length=150)
     role_salary = models.CharField(verbose_name='Ставка', max_length=10)
     hours = models.DecimalField(verbose_name='Часы', max_digits=10, decimal_places=2)
     salary = models.DecimalField(verbose_name='Зарплата по ставке', max_digits=10, decimal_places=2)
@@ -39,7 +39,7 @@ class PaySheetMonthModel(models.Model):
     year = models.IntegerField(verbose_name='Год')
     month = models.IntegerField(verbose_name='Месяц')
 
-    role = models.CharField(verbose_name='Должность', max_length=50)
+    role = models.CharField(verbose_name='Должность', max_length=150)
     role_salary = models.CharField(verbose_name='Ставка', max_length=10)
     hours = models.DecimalField(verbose_name='Часы', max_digits=10, decimal_places=2)
     salary = models.DecimalField(verbose_name='Зарплата по ставке', max_digits=10, decimal_places=2)

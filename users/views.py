@@ -62,10 +62,10 @@ class Staff(LoginRequiredMixin, ListView):
         # Sort the departments based on the length of their parent_departments list
         departments = sorted(departments, key=lambda d: len(d.get_all_parent_departments()))
 
-        for department in departments:
-            parent_departments = department.get_all_parent_departments()
-            logger.info(department)
-            logger.info(parent_departments)
+        # for department in departments:
+        #     parent_departments = department.get_all_parent_departments()
+        #     logger.info(department)
+        #     logger.info(parent_departments)
         return departments
 
     def get_context_data(self, **kwargs):
@@ -75,11 +75,11 @@ class Staff(LoginRequiredMixin, ListView):
         for department in departments:
             department_name = department.name if department.name else "Не указан отдел"
             head_of_department = department.head.all()
-
             # Получение всех пользователей, кроме руководителей отделов
-            users = CustomUser.objects.filter(department=department).exclude(
+            users = CustomUser.objects.filter(status_work=True, department=department).exclude(
                 id__in=head_of_department.values_list('id', flat=True)).order_by('-avg_kf')
-            user_dict[department_name] = (head_of_department, users)
+            if users or head_of_department:
+                user_dict[department_name] = (head_of_department, users)
 
         not_dep = CustomUser.objects.filter(status_work=True, department__isnull=True).order_by('-avg_kf')
         context['user_dict'] = user_dict

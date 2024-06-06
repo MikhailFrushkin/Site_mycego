@@ -454,9 +454,18 @@ def created_salary_check(request):
         month = data_dict.get('month', None)
         clean_data = map(clean_data_post, rowData)
         dict_pays = {}
-        for row in clean_data:
+        for index, row in enumerate(clean_data):
             try:
-                user = CustomUser.objects.get(username=row[0].split('тел:')[0])
+                user = None
+                str_representation = row[0].split('тел:')[0].strip()
+                if '_' in str_representation:
+                    user = CustomUser.objects.filter(username__iexact=str_representation).first()
+                elif ' ' in str_representation:
+                    last_name, first_name = str_representation.split(' ')
+                    user = CustomUser.objects.filter(Q(first_name=first_name) &
+                                                     Q(last_name=last_name)).first()
+                if not user:
+                    logger.error(str_representation)
                 temp = {
                     'year': year,
                     'week': week,
@@ -476,15 +485,18 @@ def created_salary_check(request):
                 dict_pays[user] = temp
             except Exception as ex:
                 logger.error(ex)
-
+        # pprint(dict_pays)
         try:
             for user, data in dict_pays.items():
+                pay_sheet = None
                 try:
                     if not month:
                         pay_sheet = PaySheetModel.objects.get(user=user, year=data['year'], week=data['week'])
                     else:
                         pay_sheet = PaySheetMonthModel.objects.get(user=user, year=data['year'], month=data['month'])
-
+                except Exception as ex:
+                    pass
+                if pay_sheet:
                     # Обновляем поля записи данными из запроса
                     pay_sheet.role = data['role']
                     pay_sheet.role_salary = data['role_salary']
@@ -498,44 +510,45 @@ def created_salary_check(request):
                     pay_sheet.penalty = data['penalty']
                     pay_sheet.comment = data['comment']
                     pay_sheet.save()
-                except Exception as ex:
-                    logger.error(ex)
-                    # Если запись не существует, создаем новую
-                    if not month:
-                        pay_sheet = PaySheetModel(
-                            user=user,
-                            year=data['year'],
-                            week=data['week'],
-                            role=data['role'],
-                            role_salary=data['role_salary'],
-                            hours=data['hours'],
-                            salary=data['salary'],
-                            works=data['works'],
-                            count_of_12=data['count_of_12'],
-                            kf=data['kf'],
-                            result_salary=data['result_salary'],
-                            bonus=data['bonus'],
-                            penalty=data['penalty'],
-                            comment=data['comment'],
-                        )
-                    else:
-                        pay_sheet = PaySheetMonthModel(
-                            user=user,
-                            year=data['year'],
-                            month=data['month'],
-                            role=data['role'],
-                            role_salary=data['role_salary'],
-                            hours=data['hours'],
-                            salary=data['salary'],
-                            works=data['works'],
-                            count_of_12=data['count_of_12'],
-                            kf=data['kf'],
-                            result_salary=data['result_salary'],
-                            bonus=data['bonus'],
-                            penalty=data['penalty'],
-                            comment=data['comment'],
-                        )
-                    pay_sheet.save()
+                else:
+                    try:
+                        if not month:
+                            pay_sheet = PaySheetModel(
+                                user=user,
+                                year=data['year'],
+                                week=data['week'],
+                                role=data['role'],
+                                role_salary=data['role_salary'],
+                                hours=data['hours'],
+                                salary=data['salary'],
+                                works=data['works'],
+                                count_of_12=data['count_of_12'],
+                                kf=data['kf'],
+                                result_salary=data['result_salary'],
+                                bonus=data['bonus'],
+                                penalty=data['penalty'],
+                                comment=data['comment'],
+                            )
+                        else:
+                            pay_sheet = PaySheetMonthModel(
+                                user=user,
+                                year=data['year'],
+                                month=data['month'],
+                                role=data['role'],
+                                role_salary=data['role_salary'],
+                                hours=data['hours'],
+                                salary=data['salary'],
+                                works=data['works'],
+                                count_of_12=data['count_of_12'],
+                                kf=data['kf'],
+                                result_salary=data['result_salary'],
+                                bonus=data['bonus'],
+                                penalty=data['penalty'],
+                                comment=data['comment'],
+                            )
+                        pay_sheet.save()
+                    except Exception as ex:
+                        logger.error(ex)
 
             return JsonResponse({'message': 'Успешно'})
         except Exception as ex:
