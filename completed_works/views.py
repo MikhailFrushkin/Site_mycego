@@ -5,8 +5,8 @@ from pprint import pprint
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum, Q
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
-from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse, HttpResponseRedirect
+from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import ListView, FormView, TemplateView, DetailView
@@ -32,12 +32,38 @@ def remove_special_characters(input_string):
 
 
 def create_work_record(request):
+    # Проверка
+    # # Получаем все работы, которые не архивированы
+    # non_archived_standards = Standards.objects.filter(archive=False)
+    #
+    # # Получаем работы, которые не указаны ни в одном из отделов
+    # standards_not_in_any_department = non_archived_standards.exclude(
+    #     id__in=DepartmentWorks.objects.values_list('works__id', flat=True)
+    # )
+    #
+    #
+    # # Получаем работы, которые повторяются в нескольких отделах
+    # repeated_standards = DepartmentWorks.objects.values('works').annotate(num_departments=Count('department')).filter(
+    #     num_departments__gt=1)
+    #
+    # # Фильтруем неархивированные работы из повторяющихся и выводим информацию о отделах
+    # for item in repeated_standards:
+    #     standard_id = item['works']
+    #     departments = DepartmentWorks.objects.filter(works=standard_id).values_list('department__name', flat=True)
+    #     standard = Standards.objects.get(pk=standard_id)
+    #     print(f"Работа '{standard.name}' повторяется в отделах: {', '.join(departments)}")
+    #
+    # print("\nРаботы, которые не указаны ни в одном из отделов:")
+    # for standard in standards_not_in_any_department:
+    #     print(standard.name)
+
     form = WorkRecordForm(user=request.user)
     if request.method == 'POST':
         form = WorkRecordForm(request.POST, user=request.user)
         if form.is_valid():
-            work_record = form.save(commit=False)
             pprint(request.POST)
+
+            work_record = form.save(commit=False)
             work_record.user = request.user
             work_record.is_checked = False
 
@@ -53,18 +79,35 @@ def create_work_record(request):
                 return render(request, 'completed_works/completed_works.html', {'form': form})
             comment = request.POST['comment']
             cleaned_text = remove_special_characters(comment).strip()
+            try:
+                dep_name = request.user.department.name
+            except Exception as ex:
+                logger.error(f'{request.user} нет отдела')
+                dep_name = ''
+            work_record.comment = f"{dep_name}. {cleaned_text}"
+            over_work_list = ['Другие работы(в минутах)', 'Грузчик', 'План', 'Обучение 3Д']
+            over_work = []
+            for work in over_work_list:
+                get_comm = request.POST.get(work, None)
+                if get_comm:
+                    over_work.append(get_comm)
+            errors = False
 
-            over_work = request.POST.get('Другие работы(в минутах)', None)
             if len(cleaned_text) == 0 and over_work:
-                logger.error(len(cleaned_text))
-                messages.error(request, 'Вы указали "Другие работы" уточните пожалуйста в комментарии об этих работах')
+                messages.error(request, 'Вы указали "Другие работы, Грузчик, План или Обучение 3Д" уточните '
+                                        'пожалуйста в комментарии об этих работах')
+                errors = True
+            if len(cleaned_text) < 5:
+                messages.error(request, 'Опишите более подробно')
+                errors = True
+
+            if errors:
                 return render(request, 'completed_works/completed_works.html', {'form': form})
 
             existing_record = WorkRecord.objects.filter(user=work_record.user, date=date, delivery=None).first()
             if existing_record:
                 messages.error(request, 'Запись уже существует для этой даты.')
                 return redirect('completed_works:completed_works_view')
-
 
             standards = request.user.role.works_standards.all()
             # Проверка, что все поля quantity не равны нулю
@@ -158,7 +201,8 @@ def create_work_record_admin_add(request):
                 cleaned_text = remove_special_characters(comment).strip()
 
                 try:
-                    exec_work_records = WorkRecord.objects.get(user=work_record.user, date=work_record.date, delivery=None)
+                    exec_work_records = WorkRecord.objects.get(user=work_record.user, date=work_record.date,
+                                                               delivery=None)
                     messages.error(request, 'Запись на эту дату существует')
                     return render(request, 'completed_works/completed_works_admin_add.html',
                                   {'form': form, 'users': users})
@@ -183,8 +227,6 @@ def create_work_record_admin_add(request):
                         logger.error(ex)
                         messages.error(request, 'Выбрана неверная поставка.')
                         return render(request, 'completed_works/completed_works.html', {'form': form, 'users': users})
-
-
 
                 standards = Standards.objects.all()
 
@@ -561,7 +603,6 @@ class DeliveryView(TemplateView):
         context['delivery_works_by_state'] = delivery_works_by_state
         context['count_state'] = DeliveryState.objects.filter(type=type_state).count()
         return context
-
 
 
 def cut_state(request, delivery_id, delivery_nums_id):

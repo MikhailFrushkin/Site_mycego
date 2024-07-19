@@ -24,7 +24,7 @@
 </div>
 
 <div style="width:40rem;height:10rem;">
-    <p>При заполнении "Другие работы" необходимо указать комментарий, что именно они в себя включали</p>
+    <p>При заполнении "Другие работы, Грузчик, План или Обучение 3Д" необходимо указать комментарий, что именно они в себя включали</p>
 </div>
 
 <div class="gradient-border" id="box" style="width:40rem;">
@@ -47,7 +47,7 @@
 
         {% for field in form %}
         {% if field.name != 'user' and field.name != 'date' and field.name != 'comment' %}
-        <div class="input-group mb-3">
+        <div class="input-group mb-6">
             <span class="narrower-input2" style="font-size: 14px;padding-top:15px;">{{ field.label }}</span>
             <input type="{{ field.field.widget.input_type }}"
                    name="{{ field.name }}"

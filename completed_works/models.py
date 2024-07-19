@@ -7,10 +7,13 @@ from users.models import CustomUser
 
 
 class Standards(models.Model):
-    name = models.CharField(verbose_name='Тип работ', max_length=255)
+    name = models.CharField(verbose_name='Тип работ', max_length=255, unique=True)
     standard = models.IntegerField(verbose_name='Норматив', default=0)
     type_for_printer = models.BooleanField(verbose_name='Относиться к печатникам', default=False)
     delivery = models.BooleanField(verbose_name='Отображать в листах поставки', default=False)
+    archive = models.BooleanField(verbose_name='Архив', default=False)
+    created_at = models.DateTimeField(verbose_name='Созданно', auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(verbose_name='Обновленно', auto_now=True, null=True)
 
     def __str__(self):
         return self.name

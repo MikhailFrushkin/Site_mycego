@@ -105,7 +105,7 @@ class StandardsList(APIView):
     @staticmethod
     def get(self):
         try:
-            rows = Standards.objects.all()
+            rows = Standards.objects.filter(archive=False)
             return JsonResponse({'data': [(i.id, i.name, i.delivery, i.standard) for i in rows]})
         except Exception as ex:
             return Response({'data': f'Ошибка обновления: {ex}'}, status=HTTP_401_UNAUTHORIZED)

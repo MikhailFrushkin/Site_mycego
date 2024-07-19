@@ -185,8 +185,7 @@
         </div>
     </div>
 </div>
-{% if request.user == profile or request.user.is_staff %}
-{% if profile.role.name == 'Печатник' or profile.role.name == 'Фасовщик пакетов на упаковке' or profile.role.name == 'Маркировщик' or profile.role.name == 'Упаковщик' or profile.role.name == 'Стажёр' %}
+
 <div class="container text-left" style="margin-top:50px;">
     <div class="row align-items-start">
 
@@ -210,6 +209,9 @@
                 </tbody>
             </table>
         </div>
+        {% if request.user == profile or request.user.is_staff %}
+        <p>{{request.user}}</p>
+        <p>{{profile}}</p>
         <div class="col">
             <h3>Часы и выплаты</h3>
             <br>
@@ -218,10 +220,10 @@
             <p>Всего премий: {{summary_data.total_bonus}} руб.</p>
             <p>Всего штрафов: {{summary_data.total_penalty}} руб.</p>
         </div>
+        {% endif %}
+
     </div>
 </div>
-{% endif %}
-{% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from pprint import pprint
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -10,7 +11,7 @@ from django.views.generic import ListView, UpdateView
 from loguru import logger
 
 from completed_works.models import WorkRecord, WorkRecordQuantity
-from pay_sheet.models import PaySheetModel
+from pay_sheet.models import PaySheetModel, PaySheetMonthModel
 from users.forms import UserLoginForm, UserProfileEditForm
 from users.models import CustomUser, Department
 
@@ -90,7 +91,9 @@ class Staff(LoginRequiredMixin, ListView):
 @login_required(login_url='/users/login/')
 def user_profile(request, user_id):
     profile = get_object_or_404(CustomUser, pk=user_id)
-    pay_sheets = PaySheetModel.objects.filter(user=profile)
+    pay_sheets_week = PaySheetModel.objects.filter(user=profile)
+    pay_sheets_month = PaySheetMonthModel.objects.filter(user=profile)
+    pay_sheets = list(pay_sheets_month) + list(pay_sheets_week)
     work_lists = WorkRecord.objects.filter(user=profile, delivery=None)
 
     work_summary = {}
@@ -110,7 +113,6 @@ def user_profile(request, user_id):
                     work_summary[work_type] = quantity
 
     sorted_work_summary = dict(sorted(work_summary.items(), key=lambda item: item[1], reverse=True))
-
     summary_data = {
         'total_hours': 0,
         'total_result_salary': 0,

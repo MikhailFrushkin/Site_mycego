@@ -82,7 +82,7 @@ class KnowledgeCategory(LoginRequiredMixin, TemplateView):
         for item in good_links:
             good_links_dict[item.category].append(item)
 
-        standards = Standards.objects.all().order_by('standard')
+        standards = Standards.objects.filter(archive=False).order_by('standard')
         context['standards'] = standards
         context['good_links'] = good_links_dict
         context['category_dict'] = category_dict
