@@ -24,4 +24,5 @@ urlpatterns = [
 
     path('request/', views.RequestTg.as_view(), name='request_tg'),
     path('pay_sheet/', views.PaySheets.as_view(), name='pay_sheet'),
+    path('works_departments/', views.WorksDepartments.as_view(), name='works_departments'),
 ]

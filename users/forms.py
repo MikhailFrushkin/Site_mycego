@@ -41,7 +41,7 @@ class CustomUserChangeForm(UserChangeForm):
         model = CustomUser
         fields = (
             'username', 'first_name', 'last_name', 'email', 'role', 'status_work', 'photo', 'phone_number',
-            'telegram_id', 'card_details', 'birth_date', 'hobbies'
+            'telegram', 'card_details', 'birth_date', 'hobbies'
         )
 
 
@@ -49,7 +49,7 @@ class CustomUserEditForm(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = ['first_name', 'last_name', 'email', 'role', 'status_work', 'photo', 'phone_number',
-                  'telegram_id', 'card_details', 'birth_date', 'hobbies']
+                  'telegram', 'card_details', 'birth_date', 'hobbies']
 
     def __init__(self, *args, **kwargs):
         super(CustomUserEditForm, self).__init__(*args, **kwargs)
@@ -59,7 +59,7 @@ class CustomUserEditForm(forms.ModelForm):
 class UserProfileEditForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'email', 'photo', 'phone_number', 'telegram_id', 'card_details',
+        fields = ['first_name', 'last_name', 'email', 'photo', 'phone_number', 'telegram', 'card_details',
                   'birth_date', 'hobbies']
 
         widgets = {

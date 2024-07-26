@@ -14,7 +14,7 @@ class CustomUserAdmin(UserAdmin):
 
     fieldsets = UserAdmin.fieldsets + (
         ('Доп. информация', {'fields': ('role', 'department', 'status_work', 'photo', 'phone_number',
-                                        'telegram_id', 'card_details', 'birth_date', 'hobbies', 'nick')}),
+                                        'telegram', 'telegram_id', 'card_details', 'birth_date', 'hobbies', 'nick')}),
         ('Избранные', {'fields': ('favorites',)}),  # Добавляем поле favorites в админку
     )
 

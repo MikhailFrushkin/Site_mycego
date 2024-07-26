@@ -143,7 +143,7 @@
                     </li>
                     <li class="active">
                         <a href="#">Телеграмм: </a>
-                        <span class="user-name-small">{{ profile.telegram_id }}</span>
+                        <span class="user-name-small">{{ profile.telegram }}</span>
                     </li>
                     <li class="active">
                         <a href="#">Реквизиты банковской карты:</a>
@@ -210,8 +210,6 @@
             </table>
         </div>
         {% if request.user == profile or request.user.is_staff %}
-        <p>{{request.user}}</p>
-        <p>{{profile}}</p>
         <div class="col">
             <h3>Часы и выплаты</h3>
             <br>

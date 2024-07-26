@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 
 from completed_works.models import Standards, WorkRecord, WorkRecordQuantity, Delivery
 from pay_sheet.models import PaySheetModel, PaySheetMonthModel
-from users.models import CustomUser
+from users.models import CustomUser, DepartmentWorks
 from work_schedule.models import Appointment, RequestsModel
 
 
@@ -35,13 +35,16 @@ class LoginView(APIView):
         try:
             username = request.data.get('username')
             password = request.data.get('password')
+            telegram_id = request.data.get('telegram_id', None)
             user = CustomUser.objects.get(username=username)
+            user.telegram_id = telegram_id
+            user.save()
             if check_password(password, user.password):
                 return Response({'id': f'{user.id}',
                                  'role': f'{user.role}'})
 
         except Exception as ex:
-            print(ex)
+            logger.error(ex)
             return Response({'message': 'Неверный логин или пароль'}, status=HTTP_401_UNAUTHORIZED)
 
 
@@ -366,6 +369,26 @@ class PaySheets(APIView):
                     'updated_at': row.updated_at,
                 }
             pprint(data)
+            return JsonResponse({'data': data}, status=200)
+        except Exception as ex:
+            logger.error(ex)
+            return Response({'data': f'Ошибка! {ex}'}, status=HTTP_401_UNAUTHORIZED)
+
+
+class WorksDepartments(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            data = {}
+            deps = DepartmentWorks.objects.all().order_by('department')
+            for dep in deps:
+                data[dep.department.name.capitalize()] = {
+                    i.name.capitalize(): {"id": i.id, 'quantity': i.standard} for i in dep.works.
+                    filter(archive=False).order_by('name')
+                }
+
+            pprint(sorted(data))
             return JsonResponse({'data': data}, status=200)
         except Exception as ex:
             logger.error(ex)
