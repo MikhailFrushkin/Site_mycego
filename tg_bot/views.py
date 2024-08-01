@@ -1,6 +1,5 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
-from pprint import pprint
 
 from django.contrib.auth.hashers import check_password
 from django.db.models import Q
@@ -40,8 +39,10 @@ class LoginView(APIView):
             user.telegram_id = telegram_id
             user.save()
             if check_password(password, user.password):
-                return Response({'id': f'{user.id}',
-                                 'role': f'{user.role}'})
+                return Response({'id': user.id,
+                                 'role': user.role.name,
+                                 'status_work': user.status_work,
+                                 })
 
         except Exception as ex:
             logger.error(ex)
@@ -128,7 +129,6 @@ class AddWorksList(APIView):
             return JsonResponse({'data': f'Не работает'}, status=403)
         works = request.data.get('works')
         comment = request.data.get('comment', None)
-        print(request.data)
         logger.debug(delivery_id)
         if not delivery_id:
             try:
@@ -229,7 +229,6 @@ class DeliveryView(APIView):
             ).order_by('-createdAt')
             for item in queryset:
                 data.append((item.id, item.name))
-            print(len(queryset))
             return JsonResponse({'data': data}, status=200)
         except Exception as ex:
             return Response({'data': 'Не найденно!'}, status=HTTP_401_UNAUTHORIZED)
@@ -368,7 +367,6 @@ class PaySheets(APIView):
                     'created_at': row.created_at,
                     'updated_at': row.updated_at,
                 }
-            pprint(data)
             return JsonResponse({'data': data}, status=200)
         except Exception as ex:
             logger.error(ex)
@@ -388,7 +386,19 @@ class WorksDepartments(APIView):
                     filter(archive=False).order_by('name')
                 }
 
-            pprint(sorted(data))
+            return JsonResponse({'data': data}, status=200)
+        except Exception as ex:
+            logger.error(ex)
+            return Response({'data': f'Ошибка! {ex}'}, status=HTTP_401_UNAUTHORIZED)
+
+
+class WorkStatusUsers(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            users = CustomUser.objects.all().values('telegram_id', 'status_work', 'username')
+            data = list(users)
             return JsonResponse({'data': data}, status=200)
         except Exception as ex:
             logger.error(ex)
