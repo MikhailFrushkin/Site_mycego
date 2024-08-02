@@ -21,6 +21,7 @@ from loguru import logger
 env = Env()
 env.read_env()
 key = env.str('SECRET_KEY')
+BOT_TOKEN = env.str('BOT_TOKEN')
 api_key1 = env.str('api_key1')
 api_key2 = env.str('api_key2')
 # Настройка вывода логов в файл

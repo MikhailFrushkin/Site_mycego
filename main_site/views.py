@@ -1,15 +1,12 @@
 import datetime
 
-import pandas as pd
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.views.generic import TemplateView
-from loguru import logger
 
 from completed_works.models import Standards
 from main_site.models import Announcement, GoodLink, Knowledge
-from users.models import CustomUser
 from work_schedule.models import Appointment
 
 
@@ -70,17 +67,6 @@ class KnowledgeCategory(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # try:
-        #     df = pd.read_excel('telegram_id.xlsx')
-        #     for index, row in df.iterrows():
-        #         try:
-        #             user = CustomUser.objects.get(username=row['username'])
-        #             user.telegram_id = row['telegram_id']
-        #             user.save()
-        #         except Exception as ex:
-        #             logger.error(row['username'])
-        # except Exception as ex:
-        #     logger.error(ex)
 
         cashed_data = cache.get('know', None)
         if cashed_data:
@@ -105,6 +91,3 @@ class KnowledgeCategory(LoginRequiredMixin, TemplateView):
         context.pop('view', None)
         cache.set('know', context, 600)
         return context
-
-
-

@@ -25,6 +25,12 @@ from utils.utils import get_year_week
 from work_schedule.forms import AppointmentForm, VacationRequestForm
 from work_schedule.models import Appointment, VacationRequest, FingerPrint, BadFingerPrint, RequestsModel
 from django.core.exceptions import ValidationError
+from mycego.settings import BOT_TOKEN
+from utils.init_bot import dp, bot
+from aiogram import Bot
+from aiogram.types import Message
+from asgiref.sync import async_to_sync
+import asyncio
 
 
 def format_duration(duration):
@@ -822,6 +828,17 @@ def request_all(request):
     })
 
 
+@dp.message()
+async def send_message(bot: Bot, user_id: int, message: str) -> None:
+    try:
+        await bot.send_message(chat_id=user_id, text=message)
+    except Exception as ex:
+        logger.error(ex)
+    finally:
+        # Закрытие сессии после отправки сообщения
+        await bot.session.close()
+
+
 @login_required
 def request_details(request, pk):
     item = RequestsModel.objects.get(pk=pk)
@@ -836,6 +853,18 @@ def request_details(request, pk):
         elif data['status'] == 'rejected':
             item.result = False
         item.save()
+
+        try:
+            user_id = item.user.telegram_id
+            mess = f'В ответ по заявке: {item.comment}\n'
+            answer = 'Подтверждено' if item.result else 'Отказано'
+            mess += f'Решение: {answer}\n'
+            if item.comment_admin:
+                mess += f'Комментарий: {item.comment_admin}\n'
+            asyncio.run(send_message(bot, user_id, mess))
+        except Exception as ex:
+            logger.error(ex)
+
         return redirect('work:request_all')
     item.save()
     return render(request, 'work/request_details.html', {'item': item})
