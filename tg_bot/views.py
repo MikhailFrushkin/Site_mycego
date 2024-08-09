@@ -397,7 +397,7 @@ class WorkStatusUsers(APIView):
 
     def get(self, request):
         try:
-            users = CustomUser.objects.all().values('telegram_id', 'status_work', 'username')
+            users = CustomUser.objects.all().values('telegram_id', 'status_work', 'username', 'birth_date')
             data = list(users)
             return JsonResponse({'data': data}, status=200)
         except Exception as ex:
